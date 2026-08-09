@@ -8,6 +8,7 @@ const PORT = process.env.PORT || 3000;
 const USERNAME = "admin";
 const PASSWORD = "123";
 
+// M3U Dosyasını Otomatik Sezon / Bölüm Parse Etme
 function parseM3U() {
     try {
         const filePath = path.join(__dirname, 'liste.m3u');
@@ -23,19 +24,35 @@ function parseM3U() {
         lines.forEach(line => {
             line = line.trim();
             if (line.startsWith('#EXTINF:')) {
+                // Görsel / Kapak Fotoğrafı
                 const logoMatch = line.match(/tvg-logo="([^"]+)"/);
                 const logo = logoMatch ? logoMatch[1] : "";
 
-                const seriesNameMatch = line.match(/series-name="([^"]+)"/);
+                // Group Title Parsing (Örn: "Sürekli Dizi - Sezon 1" veya "Sürekli Dizi")
                 const groupMatch = line.match(/group-title="([^"]+)"/);
-                const seriesName = seriesNameMatch ? seriesNameMatch[1] : (groupMatch ? groupMatch[1] : "Sürekli Dizi");
+                const rawGroup = groupMatch ? groupMatch[1] : "Sürekli Dizi";
+                
+                // Dizi Adı ve Sezon Numarasını Otomatik Ayrıştır
+                let seriesName = rawGroup.split('-')[0].trim(); // "Sürekli Dizi"
+                let season = 1;
 
-                const seasonMatch = line.match(/season="([^"]+)"/);
-                const season = seasonMatch ? parseInt(seasonMatch[1]) : 1;
+                const seasonInGroup = rawGroup.match(/Sezon\s*(\d+)/i);
+                if (seasonInGroup) {
+                    season = parseInt(seasonInGroup[1]);
+                }
 
-                const episodeMatch = line.match(/episode="([^"]+)"/);
-                const episode = episodeMatch ? parseInt(episodeMatch[1]) : 1;
+                // tvg-name parsing (Örn: "S01E02")
+                const tvgNameMatch = line.match(/tvg-name="([^"]+)"/);
+                let episode = 1;
+                if (tvgNameMatch) {
+                    const epMatch = tvgNameMatch[1].match(/E(\d+)/i);
+                    if (epMatch) episode = parseInt(epMatch[1]);
+                    
+                    const seMatch = tvgNameMatch[1].match(/S(\d+)/i);
+                    if (seMatch) season = parseInt(seMatch[1]);
+                }
 
+                // Bölüm Adı (Virgülden sonrası)
                 const titleParts = line.split(',');
                 const name = titleParts.length > 1 ? titleParts[titleParts.length - 1].trim() : `${episode}. Bölüm`;
 
@@ -45,7 +62,7 @@ function parseM3U() {
                     currentStream.url = line;
                     streams.push(currentStream);
 
-                    // Dizi bazlı gruplama
+                    // Diziye Göre Grupla
                     if (!seriesMap.has(currentStream.seriesName)) {
                         seriesMap.set(currentStream.seriesName, {
                             name: currentStream.seriesName,
@@ -53,6 +70,12 @@ function parseM3U() {
                             episodes: []
                         });
                     }
+                    
+                    // Kapak resmi güncelle
+                    if (currentStream.logo && !seriesMap.get(currentStream.seriesName).cover) {
+                        seriesMap.get(currentStream.seriesName).cover = currentStream.logo;
+                    }
+
                     seriesMap.get(currentStream.seriesName).episodes.push({
                         ...currentStream,
                         stream_id: streams.length
@@ -85,12 +108,12 @@ app.get('/player_api.php', (req, res) => {
         });
     }
 
-    // Series Kategorisi
+    // Kategoriler
     if (action === 'get_series_categories') {
         return res.json([{ category_id: "1", category_name: "Çizgi Diziler", parent_id: 0 }]);
     }
 
-    // 1. Ana Ekranda Görünecek Dizi Kartları (Sadece 'Sürekli Dizi' Görünür)
+    // 1. Ana Ekranda Görünecek Dizi Kartı (Sadece "Sürekli Dizi" Görünür)
     if (action === 'get_series') {
         let seriesList = [];
         let idCounter = 1;
@@ -101,7 +124,7 @@ app.get('/player_api.php', (req, res) => {
                 name: name,
                 series_id: idCounter,
                 cover: data.cover,
-                plot: `${name} Animasyon Dizisi`,
+                plot: `${name} Çizgi Dizisi`,
                 cast: "",
                 director: "",
                 genre: "Çizgi Dizi",
@@ -116,7 +139,7 @@ app.get('/player_api.php', (req, res) => {
         return res.json(seriesList);
     }
 
-    // 2. Dizinin İçine Basıldığında Sezonları ve Bölümleri Getir
+    // 2. Diziye Basılınca Tüm Sezonları (Sezon 1, 2 ... 8) ve Bölümleri Getir
     if (action === 'get_series_info') {
         const targetId = parseInt(series_id) || 1;
         const seriesNames = Array.from(seriesMap.keys());
@@ -147,14 +170,17 @@ app.get('/player_api.php', (req, res) => {
                     duration: "11 min",
                     plot: ep.name,
                     rating: "9.0",
-                    movie_image: ep.logo
+                    movie_image: ep.logo || seriesData.cover
                 },
                 custom_sid: "",
                 added: "1700000000"
             });
         });
 
-        const seasonsList = Array.from(seasonsSet).map(s => ({
+        // Sezonları Küçükten Büyüğe Sırala (1, 2, 3 ... 8)
+        const sortedSeasons = Array.from(seasonsSet).sort((a, b) => a - b);
+
+        const seasonsList = sortedSeasons.map(s => ({
             air_date: "",
             episode_count: episodesObj[s.toString()] ? episodesObj[s.toString()].length : 0,
             id: s,
@@ -170,7 +196,7 @@ app.get('/player_api.php', (req, res) => {
             info: {
                 name: targetName,
                 cover: seriesData.cover,
-                plot: `${targetName} Animasyon Dizisi`,
+                plot: `${targetName} Çizgi Dizisi`,
                 genre: "Çizgi Dizi"
             }
         });
@@ -179,7 +205,7 @@ app.get('/player_api.php', (req, res) => {
     res.json([]);
 });
 
-// Bölüm Oynatma Linki
+// Video Oynatma Linki
 app.get('/:type/:user/:pass/:id', (req, res) => {
     const { user, pass, id } = req.params;
     if (user !== USERNAME || pass !== PASSWORD) return res.status(403).send("Yetkisiz Erişim");
