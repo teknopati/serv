@@ -10,7 +10,7 @@ const PORT = process.env.PORT || 3000;
 const USERNAME = "admin";
 const PASSWORD = "123";
 
-// 📌 1. Sezon 1. Bölüm Başlangıç Sabiti
+// 📌 Yayın Akışı Başlangıç Sabiti (1. Sezon 1. Bölüm Referansı)
 const START_ANCHOR_TIME = 1786233600; 
 
 // M3U Okuyucu
@@ -69,7 +69,7 @@ function readM3UFile(fileName) {
     }
 }
 
-// 🕒 7/24 Döngüsel Saat Motoru
+// 🕒 7/24 Kesintisiz Yayın Akış Motoru
 function getSurekliDiziLoop() {
     const allSeries = readM3UFile('series.m3u');
     
@@ -82,7 +82,7 @@ function getSurekliDiziLoop() {
     const targetEpisodes = surekliDiziEpisodes.length > 0 ? surekliDiziEpisodes : allSeries;
     if (targetEpisodes.length === 0) return null;
 
-    const episodeDuration = 11 * 60; // 11 Dakika
+    const episodeDuration = 11 * 60; // Her bölüm varsayılan 11 Dakika
     const totalDuration = targetEpisodes.length * episodeDuration;
     
     const nowInSeconds = Math.floor(Date.now() / 1000);
@@ -95,47 +95,47 @@ function getSurekliDiziLoop() {
     return targetEpisodes[currentIndex];
 }
 
-// 📡 Canlı TV Manifest Temizleyici (Alttaki Barı ve Süreyi Kaldırır)
-function servePureLivePlaylist(targetUrl, res) {
+// 📡 Gerçek Canlı TV Akış Oluşturucu (VOD Barını Kaldırır)
+function proxyLiveManifest(targetUrl, res) {
     try {
         const parsedUrl = new URL(targetUrl);
-        const options = {
+        const client = parsedUrl.protocol === 'https:' ? https : http;
+
+        const reqOptions = {
             hostname: parsedUrl.hostname,
             path: parsedUrl.pathname + parsedUrl.search,
             headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
                 'Referer': `${parsedUrl.protocol}//${parsedUrl.hostname}/`
             }
         };
 
-        const client = parsedUrl.protocol === 'https:' ? https : http;
-
-        client.get(options, (streamRes) => {
+        client.get(reqOptions, (remoteRes) => {
             let data = '';
-            streamRes.on('data', chunk => data += chunk);
-            streamRes.on('end', () => {
+            remoteRes.on('data', chunk => data += chunk);
+            remoteRes.on('end', () => {
                 res.setHeader('Content-Type', 'application/vnd.apple.mpegurl');
                 res.setHeader('Access-Control-Allow-Origin', '*');
                 res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
 
                 const baseUrl = targetUrl.substring(0, targetUrl.lastIndexOf('/') + 1);
-                let lines = data.split('\n');
-                let newLines = [];
+                const lines = data.split('\n');
+                let output = [];
 
                 lines.forEach(line => {
-                    line = line.trim();
-                    // Video bitiş ve VOD etiketlerini silerek TV canlı yayınına dönüştürür
-                    if (line === '#EXT-X-ENDLIST' || line.startsWith('#EXT-X-PLAYLIST-TYPE')) {
+                    const trimmed = line.trim();
+                    // Video bitiş ve VOD tanımlarını temizleyip canlı TV akışına dönüştürür
+                    if (trimmed === '#EXT-X-ENDLIST' || trimmed.startsWith('#EXT-X-PLAYLIST-TYPE')) {
                         return;
                     }
-                    if (line && !line.startsWith('#') && !line.startsWith('http')) {
-                        newLines.push(baseUrl + line);
+                    if (trimmed && !trimmed.startsWith('#') && !trimmed.startsWith('http')) {
+                        output.push(baseUrl + trimmed);
                     } else {
-                        newLines.push(line);
+                        output.push(trimmed);
                     }
                 });
 
-                res.send(newLines.join('\n'));
+                res.send(output.join('\n'));
             });
         }).on('error', () => {
             res.redirect(302, targetUrl);
@@ -166,7 +166,7 @@ app.get('/player_api.php', (req, res) => {
     // --- 1. TV MENÜSÜ ---
     if (action === 'get_live_categories') {
         const liveItems = readM3UFile('tv.m3u');
-        let categories = [{ category_id: "724", category_name: "7/24 Canlı Diziler", parent_id: 0 }];
+        let categories = [{ category_id: "724", category_name: "📺 7/24 Canlı Diziler", parent_id: 0 }];
         
         if (liveItems.length > 0) {
             const cats = Array.from(new Set(liveItems.map(i => i.group)));
@@ -300,17 +300,18 @@ app.get('/player_api.php', (req, res) => {
     res.json([]);
 });
 
-// Oynatma Yönlendiricisi (Canlı Yayın Temizleyicili)
+// Oynatma Yönlendiricisi
 app.get('/:type/:user/:pass/:id', (req, res) => {
     const { user, pass, id } = req.params;
     if (user !== USERNAME || pass !== PASSWORD) return res.status(403).send("Yetkisiz Erişim");
 
     const cleanId = parseInt(id.replace(/\.[^/.]+$/, ""));
 
+    // 7/24 Canlı Dizi Kanalı İsteği
     if (cleanId === 999) {
         const currentEpisode = getSurekliDiziLoop();
         if (currentEpisode && currentEpisode.url) {
-            return servePureLivePlaylist(currentEpisode.url, res);
+            return proxyLiveManifest(currentEpisode.url, res);
         }
     }
 
