@@ -1,6 +1,8 @@
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
+const https = require('https');
+const http = require('http');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -64,7 +66,7 @@ function readM3UFile(fileName) {
     }
 }
 
-// 7/24 Sürekli Dizi Döngü Hesabı
+// 7/24 Sürekli Dizi Aktif Bölüm Hesabı
 function getSurekliDiziLoop() {
     const allSeries = readM3UFile('series.m3u');
     
@@ -240,7 +242,30 @@ app.get('/player_api.php', (req, res) => {
     res.json([]);
 });
 
-// HAFİF VE DONMAYAN YÖNLENDİRİCİ
+// M3U8 Playlist İçeriğini Okuyup Sunma
+function fetchAndPipeM3U8(targetUrl, res) {
+    const client = targetUrl.startsWith('https') ? https : http;
+    client.get(targetUrl, (streamRes) => {
+        let data = '';
+        streamRes.on('data', chunk => data += chunk);
+        streamRes.on('end', () => {
+            res.setHeader('Content-Type', 'application/vnd.apple.mpegurl');
+            // Eğer göreceli linkler varsa onları tam adrese çevir
+            const baseUrl = targetUrl.substring(0, targetUrl.lastIndexOf('/') + 1);
+            const formattedManifest = data.split('\n').map(line => {
+                line = line.trim();
+                if (line && !line.startsWith('#') && !line.startsWith('http')) {
+                    return baseUrl + line;
+                }
+                return line;
+            }).join('\n');
+            
+            res.send(formattedManifest);
+        });
+    }).on('error', () => res.status(500).send("Yayın çekilemedi"));
+}
+
+// Oynatma İstekleri
 app.get('/:type/:user/:pass/:id', (req, res) => {
     const { user, pass, id } = req.params;
     if (user !== USERNAME || pass !== PASSWORD) return res.status(403).send("Yetkisiz Erişim");
@@ -251,7 +276,7 @@ app.get('/:type/:user/:pass/:id', (req, res) => {
     if (cleanId === 999) {
         const currentEpisode = getSurekliDiziLoop();
         if (currentEpisode && currentEpisode.url) {
-            return res.redirect(307, currentEpisode.url);
+            return fetchAndPipeM3U8(currentEpisode.url, res);
         }
     }
 
@@ -259,9 +284,9 @@ app.get('/:type/:user/:pass/:id', (req, res) => {
     const movieItems = readM3UFile('movie.m3u');
     const seriesItems = readM3UFile('series.m3u');
 
-    if (cleanId <= 900 && tvItems[cleanId - 1]) return res.redirect(307, tvItems[cleanId - 1].url);
-    if (cleanId > 1000 && cleanId < 2000 && movieItems[cleanId - 1001]) return res.redirect(307, movieItems[cleanId - 1001].url);
-    if (cleanId >= 2000 && seriesItems[cleanId - 2000]) return res.redirect(307, seriesItems[cleanId - 2000].url);
+    if (cleanId <= 900 && tvItems[cleanId - 1]) return res.redirect(302, tvItems[cleanId - 1].url);
+    if (cleanId > 1000 && cleanId < 2000 && movieItems[cleanId - 1001]) return res.redirect(302, movieItems[cleanId - 1001].url);
+    if (cleanId >= 2000 && seriesItems[cleanId - 2000]) return res.redirect(302, seriesItems[cleanId - 2000].url);
 
     res.status(404).send("Yayın bulunamadı");
 });
