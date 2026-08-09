@@ -8,7 +8,7 @@ const PORT = process.env.PORT || 3000;
 const USERNAME = "admin";
 const PASSWORD = "123";
 
-// M3U Dosyasını Hata Vermeden Güvenle Okuyan Fonksiyon
+// M3U Okuyucu
 function readM3UFile(fileName) {
     try {
         const filePath = path.join(__dirname, fileName);
@@ -68,16 +68,13 @@ function readM3UFile(fileName) {
 function getSurekliDiziLoop() {
     const allSeries = readM3UFile('series.m3u');
     
-    // Sadece "Sürekli Dizi" olanları seç
     const surekliDiziEpisodes = allSeries.filter(item => 
         item.seriesName.toLowerCase().includes("sürekli dizi") || 
         item.seriesName.toLowerCase().includes("regular show") ||
         item.group.toLowerCase().includes("sürekli dizi")
     );
 
-    // Bulamazsa varsayılan olarak series.m3u'daki ilk diziyi al
     const targetEpisodes = surekliDiziEpisodes.length > 0 ? surekliDiziEpisodes : allSeries;
-
     if (targetEpisodes.length === 0) return null;
 
     const episodeDuration = 11 * 60; // 11 Dakika
@@ -104,7 +101,6 @@ app.get('/player_api.php', (req, res) => {
         });
     }
 
-    // EPG Donma Koruması
     if (action === 'get_epg' || action === 'get_short_epg' || action === 'get_simple_data_table') {
         return res.json({ epg_listings: [] });
     }
@@ -125,18 +121,19 @@ app.get('/player_api.php', (req, res) => {
         const liveItems = readM3UFile('tv.m3u');
         const cats = Array.from(new Set(liveItems.map(i => i.group)));
         
-        // 1. Sıraya 7/24 Canlı Kanalı Yerleştir
+        // Aktif Canlı Bölümü Bul
+        const currentLoopEp = getSurekliDiziLoop();
+        
         let streams = [{
             num: 1,
-            name: "Sürekli Dizi (7/24 Canlı TV)",
-            stream_id: 99999,
+            name: currentLoopEp ? `Sürekli Dizi 7/24 (${currentLoopEp.name})` : "Sürekli Dizi (7/24 Canlı TV)",
+            stream_id: 999,
             stream_type: "live",
             stream_icon: "https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg",
             category_id: "724",
-            direct_source: ""
+            direct_source: currentLoopEp ? currentLoopEp.url : ""
         }];
 
-        // tv.m3u içindeki Kanalları Ekle (TRT1, ATV vs.)
         liveItems.forEach((item, index) => {
             streams.push({
                 num: index + 2,
@@ -223,7 +220,8 @@ app.get('/player_api.php', (req, res) => {
                 episode_num: ep.episode,
                 title: ep.name,
                 container_extension: "m3u8",
-                info: { duration: "11 min", plot: ep.name, movie_image: ep.logo || seriesData.cover }
+                info: { duration: "11 min", plot: ep.name, movie_image: ep.logo || seriesData.cover },
+                url: ep.url
             });
         });
 
@@ -245,18 +243,18 @@ app.get('/player_api.php', (req, res) => {
     res.json([]);
 });
 
-// Stream Link Yönlendiricisi
+// Oynatma Yönlendiricisi
 app.get('/:type/:user/:pass/:id', (req, res) => {
     const { user, pass, id } = req.params;
     if (user !== USERNAME || pass !== PASSWORD) return res.status(403).send("Yetkisiz Erişim");
 
     const cleanId = parseInt(id.replace(/\.[^/.]+$/, ""));
 
-    // 7/24 Sürekli Dizi Yönlendirmesi
-    if (cleanId === 99999) {
+    // 7/24 Canlı Yayın ID'si (999)
+    if (cleanId === 999) {
         const currentEpisode = getSurekliDiziLoop();
         if (currentEpisode && currentEpisode.url) {
-            return res.redirect(currentEpisode.url);
+            return res.redirect(302, currentEpisode.url);
         }
     }
 
@@ -264,9 +262,9 @@ app.get('/:type/:user/:pass/:id', (req, res) => {
     const movieItems = readM3UFile('movie.m3u');
     const seriesItems = readM3UFile('series.m3u');
 
-    if (cleanId <= 1000 && tvItems[cleanId - 1]) return res.redirect(tvItems[cleanId - 1].url);
-    if (cleanId > 1000 && cleanId < 2000 && movieItems[cleanId - 1001]) return res.redirect(movieItems[cleanId - 1001].url);
-    if (cleanId >= 2000 && seriesItems[cleanId - 2000]) return res.redirect(seriesItems[cleanId - 2000].url);
+    if (cleanId <= 900 && tvItems[cleanId - 1]) return res.redirect(302, tvItems[cleanId - 1].url);
+    if (cleanId > 1000 && cleanId < 2000 && movieItems[cleanId - 1001]) return res.redirect(302, movieItems[cleanId - 1001].url);
+    if (cleanId >= 2000 && seriesItems[cleanId - 2000]) return res.redirect(302, seriesItems[cleanId - 2000].url);
 
     res.status(404).send("Yayın bulunamadı");
 });
