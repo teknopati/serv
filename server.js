@@ -8,111 +8,178 @@ const PORT = process.env.PORT || 3000;
 const USERNAME = "admin";
 const PASSWORD = "123";
 
-// M3U Dosyasını Anlık / Canlı Okuma Fonksiyonu
 function parseM3U() {
     try {
         const filePath = path.join(__dirname, 'liste.m3u');
-        if (!fs.existsSync(filePath)) return { categories: [], streams: [] };
+        if (!fs.existsSync(filePath)) return { seriesMap: new Map(), streams: [] };
         
-        // utf-8 olarak dosyayı anlık oku
         const content = fs.readFileSync(filePath, 'utf-8');
         const lines = content.split(/\r?\n/);
         
-        let categories = new Set();
+        let seriesMap = new Map();
         let streams = [];
         let currentStream = {};
 
         lines.forEach(line => {
             line = line.trim();
             if (line.startsWith('#EXTINF:')) {
-                // Kategori Çekme
-                const groupMatch = line.match(/group-title="([^"]+)"/);
-                const category = groupMatch ? groupMatch[1] : "Genel";
-                categories.add(category);
-
-                // Görsel Çekme
                 const logoMatch = line.match(/tvg-logo="([^"]+)"/);
                 const logo = logoMatch ? logoMatch[1] : "";
 
-                // İsim Çekme
-                const titleParts = line.split(',');
-                const name = titleParts.length > 1 ? titleParts[titleParts.length - 1].trim() : "Yayın";
+                const seriesNameMatch = line.match(/series-name="([^"]+)"/);
+                const groupMatch = line.match(/group-title="([^"]+)"/);
+                const seriesName = seriesNameMatch ? seriesNameMatch[1] : (groupMatch ? groupMatch[1] : "Sürekli Dizi");
 
-                currentStream = { name, category, logo };
+                const seasonMatch = line.match(/season="([^"]+)"/);
+                const season = seasonMatch ? parseInt(seasonMatch[1]) : 1;
+
+                const episodeMatch = line.match(/episode="([^"]+)"/);
+                const episode = episodeMatch ? parseInt(episodeMatch[1]) : 1;
+
+                const titleParts = line.split(',');
+                const name = titleParts.length > 1 ? titleParts[titleParts.length - 1].trim() : `${episode}. Bölüm`;
+
+                currentStream = { name, seriesName, logo, season, episode };
             } else if (line.startsWith('http://') || line.startsWith('https://')) {
                 if (currentStream.name) {
                     currentStream.url = line;
                     streams.push(currentStream);
+
+                    // Dizi bazlı gruplama
+                    if (!seriesMap.has(currentStream.seriesName)) {
+                        seriesMap.set(currentStream.seriesName, {
+                            name: currentStream.seriesName,
+                            cover: currentStream.logo,
+                            episodes: []
+                        });
+                    }
+                    seriesMap.get(currentStream.seriesName).episodes.push({
+                        ...currentStream,
+                        stream_id: streams.length
+                    });
+
                     currentStream = {};
                 }
             }
         });
 
-        return { categories: Array.from(categories), streams };
+        return { seriesMap, streams };
     } catch (e) {
-        return { categories: [], streams: [] };
+        return { seriesMap: new Map(), streams: [] };
     }
 }
 
-// Xtream API Giriş Noktası
 app.get('/player_api.php', (req, res) => {
-    const { username, password, action } = req.query;
+    const { username, password, action, series_id } = req.query;
 
     if (username !== USERNAME || password !== PASSWORD) {
         return res.status(401).json({ user_info: { auth: 0 } });
     }
 
-    const { categories, streams } = parseM3U();
+    const { seriesMap, streams } = parseM3U();
 
     if (!action) {
         return res.json({
-            user_info: {
-                username: USERNAME,
-                auth: 1,
-                status: "Active",
-                exp_date: "1999999999",
-                is_trial: "0",
-                active_cons: "1",
-                max_connections: "10"
-            },
-            server_info: {
-                url: req.hostname,
-                port: "80",
-                https_port: "443",
-                server_protocol: "https"
+            user_info: { username: USERNAME, auth: 1, status: "Active", exp_date: "1999999999" },
+            server_info: { url: req.hostname, port: "80", https_port: "443", server_protocol: "https" }
+        });
+    }
+
+    // Series Kategorisi
+    if (action === 'get_series_categories') {
+        return res.json([{ category_id: "1", category_name: "Çizgi Diziler", parent_id: 0 }]);
+    }
+
+    // 1. Ana Ekranda Görünecek Dizi Kartları (Sadece 'Sürekli Dizi' Görünür)
+    if (action === 'get_series') {
+        let seriesList = [];
+        let idCounter = 1;
+
+        seriesMap.forEach((data, name) => {
+            seriesList.push({
+                num: idCounter,
+                name: name,
+                series_id: idCounter,
+                cover: data.cover,
+                plot: `${name} Animasyon Dizisi`,
+                cast: "",
+                director: "",
+                genre: "Çizgi Dizi",
+                releaseDate: "",
+                last_modified: "1700000000",
+                rating: "9.0",
+                category_id: "1"
+            });
+            idCounter++;
+        });
+
+        return res.json(seriesList);
+    }
+
+    // 2. Dizinin İçine Basıldığında Sezonları ve Bölümleri Getir
+    if (action === 'get_series_info') {
+        const targetId = parseInt(series_id) || 1;
+        const seriesNames = Array.from(seriesMap.keys());
+        const targetName = seriesNames[targetId - 1];
+
+        if (!targetName || !seriesMap.has(targetName)) {
+            return res.json({ seasons: [], episodes: {} });
+        }
+
+        const seriesData = seriesMap.get(targetName);
+        let seasonsSet = new Set();
+        let episodesObj = {};
+
+        seriesData.episodes.forEach(ep => {
+            seasonsSet.add(ep.season);
+            const seasonKey = ep.season.toString();
+
+            if (!episodesObj[seasonKey]) {
+                episodesObj[seasonKey] = [];
+            }
+
+            episodesObj[seasonKey].push({
+                id: ep.stream_id.toString(),
+                episode_num: ep.episode,
+                title: ep.name,
+                container_extension: "m3u8",
+                info: {
+                    duration: "11 min",
+                    plot: ep.name,
+                    rating: "9.0",
+                    movie_image: ep.logo
+                },
+                custom_sid: "",
+                added: "1700000000"
+            });
+        });
+
+        const seasonsList = Array.from(seasonsSet).map(s => ({
+            air_date: "",
+            episode_count: episodesObj[s.toString()] ? episodesObj[s.toString()].length : 0,
+            id: s,
+            name: `${s}. Sezon`,
+            overview: "",
+            season_number: s,
+            cover: seriesData.cover
+        }));
+
+        return res.json({
+            seasons: seasonsList,
+            episodes: episodesObj,
+            info: {
+                name: targetName,
+                cover: seriesData.cover,
+                plot: `${targetName} Animasyon Dizisi`,
+                genre: "Çizgi Dizi"
             }
         });
-    }
-
-    if (action === 'get_live_categories' || action === 'get_series_categories' || action === 'get_vod_categories') {
-        const catList = categories.map((cat, index) => ({
-            category_id: (index + 1).toString(),
-            category_name: cat,
-            parent_id: 0
-        }));
-        return res.json(catList);
-    }
-
-    if (action === 'get_live_streams' || action === 'get_series' || action === 'get_vod_streams') {
-        const streamList = streams.map((s, index) => {
-            const catIndex = categories.indexOf(s.category) + 1;
-            return {
-                num: index + 1,
-                name: s.name,
-                stream_id: index + 1,
-                stream_type: "live",
-                stream_icon: s.logo,
-                category_id: catIndex.toString(),
-                direct_source: s.url
-            };
-        });
-        return res.json(streamList);
     }
 
     res.json([]);
 });
 
-// Yayın Oynatma
+// Bölüm Oynatma Linki
 app.get('/:type/:user/:pass/:id', (req, res) => {
     const { user, pass, id } = req.params;
     if (user !== USERNAME || pass !== PASSWORD) return res.status(403).send("Yetkisiz Erişim");
