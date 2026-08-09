@@ -1,6 +1,8 @@
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
+const https = require('https');
+const http = require('http');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -64,19 +66,36 @@ function readM3UFile(fileName) {
     }
 }
 
-// 🕒 Saat Hesabına Göre Anlık Bölüm Linki Bulucu
-function getSurekliDiziLoop() {
+// 🕒 7/24 Canlı Yayın Zaman Motoru (Bölüm + Anlık Saniye Hesabı)
+function getSurekliDiziLiveState() {
     const allSeries = readM3UFile('series.m3u');
-    if (allSeries.length === 0) return null;
-
-    const episodeDuration = 11 * 60; // Her bölüm 11 Dk (660 Saniye)
-    const totalDuration = allSeries.length * episodeDuration;
     
-    const nowInSeconds = Math.floor(Date.now() / 1000);
-    const currentLoopPos = nowInSeconds % totalDuration;
-    const currentIndex = Math.floor(currentLoopPos / episodeDuration);
+    const surekliDiziEpisodes = allSeries.filter(item => 
+        item.seriesName.toLowerCase().includes("sürekli dizi") || 
+        item.seriesName.toLowerCase().includes("regular show") ||
+        item.group.toLowerCase().includes("sürekli dizi")
+    );
 
-    return allSeries[currentIndex];
+    const targetEpisodes = surekliDiziEpisodes.length > 0 ? surekliDiziEpisodes : allSeries;
+    if (targetEpisodes.length === 0) return null;
+
+    const episodeDuration = 11 * 60; // 11 Dakika (660 Saniye)
+    const totalDuration = targetEpisodes.length * episodeDuration;
+    const nowInSeconds = Math.floor(Date.now() / 1000);
+
+    // Bütün dizilerin döngüdeki anlık konumu
+    const currentLoopPos = nowInSeconds % totalDuration;
+    
+    // Hangi bölümdeyiz?
+    const currentIndex = Math.floor(currentLoopPos / episodeDuration);
+    
+    // O bölümün kaçıncı saniyesindeyiz?
+    const offsetSeconds = currentLoopPos % episodeDuration;
+
+    return {
+        episode: targetEpisodes[currentIndex],
+        offsetSeconds: offsetSeconds
+    };
 }
 
 app.get('/player_api.php', (req, res) => {
@@ -112,11 +131,11 @@ app.get('/player_api.php', (req, res) => {
     if (action === 'get_live_streams') {
         const liveItems = readM3UFile('tv.m3u');
         const cats = Array.from(new Set(liveItems.map(i => i.group)));
-        const currentLoopEp = getSurekliDiziLoop();
+        const liveState = getSurekliDiziLiveState();
         
         let streams = [{
             num: 1,
-            name: currentLoopEp ? `Sürekli Dizi 7/24 (${currentLoopEp.name})` : "Sürekli Dizi (7/24 Canlı TV)",
+            name: (liveState && liveState.episode) ? `Sürekli Dizi 7/24 (${liveState.episode.name})` : "Sürekli Dizi (7/24 Canlı TV)",
             stream_id: 999,
             stream_type: "live",
             stream_icon: "https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg",
@@ -232,7 +251,54 @@ app.get('/player_api.php', (req, res) => {
     res.json([]);
 });
 
-// Oynatma İstekleri (Doğrudan Orijinal M3U8 Linkine Yönlendirme)
+// Canlı Yayın İçin Zaman Enjeksiyonlu M3U8 Oluşturucu
+function serveLiveManifestWithOffset(targetUrl, offsetSeconds, res) {
+    try {
+        const parsedUrl = new URL(targetUrl);
+        const options = {
+            hostname: parsedUrl.hostname,
+            path: parsedUrl.pathname + parsedUrl.search,
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Referer': `${parsedUrl.protocol}//${parsedUrl.hostname}/`
+            }
+        };
+
+        const client = parsedUrl.protocol === 'https:' ? https : http;
+
+        client.get(options, (streamRes) => {
+            let data = '';
+            streamRes.on('data', chunk => data += chunk);
+            streamRes.on('end', () => {
+                res.setHeader('Content-Type', 'application/vnd.apple.mpegurl');
+                res.setHeader('Access-Control-Allow-Origin', '*');
+
+                const baseUrl = targetUrl.substring(0, targetUrl.lastIndexOf('/') + 1);
+                let lines = data.split('\n');
+                let newLines = [];
+
+                lines.forEach(line => {
+                    line = line.trim();
+                    // `#EXTM3U` etiketinden hemen sonra canlı yayın başlama saniyesini enjekte et
+                    if (line === '#EXTM3U') {
+                        newLines.push(line);
+                        newLines.push(`#EXT-X-START:TIME-OFFSET=${offsetSeconds}`);
+                    } else if (line && !line.startsWith('#') && !line.startsWith('http')) {
+                        newLines.push(baseUrl + line);
+                    } else {
+                        newLines.push(line);
+                    }
+                });
+
+                res.send(newLines.join('\n'));
+            });
+        }).on('error', () => res.status(500).send("Yayın çekilemedi"));
+    } catch (e) {
+        res.status(500).send("Geçersiz URL");
+    }
+}
+
+// Oynatma İstekleri
 app.get('/:type/:user/:pass/:id', (req, res) => {
     const { user, pass, id } = req.params;
     if (user !== USERNAME || pass !== PASSWORD) return res.status(403).send("Yetkisiz Erişim");
@@ -241,10 +307,10 @@ app.get('/:type/:user/:pass/:id', (req, res) => {
 
     // 7/24 Canlı Dizi Kanalı İsteği
     if (cleanId === 999) {
-        const currentEpisode = getSurekliDiziLoop();
-        if (currentEpisode && currentEpisode.url) {
-            // Hiç araya girmeden doğrudan bölümün orijinal m3u8 linkini veriyoruz
-            return res.redirect(302, currentEpisode.url);
+        const liveState = getSurekliDiziLiveState();
+        if (liveState && liveState.episode && liveState.episode.url) {
+            // M3U8 dosyasını çekip içine anlık saniyeyi enjekte ederek veriyoruz
+            return serveLiveManifestWithOffset(liveState.episode.url, liveState.offsetSeconds, res);
         }
     }
 
