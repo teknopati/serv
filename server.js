@@ -66,7 +66,7 @@ function readM3UFile(fileName) {
     }
 }
 
-// 🕒 7/24 Canlı Yayın Zaman Motoru (Bölüm + Anlık Saniye Hesabı)
+// 🕒 Anlık Bölüm ve Saniye Hesabı
 function getSurekliDiziLiveState() {
     const allSeries = readM3UFile('series.m3u');
     
@@ -83,19 +83,138 @@ function getSurekliDiziLiveState() {
     const totalDuration = targetEpisodes.length * episodeDuration;
     const nowInSeconds = Math.floor(Date.now() / 1000);
 
-    // Bütün dizilerin döngüdeki anlık konumu
     const currentLoopPos = nowInSeconds % totalDuration;
-    
-    // Hangi bölümdeyiz?
     const currentIndex = Math.floor(currentLoopPos / episodeDuration);
-    
-    // O bölümün kaçıncı saniyesindeyiz?
     const offsetSeconds = currentLoopPos % episodeDuration;
 
     return {
         episode: targetEpisodes[currentIndex],
-        offsetSeconds: offsetSeconds
+        currentIndex: currentIndex,
+        offsetSeconds: offsetSeconds,
+        totalEpisodes: targetEpisodes.length,
+        allEpisodes: targetEpisodes
     };
+}
+
+// M3U8 Dosyasını Çekip Ayrıştıran Yardımcı Fonksiyon
+function fetchM3U8Content(targetUrl) {
+    return new Promise((resolve) => {
+        try {
+            const parsedUrl = new URL(targetUrl);
+            const options = {
+                hostname: parsedUrl.hostname,
+                path: parsedUrl.pathname + parsedUrl.search,
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                    'Referer': `${parsedUrl.protocol}//${parsedUrl.hostname}/`
+                }
+            };
+
+            const client = parsedUrl.protocol === 'https:' ? https : http;
+            client.get(options, (streamRes) => {
+                let data = '';
+                streamRes.on('data', chunk => data += chunk);
+                streamRes.on('end', () => resolve({ data, targetUrl }));
+            }).on('error', () => resolve(null));
+        } catch (e) {
+            resolve(null);
+        }
+    });
+}
+
+// 📡 Gerçek 7/24 Canlı Yayın Manifestosu (Live HLS Feed)
+async function generateLiveHLSStream(res) {
+    const liveState = getSurekliDiziLiveState();
+    if (!liveState) return res.status(404).send("Yayın Yok");
+
+    const fetched = await fetchM3U8Content(liveState.episode.url);
+    if (!fetched || !fetched.data) {
+        // Eğer o anki M3U8 çekilemezse orijinal linke yönlendir
+        return res.redirect(302, liveState.episode.url);
+    }
+
+    const baseUrl = fetched.targetUrl.substring(0, fetched.targetUrl.lastIndexOf('/') + 1);
+    const lines = fetched.data.split('\n');
+
+    let isMaster = false;
+    let subManifestUrl = null;
+
+    // Eğer çekilen dosya bir Master M3U8 ise en yüksek kaliteli alt M3U8'i seç
+    lines.forEach(line => {
+        line = line.trim();
+        if (line.includes('.m3u8')) {
+            isMaster = true;
+            subManifestUrl = line.startsWith('http') ? line : baseUrl + line;
+        }
+    });
+
+    if (isMaster && subManifestUrl) {
+        const subFetched = await fetchM3U8Content(subManifestUrl);
+        if (subFetched && subFetched.data) {
+            return processAndServeChunks(subFetched.data, subFetched.targetUrl, liveState.offsetSeconds, res);
+        }
+    }
+
+    return processAndServeChunks(fetched.data, fetched.targetUrl, liveState.offsetSeconds, res);
+}
+
+// .ts Parçalarını Saat Offsetine Göre Canlı Akışa Dönüştüren Motor
+function processAndServeChunks(manifestData, manifestUrl, offsetSeconds, res) {
+    const baseUrl = manifestUrl.substring(0, manifestUrl.lastIndexOf('/') + 1);
+    const lines = manifestData.split('\n');
+
+    let segments = [];
+    let currentDuration = 0;
+
+    for (let i = 0; i < lines.length; i++) {
+        let line = lines[i].trim();
+        if (line.startsWith('#EXTINF:')) {
+            const durationMatch = line.match(/#EXTINF:([\d\.]+)/);
+            const duration = durationMatch ? parseFloat(durationMatch[1]) : 10;
+            const mediaUrlLine = lines[i + 1] ? lines[i + 1].trim() : '';
+
+            if (mediaUrlLine && !mediaUrlLine.startsWith('#')) {
+                const fullMediaUrl = mediaUrlLine.startsWith('http') ? mediaUrlLine : baseUrl + mediaUrlLine;
+                segments.push({
+                    duration: duration,
+                    url: fullMediaUrl
+                });
+            }
+        }
+    }
+
+    // Toplam süre içinde saatimizin denk geldiği .ts segmentini bul
+    let accumulatedTime = 0;
+    let startIndex = 0;
+
+    for (let i = 0; i < segments.length; i++) {
+        accumulatedTime += segments[i].duration;
+        if (accumulatedTime >= offsetSeconds) {
+            startIndex = i;
+            break;
+        }
+    }
+
+    // Gerçek 7/24 Canlı Yayın M3U8 Başlığı Oluştur
+    const sequence = Math.floor(Date.now() / 10000);
+    let outputManifest = [
+        '#EXTM3U',
+        '#EXT-X-VERSION:3',
+        '#EXT-X-TARGETDURATION:10',
+        `#EXT-X-MEDIA-SEQUENCE:${sequence}`,
+        '#EXT-X-DISCONTINUITY'
+    ];
+
+    // O anki saniyeden itibaren geleceğe doğru segmentleri ekle (VOD değil Canlı Akış!)
+    const liveWindowSegments = segments.slice(startIndex, startIndex + 30);
+    liveWindowSegments.forEach(seg => {
+        outputManifest.push(`#EXTINF:${seg.duration.toFixed(3)},`);
+        outputManifest.push(seg.url);
+    });
+
+    res.setHeader('Content-Type', 'application/vnd.apple.mpegurl');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.send(outputManifest.join('\n'));
 }
 
 app.get('/player_api.php', (req, res) => {
@@ -251,55 +370,8 @@ app.get('/player_api.php', (req, res) => {
     res.json([]);
 });
 
-// Canlı Yayın İçin Zaman Enjeksiyonlu M3U8 Oluşturucu
-function serveLiveManifestWithOffset(targetUrl, offsetSeconds, res) {
-    try {
-        const parsedUrl = new URL(targetUrl);
-        const options = {
-            hostname: parsedUrl.hostname,
-            path: parsedUrl.pathname + parsedUrl.search,
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                'Referer': `${parsedUrl.protocol}//${parsedUrl.hostname}/`
-            }
-        };
-
-        const client = parsedUrl.protocol === 'https:' ? https : http;
-
-        client.get(options, (streamRes) => {
-            let data = '';
-            streamRes.on('data', chunk => data += chunk);
-            streamRes.on('end', () => {
-                res.setHeader('Content-Type', 'application/vnd.apple.mpegurl');
-                res.setHeader('Access-Control-Allow-Origin', '*');
-
-                const baseUrl = targetUrl.substring(0, targetUrl.lastIndexOf('/') + 1);
-                let lines = data.split('\n');
-                let newLines = [];
-
-                lines.forEach(line => {
-                    line = line.trim();
-                    // `#EXTM3U` etiketinden hemen sonra canlı yayın başlama saniyesini enjekte et
-                    if (line === '#EXTM3U') {
-                        newLines.push(line);
-                        newLines.push(`#EXT-X-START:TIME-OFFSET=${offsetSeconds}`);
-                    } else if (line && !line.startsWith('#') && !line.startsWith('http')) {
-                        newLines.push(baseUrl + line);
-                    } else {
-                        newLines.push(line);
-                    }
-                });
-
-                res.send(newLines.join('\n'));
-            });
-        }).on('error', () => res.status(500).send("Yayın çekilemedi"));
-    } catch (e) {
-        res.status(500).send("Geçersiz URL");
-    }
-}
-
 // Oynatma İstekleri
-app.get('/:type/:user/:pass/:id', (req, res) => {
+app.get('/:type/:user/:pass/:id', async (req, res) => {
     const { user, pass, id } = req.params;
     if (user !== USERNAME || pass !== PASSWORD) return res.status(403).send("Yetkisiz Erişim");
 
@@ -307,11 +379,7 @@ app.get('/:type/:user/:pass/:id', (req, res) => {
 
     // 7/24 Canlı Dizi Kanalı İsteği
     if (cleanId === 999) {
-        const liveState = getSurekliDiziLiveState();
-        if (liveState && liveState.episode && liveState.episode.url) {
-            // M3U8 dosyasını çekip içine anlık saniyeyi enjekte ederek veriyoruz
-            return serveLiveManifestWithOffset(liveState.episode.url, liveState.offsetSeconds, res);
-        }
+        return generateLiveHLSStream(res);
     }
 
     const tvItems = readM3UFile('tv.m3u');
