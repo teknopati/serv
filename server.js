@@ -10,10 +10,10 @@ const PORT = process.env.PORT || 3000;
 const USERNAME = "admin";
 const PASSWORD = "123";
 
-// 📌 1. Sezon 1. Bölümden başlatmak için sabit referans noktası
-const GLOBAL_START_ANCHOR = 1786233600; 
+// 📌 YAYIN AKIŞI BAŞLANGIÇ TEMA TARIHI (Sabit Referans Numarası)
+// Yayın akışı bu andan itibaren 1. Sezon 1. Bölümden itibaren 7/24 akar.
+const BROADCAST_START_TIME = 1786233600; 
 
-// M3U Okuyucu
 function readM3UFile(fileName) {
     try {
         const filePath = path.join(__dirname, fileName);
@@ -69,7 +69,7 @@ function readM3UFile(fileName) {
     }
 }
 
-// 🕒 7/24 Canlı Dizi Hesaplayıcı
+// 🕒 7/24 Kesintisiz Arka Plan Yayın Akış Motoru
 function getLiveStateForSeries(targetSeriesName) {
     const allSeries = readM3UFile('series.m3u');
     
@@ -80,15 +80,21 @@ function getLiveStateForSeries(targetSeriesName) {
     const episodes = filteredEpisodes.length > 0 ? filteredEpisodes : allSeries;
     if (episodes.length === 0) return null;
 
-    const episodeDuration = 11 * 60; // 11 Dakika (660 Saniye)
-    const totalDuration = episodes.length * episodeDuration;
+    const episodeDuration = 11 * 60; // Her bölüm 11 dakika (660 saniye)
+    const totalLoopDuration = episodes.length * episodeDuration;
     
+    // Şu anki gerçek zaman (Saniye cinsinden)
     const nowInSeconds = Math.floor(Date.now() / 1000);
-    let elapsedSeconds = nowInSeconds - GLOBAL_START_ANCHOR;
-    if (elapsedSeconds < 0) elapsedSeconds = 0;
+    
+    // Yayın başlangıcından bugüne kadar geçen toplam saniye (Sen izlesen de izlemesen de akan zaman)
+    let totalElapsedSeconds = nowInSeconds - BROADCAST_START_TIME;
+    if (totalElapsedSeconds < 0) totalElapsedSeconds = 0;
 
-    const currentLoopPos = elapsedSeconds % totalDuration;
-    const currentIndex = Math.floor(currentLoopPos / episodeDuration);
+    // 300 bölüm bittiğinde otomatikman 1. bölüme sıfırlayan mod hesabı (%)
+    const currentLoopPosition = totalElapsedSeconds % totalLoopDuration;
+    
+    // Akışta şu an kaçıncı bölümdeyiz?
+    const currentIndex = Math.floor(currentLoopPosition / episodeDuration);
 
     return {
         episode: episodes[currentIndex],
@@ -97,8 +103,8 @@ function getLiveStateForSeries(targetSeriesName) {
     };
 }
 
-// 📡 Canlı Stream Proxy / Transcoder Motoru (Video yerine Canlı Akış Sunar)
-function streamLiveStreamProxy(targetUrl, res) {
+// Stream Akış Aktarıcısı (TV Formatı)
+function pipeLiveStream(targetUrl, res) {
     try {
         const parsedUrl = new URL(targetUrl);
         const options = {
@@ -113,19 +119,15 @@ function streamLiveStreamProxy(targetUrl, res) {
         const client = parsedUrl.protocol === 'https:' ? https : http;
 
         client.get(options, (remoteRes) => {
-            // XCIPTV'nin bunu Canlı TV olarak algılaması için gerekli başlıklar:
             res.setHeader('Content-Type', 'video/mp2t');
             res.setHeader('Access-Control-Allow-Origin', '*');
             res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-            res.setHeader('Pragma', 'no-cache');
-            res.setHeader('Expires', '0');
-
             remoteRes.pipe(res);
         }).on('error', () => {
-            res.status(500).send("Canlı yayın çekilemedi.");
+            res.status(500).send("Yayın akışı çekilemedi.");
         });
     } catch (e) {
-        res.status(500).send("Yayın hatası.");
+        res.status(500).send("Aktarım hatası.");
     }
 }
 
@@ -175,7 +177,7 @@ app.get('/player_api.php', (req, res) => {
             
             streams.push({
                 num: index + 1,
-                name: (liveState && liveState.episode) ? `${sName} 7/24 (${liveState.episode.name})` : `${sName} (7/24 TV)`,
+                name: (liveState && liveState.episode) ? `${sName} 7/24 (${liveState.episode.name})` : `${sName} (7/24 Canlı TV)`,
                 stream_id: streamIdCounter + index,
                 stream_type: "live",
                 stream_icon: logo || "https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg",
@@ -294,7 +296,7 @@ app.get('/player_api.php', (req, res) => {
     res.json([]);
 });
 
-// Stream Yönlendirici (Canlı TV Modu)
+// Oynatma Yönlendiricisi
 app.get('/:type/:user/:pass/:id', (req, res) => {
     const { user, pass, id } = req.params;
     if (user !== USERNAME || pass !== PASSWORD) return res.status(403).send("Yetkisiz Erişim");
@@ -311,8 +313,7 @@ app.get('/:type/:user/:pass/:id', (req, res) => {
         if (targetSeriesName) {
             const liveState = getLiveStateForSeries(targetSeriesName);
             if (liveState && liveState.episode && liveState.episode.url) {
-                // Video yönlendirmesi YERİNE canlı TV stream akışı başlatılır:
-                return streamLiveStreamProxy(liveState.episode.url, res);
+                return pipeLiveStream(liveState.episode.url, res);
             }
         }
     }
@@ -321,7 +322,7 @@ app.get('/:type/:user/:pass/:id', (req, res) => {
     const movieItems = readM3UFile('movie.m3u');
     const seriesItems = readM3UFile('series.m3u');
 
-    if (cleanId <= 900 && tvItems[cleanId - 1]) return streamLiveStreamProxy(tvItems[cleanId - 1].url, res);
+    if (cleanId <= 900 && tvItems[cleanId - 1]) return pipeLiveStream(tvItems[cleanId - 1].url, res);
     if (cleanId > 1000 && cleanId < 2000 && movieItems[cleanId - 1001]) return res.redirect(302, movieItems[cleanId - 1001].url);
     if (cleanId >= 2000 && seriesItems[cleanId - 2000]) return res.redirect(302, seriesItems[cleanId - 2000].url);
 
