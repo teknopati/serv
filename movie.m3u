@@ -1,1 +1,13 @@
+#EXTM3U
 
+#EXTINF:-1 tvg-logo="https://image.tmdb.org/t/p/w500/q6y0Go1tsGEmtA239zP23A93f1U.jpg" group-title="Aksiyon", Inception (Başlangıç)
+https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4
+
+#EXTINF:-1 tvg-logo="https://image.tmdb.org/t/p/w500/or06FN3Dka5tukK1e9813P3e23D.jpg" group-title="Bilim Kurgu", Interstellar (Yıldızlararası)
+https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4
+
+#EXTINF:-1 tvg-logo="https://image.tmdb.org/t/p/w500/393939.jpg" group-title="Animasyon", For the Birds
+https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4
+
+#EXTINF:-1 tvg-logo="https://image.tmdb.org/t/p/w500/1E5u29FiR332939.jpg" group-title="Aksiyon", Tears of Steel
+https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4
