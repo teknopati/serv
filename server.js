@@ -64,8 +64,8 @@ function readM3UFile(fileName) {
     }
 }
 
-// 🕒 Türkiye Saatine Göre Kesintisiz 7/24 Akan Saat Motoru
-function getSurekliDiziLoop() {
+// 🕒 7/24 Sürekli Dizi Yayın Motoru
+function getSurekliDiziLiveState() {
     const allSeries = readM3UFile('series.m3u');
     
     const surekliDiziEpisodes = allSeries.filter(item => 
@@ -80,12 +80,18 @@ function getSurekliDiziLoop() {
     const episodeDuration = 11 * 60; // Her bölüm 11 Dakika (660 Saniye)
     const totalDuration = targetEpisodes.length * episodeDuration;
     
-    // Türkiye saati / Dünya Epoch zamanı üzerinden sen baksan da bakmasan da akan zaman
     const nowInSeconds = Math.floor(Date.now() / 1000);
     const currentLoopPos = nowInSeconds % totalDuration;
     const currentIndex = Math.floor(currentLoopPos / episodeDuration);
+    const offsetSeconds = currentLoopPos % episodeDuration;
 
-    return targetEpisodes[currentIndex];
+    return {
+        episode: targetEpisodes[currentIndex],
+        currentIndex: currentIndex,
+        offsetSeconds: offsetSeconds,
+        totalEpisodes: targetEpisodes.length,
+        allEpisodes: targetEpisodes
+    };
 }
 
 app.get('/player_api.php', (req, res) => {
@@ -121,11 +127,11 @@ app.get('/player_api.php', (req, res) => {
     if (action === 'get_live_streams') {
         const liveItems = readM3UFile('tv.m3u');
         const cats = Array.from(new Set(liveItems.map(i => i.group)));
-        const currentLoopEp = getSurekliDiziLoop();
+        const liveState = getSurekliDiziLiveState();
         
         let streams = [{
             num: 1,
-            name: currentLoopEp ? `Sürekli Dizi 7/24 (${currentLoopEp.name})` : "Sürekli Dizi (7/24 Canlı TV)",
+            name: (liveState && liveState.episode) ? `Sürekli Dizi 7/24 (${liveState.episode.name})` : "Sürekli Dizi (7/24 Canlı TV)",
             stream_id: 999,
             stream_type: "live",
             stream_icon: "https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg",
@@ -141,7 +147,7 @@ app.get('/player_api.php', (req, res) => {
                 stream_type: "live",
                 stream_icon: item.logo,
                 category_id: (cats.indexOf(item.group) + 1).toString(),
-                direct_source: ""
+                direct_source: item.url
             });
         });
 
@@ -241,18 +247,17 @@ app.get('/player_api.php', (req, res) => {
     res.json([]);
 });
 
-// Oynatma İstekleri (Standart Hızlı Yönlendirme)
+// Oynatma İstekleri
 app.get('/:type/:user/:pass/:id', (req, res) => {
     const { user, pass, id } = req.params;
     if (user !== USERNAME || pass !== PASSWORD) return res.status(403).send("Yetkisiz Erişim");
 
     const cleanId = parseInt(id.replace(/\.[^/.]+$/, ""));
 
-    // 7/24 Canlı Dizi Akışı
     if (cleanId === 999) {
-        const currentEpisode = getSurekliDiziLoop();
-        if (currentEpisode && currentEpisode.url) {
-            return res.redirect(302, currentEpisode.url);
+        const liveState = getSurekliDiziLiveState();
+        if (liveState && liveState.episode && liveState.episode.url) {
+            return res.redirect(302, liveState.episode.url);
         }
     }
 
