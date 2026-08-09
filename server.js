@@ -8,7 +8,7 @@ const PORT = process.env.PORT || 3000;
 const USERNAME = "admin";
 const PASSWORD = "123";
 
-// Genel M3U Okuyucu Fonksiyon
+// Genel M3U Okuyucu
 function readM3UFile(fileName) {
     try {
         const filePath = path.join(__dirname, fileName);
@@ -29,6 +29,7 @@ function readM3UFile(fileName) {
                 const groupMatch = line.match(/group-title="([^"]+)"/);
                 const rawGroup = groupMatch ? groupMatch[1] : "Genel";
                 
+                // Dizi Adını Ayıkla (Örn: "Sürekli Dizi - Sezon 1" -> "Sürekli Dizi")
                 let seriesName = rawGroup.split('-')[0].trim();
                 let season = 1;
 
@@ -50,7 +51,7 @@ function readM3UFile(fileName) {
 
                 currentItem = { name, group: rawGroup, seriesName, logo, season, episode };
             } else if (line.startsWith('http://') || line.startsWith('https://')) {
-                if (currentItem.name) {
+                if (currentStream.name || currentItem.name) {
                     currentItem.url = line;
                     items.push(currentItem);
                     currentItem = {};
@@ -62,6 +63,29 @@ function readM3UFile(fileName) {
     } catch (e) {
         return [];
     }
+}
+
+// 🕒 Sadece "Sürekli Dizi" İçin 7/24 Arka Plan Döngüsü
+function getSurekliDiziLoop() {
+    const allSeries = readM3UFile('series.m3u');
+    
+    // Sadece adı "Sürekli Dizi" olan bölümleri filtrele
+    const surekliDiziEpisodes = allSeries.filter(item => 
+        item.seriesName.toLowerCase().includes("sürekli dizi") || 
+        item.seriesName.toLowerCase().includes("regular show")
+    );
+
+    if (surekliDiziEpisodes.length === 0) return null;
+
+    const episodeDuration = 11 * 60; // 11 Dakika
+    const totalDuration = surekliDiziEpisodes.length * episodeDuration;
+    const nowInSeconds = Math.floor(Date.now() / 1000);
+
+    // Otomatik Başa Dönme Hesabı (%)
+    const currentLoopPos = nowInSeconds % totalDuration;
+    const currentIndex = Math.floor(currentLoopPos / episodeDuration);
+
+    return surekliDiziEpisodes[currentIndex];
 }
 
 app.get('/player_api.php', (req, res) => {
@@ -78,66 +102,66 @@ app.get('/player_api.php', (req, res) => {
         });
     }
 
-    // EPG Isteklerini Kapat (Donmayı önler)
     if (action === 'get_epg' || action === 'get_short_epg' || action === 'get_simple_data_table') {
         return res.json({ epg_listings: [] });
     }
 
-    // --- 1. TV / CANLI YAYIN (tv.m3u) ---
+    // --- 1. TV MENÜSÜ ---
     if (action === 'get_live_categories') {
         const liveItems = readM3UFile('tv.m3u');
-        if (liveItems.length === 0) return res.json([{ category_id: "1", category_name: "TV Yayını Yok", parent_id: 0 }]);
-        const cats = Array.from(new Set(liveItems.map(i => i.group)));
-        return res.json(cats.map((c, i) => ({ category_id: (i + 1).toString(), category_name: c, parent_id: 0 })));
+        let categories = [{ category_id: "724", category_name: "7/24 Canlı Diziler", parent_id: 0 }];
+        if (liveItems.length > 0) {
+            const cats = Array.from(new Set(liveItems.map(i => i.group)));
+            cats.forEach((c, i) => categories.push({ category_id: (i + 1).toString(), category_name: c, parent_id: 0 }));
+        }
+        return res.json(categories);
     }
 
     if (action === 'get_live_streams') {
         const liveItems = readM3UFile('tv.m3u');
         const cats = Array.from(new Set(liveItems.map(i => i.group)));
-        return res.json(liveItems.map((item, index) => ({
-            num: index + 1,
-            name: item.name,
-            stream_id: index + 1,
+        
+        let streams = [{
+            num: 1,
+            name: "Sürekli Dizi (7/24 Canlı TV)",
+            stream_id: 99999,
             stream_type: "live",
-            stream_icon: item.logo,
-            category_id: (cats.indexOf(item.group) + 1).toString(),
-            direct_source: item.url
-        })));
+            stream_icon: "https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg",
+            category_id: "724",
+            direct_source: ""
+        }];
+
+        liveItems.forEach((item, index) => {
+            streams.push({
+                num: index + 2,
+                name: item.name,
+                stream_id: index + 1,
+                stream_type: "live",
+                stream_icon: item.logo,
+                category_id: (cats.indexOf(item.group) + 1).toString(),
+                direct_source: item.url
+            });
+        });
+
+        return res.json(streams);
     }
 
-    // --- 2. MOVIE / FILMLER (movie.m3u) ---
-    if (action === 'get_vod_categories') {
-        const movieItems = readM3UFile('movie.m3u');
-        if (movieItems.length === 0) return res.json([{ category_id: "1", category_name: "Film Yok", parent_id: 0 }]);
-        const cats = Array.from(new Set(movieItems.map(i => i.group)));
-        return res.json(cats.map((c, i) => ({ category_id: (i + 1).toString(), category_name: c, parent_id: 0 })));
-    }
+    // --- 2. MOVIE MENÜSÜ ---
+    if (action === 'get_vod_categories') return res.json([{ category_id: "1", category_name: "Film Yok", parent_id: 0 }]);
+    if (action === 'get_vod_streams') return res.json([]);
 
-    if (action === 'get_vod_streams') {
-        const movieItems = readM3UFile('movie.m3u');
-        const cats = Array.from(new Set(movieItems.map(i => i.group)));
-        return res.json(movieItems.map((item, index) => ({
-            num: index + 1,
-            name: item.name,
-            stream_id: index + 1000, // Çakışmasın diye yüksek ID
-            stream_type: "movie",
-            stream_icon: item.logo,
-            category_id: (cats.indexOf(item.group) + 1).toString(),
-            direct_source: item.url
-        })));
-    }
-
-    // --- 3. SERIES / DIZILER (series.m3u) ---
+    // --- 3. SERIES MENÜSÜ (Çoklu Dizi Desteği) ---
     if (action === 'get_series_categories') {
         const seriesItems = readM3UFile('series.m3u');
         if (seriesItems.length === 0) return res.json([{ category_id: "1", category_name: "Dizi Yok", parent_id: 0 }]);
-        return res.json([{ category_id: "1", category_name: "Çizgi Diziler", parent_id: 0 }]);
+        return res.json([{ category_id: "1", category_name: "Tüm Diziler", parent_id: 0 }]);
     }
 
     if (action === 'get_series') {
         const seriesItems = readM3UFile('series.m3u');
         let seriesMap = new Map();
 
+        // series.m3u içindeki FARKLI tüm dizileri ayıkla
         seriesItems.forEach(item => {
             if (!seriesMap.has(item.seriesName)) {
                 seriesMap.set(item.seriesName, { name: item.seriesName, cover: item.logo });
@@ -152,8 +176,8 @@ app.get('/player_api.php', (req, res) => {
                 name: name,
                 series_id: idCounter,
                 cover: data.cover,
-                plot: `${name} Çizgi Dizisi`,
-                genre: "Çizgi Dizi",
+                plot: `${name} Dizisi`,
+                genre: "Çizgi Dizi / Dizi",
                 category_id: "1"
             });
             idCounter++;
@@ -216,13 +240,21 @@ app.get('/player_api.php', (req, res) => {
     res.json([]);
 });
 
-// Oynatma Yönlendiricisi
+// Stream Oynatıcı
 app.get('/:type/:user/:pass/:id', (req, res) => {
     const { user, pass, id } = req.params;
     if (user !== USERNAME || pass !== PASSWORD) return res.status(403).send("Yetkisiz Erişim");
 
     const cleanId = parseInt(id.replace(/\.[^/.]+$/, ""));
-    
+
+    // 7/24 Sürekli Dizi TV İsteği
+    if (cleanId === 99999) {
+        const currentEpisode = getSurekliDiziLoop();
+        if (currentEpisode && currentEpisode.url) {
+            return res.redirect(currentEpisode.url);
+        }
+    }
+
     const tvItems = readM3UFile('tv.m3u');
     const movieItems = readM3UFile('movie.m3u');
     const seriesItems = readM3UFile('series.m3u');
