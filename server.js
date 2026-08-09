@@ -8,6 +8,9 @@ const PORT = process.env.PORT || 3000;
 const USERNAME = "admin";
 const PASSWORD = "123";
 
+// 📌 1. Sezon 1. Bölümden Başlatmak İçin Sabit Referans Noktası (Epoch Anchor)
+const START_ANCHOR_TIME = 1786233600; 
+
 // M3U Okuyucu
 function readM3UFile(fileName) {
     try {
@@ -64,7 +67,7 @@ function readM3UFile(fileName) {
     }
 }
 
-// 🕒 7/24 Kesintisiz Arka Plan Saat Motoru
+// 🕒 1. Sezon 1. Bölümden Başlayan Sürekli Dönüş Motoru
 function getSurekliDiziLoop() {
     const allSeries = readM3UFile('series.m3u');
     
@@ -81,7 +84,12 @@ function getSurekliDiziLoop() {
     const totalDuration = targetEpisodes.length * episodeDuration;
     
     const nowInSeconds = Math.floor(Date.now() / 1000);
-    const currentLoopPos = nowInSeconds % totalDuration;
+    
+    // Geçen süreye göre 1. Sezon 1. Bölümden itibaren sırayla ilerleme
+    let elapsedSeconds = nowInSeconds - START_ANCHOR_TIME;
+    if (elapsedSeconds < 0) elapsedSeconds = 0;
+
+    const currentLoopPos = elapsedSeconds % totalDuration;
     const currentIndex = Math.floor(currentLoopPos / episodeDuration);
 
     return targetEpisodes[currentIndex];
@@ -108,7 +116,7 @@ app.get('/player_api.php', (req, res) => {
     // --- 1. TV MENÜSÜ ---
     if (action === 'get_live_categories') {
         const liveItems = readM3UFile('tv.m3u');
-        let categories = [{ category_id: "724", category_name: "📺 7/24 Canlı Diziler", parent_id: 0 }];
+        let categories = [{ category_id: "724", category_name: "7/24 Canlı Diziler", parent_id: 0 }];
         
         if (liveItems.length > 0) {
             const cats = Array.from(new Set(liveItems.map(i => i.group)));
@@ -122,7 +130,6 @@ app.get('/player_api.php', (req, res) => {
         const cats = Array.from(new Set(liveItems.map(i => i.group)));
         const currentLoopEp = getSurekliDiziLoop();
         
-        // 🎯 KESİN CANLI YAYIN YAPILANDIRMASI (ts formatı zorlaması)
         let streams = [{
             num: 1,
             name: currentLoopEp ? `Sürekli Dizi 7/24 (${currentLoopEp.name})` : "Sürekli Dizi (7/24 Canlı TV)",
@@ -130,8 +137,6 @@ app.get('/player_api.php', (req, res) => {
             stream_type: "live",
             stream_icon: "https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg",
             category_id: "724",
-            container_extension: "ts", // m3u8 yerine ts zorlayarak video barını kaldırıyoruz
-            custom_sid: "",
             direct_source: ""
         }];
 
@@ -143,7 +148,6 @@ app.get('/player_api.php', (req, res) => {
                 stream_type: "live",
                 stream_icon: item.logo,
                 category_id: (cats.indexOf(item.group) + 1).toString(),
-                container_extension: "ts",
                 direct_source: item.url
             });
         });
@@ -244,13 +248,14 @@ app.get('/player_api.php', (req, res) => {
     res.json([]);
 });
 
-// Oynatma İstekleri
+// Oynatma İstekleri (Çalışan Doğrudan Redirection Yapısı)
 app.get('/:type/:user/:pass/:id', (req, res) => {
     const { user, pass, id } = req.params;
     if (user !== USERNAME || pass !== PASSWORD) return res.status(403).send("Yetkisiz Erişim");
 
     const cleanId = parseInt(id.replace(/\.[^/.]+$/, ""));
 
+    // 7/24 Canlı Yayın
     if (cleanId === 999) {
         const currentEpisode = getSurekliDiziLoop();
         if (currentEpisode && currentEpisode.url) {
