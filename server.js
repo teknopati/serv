@@ -1,6 +1,8 @@
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
+const https = require('https');
+const http = require('http');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -120,8 +122,6 @@ app.get('/player_api.php', (req, res) => {
     if (action === 'get_live_streams') {
         const liveItems = readM3UFile('tv.m3u');
         const cats = Array.from(new Set(liveItems.map(i => i.group)));
-        
-        // Aktif Canlı Bölümü Bul
         const currentLoopEp = getSurekliDiziLoop();
         
         let streams = [{
@@ -131,7 +131,7 @@ app.get('/player_api.php', (req, res) => {
             stream_type: "live",
             stream_icon: "https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg",
             category_id: "724",
-            direct_source: currentLoopEp ? currentLoopEp.url : ""
+            direct_source: ""
         }];
 
         liveItems.forEach((item, index) => {
@@ -220,8 +220,7 @@ app.get('/player_api.php', (req, res) => {
                 episode_num: ep.episode,
                 title: ep.name,
                 container_extension: "m3u8",
-                info: { duration: "11 min", plot: ep.name, movie_image: ep.logo || seriesData.cover },
-                url: ep.url
+                info: { duration: "11 min", plot: ep.name, movie_image: ep.logo || seriesData.cover }
             });
         });
 
@@ -243,18 +242,33 @@ app.get('/player_api.php', (req, res) => {
     res.json([]);
 });
 
-// Oynatma Yönlendiricisi
+// PROXY (YÖNLENDİRME YAPMADAN DOĞRUDAN YAYIN AKITMA MOTORU)
+function proxyStream(targetUrl, res) {
+    try {
+        const client = targetUrl.startsWith('https') ? https : http;
+        client.get(targetUrl, (streamRes) => {
+            res.writeHead(streamRes.statusCode, streamRes.headers);
+            streamRes.pipe(res);
+        }).on('error', (err) => {
+            res.status(500).send("Yayın çekilemedi.");
+        });
+    } catch (e) {
+        res.status(500).send("Sunucu hatası.");
+    }
+}
+
+// Oynatma İstekleri
 app.get('/:type/:user/:pass/:id', (req, res) => {
     const { user, pass, id } = req.params;
     if (user !== USERNAME || pass !== PASSWORD) return res.status(403).send("Yetkisiz Erişim");
 
     const cleanId = parseInt(id.replace(/\.[^/.]+$/, ""));
 
-    // 7/24 Canlı Yayın ID'si (999)
+    // 7/24 Canlı Yayın
     if (cleanId === 999) {
         const currentEpisode = getSurekliDiziLoop();
         if (currentEpisode && currentEpisode.url) {
-            return res.redirect(302, currentEpisode.url);
+            return proxyStream(currentEpisode.url, res);
         }
     }
 
@@ -262,9 +276,9 @@ app.get('/:type/:user/:pass/:id', (req, res) => {
     const movieItems = readM3UFile('movie.m3u');
     const seriesItems = readM3UFile('series.m3u');
 
-    if (cleanId <= 900 && tvItems[cleanId - 1]) return res.redirect(302, tvItems[cleanId - 1].url);
-    if (cleanId > 1000 && cleanId < 2000 && movieItems[cleanId - 1001]) return res.redirect(302, movieItems[cleanId - 1001].url);
-    if (cleanId >= 2000 && seriesItems[cleanId - 2000]) return res.redirect(302, seriesItems[cleanId - 2000].url);
+    if (cleanId <= 900 && tvItems[cleanId - 1]) return proxyStream(tvItems[cleanId - 1].url, res);
+    if (cleanId > 1000 && cleanId < 2000 && movieItems[cleanId - 1001]) return proxyStream(movieItems[cleanId - 1001].url, res);
+    if (cleanId >= 2000 && seriesItems[cleanId - 2000]) return proxyStream(seriesItems[cleanId - 2000].url, res);
 
     res.status(404).send("Yayın bulunamadı");
 });
