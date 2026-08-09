@@ -66,7 +66,7 @@ function readM3UFile(fileName) {
     }
 }
 
-// 7/24 Sürekli Dizi Aktif Bölüm Hesabı
+// 7/24 Sürekli Dizi Döngü Hesabı
 function getSurekliDiziLoop() {
     const allSeries = readM3UFile('series.m3u');
     
@@ -242,27 +242,44 @@ app.get('/player_api.php', (req, res) => {
     res.json([]);
 });
 
-// M3U8 Playlist İçeriğini Okuyup Sunma
-function fetchAndPipeM3U8(targetUrl, res) {
-    const client = targetUrl.startsWith('https') ? https : http;
-    client.get(targetUrl, (streamRes) => {
-        let data = '';
-        streamRes.on('data', chunk => data += chunk);
-        streamRes.on('end', () => {
-            res.setHeader('Content-Type', 'application/vnd.apple.mpegurl');
-            // Eğer göreceli linkler varsa onları tam adrese çevir
-            const baseUrl = targetUrl.substring(0, targetUrl.lastIndexOf('/') + 1);
-            const formattedManifest = data.split('\n').map(line => {
-                line = line.trim();
-                if (line && !line.startsWith('#') && !line.startsWith('http')) {
-                    return baseUrl + line;
-                }
-                return line;
-            }).join('\n');
-            
-            res.send(formattedManifest);
-        });
-    }).on('error', () => res.status(500).send("Yayın çekilemedi"));
+// KORUMALARI AŞAN M3U8 FETCH MOTORU
+function fetchHeaderBypassM3U8(targetUrl, res) {
+    try {
+        const parsedUrl = new URL(targetUrl);
+        const options = {
+            hostname: parsedUrl.hostname,
+            path: parsedUrl.pathname + parsedUrl.search,
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Referer': `${parsedUrl.protocol}//${parsedUrl.hostname}/`,
+                'Origin': `${parsedUrl.protocol}//${parsedUrl.hostname}`
+            }
+        };
+
+        const client = parsedUrl.protocol === 'https:' ? https : http;
+
+        client.get(options, (streamRes) => {
+            let data = '';
+            streamRes.on('data', chunk => data += chunk);
+            streamRes.on('end', () => {
+                res.setHeader('Content-Type', 'application/vnd.apple.mpegurl');
+                res.setHeader('Access-Control-Allow-Origin', '*');
+
+                const baseUrl = targetUrl.substring(0, targetUrl.lastIndexOf('/') + 1);
+                const formattedManifest = data.split('\n').map(line => {
+                    line = line.trim();
+                    if (line && !line.startsWith('#') && !line.startsWith('http')) {
+                        return baseUrl + line;
+                    }
+                    return line;
+                }).join('\n');
+
+                res.send(formattedManifest);
+            });
+        }).on('error', () => res.status(500).send("Yayın çekilemedi"));
+    } catch (e) {
+        res.status(500).send("Geçersiz URL");
+    }
 }
 
 // Oynatma İstekleri
@@ -276,7 +293,7 @@ app.get('/:type/:user/:pass/:id', (req, res) => {
     if (cleanId === 999) {
         const currentEpisode = getSurekliDiziLoop();
         if (currentEpisode && currentEpisode.url) {
-            return fetchAndPipeM3U8(currentEpisode.url, res);
+            return fetchHeaderBypassM3U8(currentEpisode.url, res);
         }
     }
 
