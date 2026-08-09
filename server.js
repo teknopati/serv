@@ -8,8 +8,8 @@ const PORT = process.env.PORT || 3000;
 const USERNAME = "admin";
 const PASSWORD = "123";
 
-// Sabit Zaman Referansı (1. Sezon 1. Bölüm Başlangıcı İçin)
-const GLOBAL_START_ANCHOR = 1786233600; 
+// 📌 1. Sezon 1. Bölümden başlatmak için dinamik referans noktası
+const GLOBAL_START_ANCHOR = Math.floor(Date.now() / 1000); 
 
 // M3U Okuyucu
 function readM3UFile(fileName) {
@@ -71,7 +71,6 @@ function readM3UFile(fileName) {
 function getLiveStateForSeries(targetSeriesName) {
     const allSeries = readM3UFile('series.m3u');
     
-    // İstenen diziye ait tüm bölümleri filtrele
     const filteredEpisodes = allSeries.filter(item => 
         item.seriesName.toLowerCase() === targetSeriesName.toLowerCase()
     );
@@ -114,7 +113,7 @@ app.get('/player_api.php', (req, res) => {
         return res.json({ epg_listings: [] });
     }
 
-    // --- 1. TV MENÜSÜ (7/24 Canlı Otomatik Diziler + Canlı TV Kanalları) ---
+    // --- 1. TV MENÜSÜ ---
     if (action === 'get_live_categories') {
         const liveItems = readM3UFile('tv.m3u');
         let categories = [{ category_id: "724", category_name: "7/24 Canlı Diziler", parent_id: 0 }];
@@ -131,13 +130,11 @@ app.get('/player_api.php', (req, res) => {
         const seriesItems = readM3UFile('series.m3u');
         const cats = Array.from(new Set(liveItems.map(i => i.group)));
         
-        // series.m3u içindeki TÜM FARKLI dizileri bul
         const uniqueSeriesNames = Array.from(new Set(seriesItems.map(i => i.seriesName)));
         
         let streams = [];
         let streamIdCounter = 9000;
 
-        // Her dizi için otomatik bir 7/24 Canlı TV Kanalı oluştur
         uniqueSeriesNames.forEach((sName, index) => {
             const liveState = getLiveStateForSeries(sName);
             const logo = seriesItems.find(i => i.seriesName === sName)?.logo || "";
@@ -149,11 +146,12 @@ app.get('/player_api.php', (req, res) => {
                 stream_type: "live",
                 stream_icon: logo || "https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg",
                 category_id: "724",
+                container_extension: "m3u8",
+                custom_sid: "",
                 direct_source: ""
             });
         });
 
-        // tv.m3u içindeki normal TV kanallarını ekle (TRT1, ATV vb.)
         const baseNum = streams.length + 1;
         liveItems.forEach((item, index) => {
             streams.push({
@@ -163,6 +161,7 @@ app.get('/player_api.php', (req, res) => {
                 stream_type: "live",
                 stream_icon: item.logo,
                 category_id: (cats.indexOf(item.group) + 1).toString(),
+                container_extension: "m3u8",
                 direct_source: item.url
             });
         });
@@ -174,7 +173,7 @@ app.get('/player_api.php', (req, res) => {
     if (action === 'get_vod_categories') return res.json([{ category_id: "1", category_name: "Film Yok", parent_id: 0 }]);
     if (action === 'get_vod_streams') return res.json([]);
 
-    // --- 3. SERIES MENÜSÜ (Bütün Diziler) ---
+    // --- 3. SERIES MENÜSÜ ---
     if (action === 'get_series_categories') {
         const seriesItems = readM3UFile('series.m3u');
         if (seriesItems.length === 0) return res.json([{ category_id: "1", category_name: "Dizi Yok", parent_id: 0 }]);
