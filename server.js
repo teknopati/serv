@@ -1,6 +1,8 @@
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
+const https = require('https');
+const http = require('http');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -8,7 +10,7 @@ const PORT = process.env.PORT || 3000;
 const USERNAME = "admin";
 const PASSWORD = "123";
 
-// 📌 1. Sezon 1. Bölümden başlatacak olan başlangıç noktası (Bugünün zaman damgası)
+// 📌 1. Sezon 1. Bölüm 0. Saniye Referansı (Dünya Saati Anchor)
 const START_ANCHOR_TIME = 1786233600; 
 
 // M3U Okuyucu
@@ -67,7 +69,7 @@ function readM3UFile(fileName) {
     }
 }
 
-// 🕒 1. Sezon 1. Bölümden Başlayan Sıralı Yayın Motoru
+// 🕒 ARKA PLANDA KESİNTİSİZ DÖNEN CANLI SAAT MOTORU
 function getLiveStateForSeries(targetSeriesName) {
     const allSeries = readM3UFile('series.m3u');
     
@@ -78,23 +80,84 @@ function getLiveStateForSeries(targetSeriesName) {
     const episodes = filteredEpisodes.length > 0 ? filteredEpisodes : allSeries;
     if (episodes.length === 0) return null;
 
-    const episodeDuration = 11 * 60; // 11 Dakika
+    const episodeDuration = 11 * 60; // Her bölüm 11 Dakika (660 Saniye)
     const totalLoopDuration = episodes.length * episodeDuration;
     
     const nowInSeconds = Math.floor(Date.now() / 1000);
     
-    // Geçen toplam süreye göre 1. Sezon 1. Bölümden sırayla akış hesabı
+    // Sen bakmasan da arka planda akan toplam saniye
     let elapsedSeconds = nowInSeconds - START_ANCHOR_TIME;
     if (elapsedSeconds < 0) elapsedSeconds = 0;
 
+    // Döngüdeki anlık saniye konumu
     const currentLoopPosition = elapsedSeconds % totalLoopDuration;
+    
+    // Hangi bölümdeyiz?
     const currentIndex = Math.floor(currentLoopPosition / episodeDuration);
+    
+    // O bölümün TAM KAÇINCI SANİYESİNDEYİZ? (1 ile 660 saniye arası)
+    const offsetSeconds = currentLoopPosition % episodeDuration;
 
     return {
         episode: episodes[currentIndex],
         currentIndex: currentIndex,
+        offsetSeconds: offsetSeconds,
         totalEpisodes: episodes.length
     };
+}
+
+// 📡 M3U8 Dosyasına Canlı Yayın Saniyesini Enjekte Eden Motor
+function serveLiveManifestWithOffset(targetUrl, offsetSeconds, res) {
+    try {
+        const parsedUrl = new URL(targetUrl);
+        const options = {
+            hostname: parsedUrl.hostname,
+            path: parsedUrl.pathname + parsedUrl.search,
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Referer': `${parsedUrl.protocol}//${parsedUrl.hostname}/`
+            }
+        };
+
+        const client = parsedUrl.protocol === 'https:' ? https : http;
+
+        client.get(options, (streamRes) => {
+            let data = '';
+            streamRes.on('data', chunk => data += chunk);
+            streamRes.on('end', () => {
+                res.setHeader('Content-Type', 'application/vnd.apple.mpegurl');
+                res.setHeader('Access-Control-Allow-Origin', '*');
+                res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+
+                const baseUrl = targetUrl.substring(0, targetUrl.lastIndexOf('/') + 1);
+                let lines = data.split('\n');
+                let newLines = [];
+
+                lines.forEach(line => {
+                    line = line.trim();
+                    
+                    // Video bitiş etiketini sil (Televizyon yayını canlı sanıp durdurmasın)
+                    if (line === '#EXT-X-ENDLIST') {
+                        return;
+                    }
+
+                    // EXTM3U etiketinden hemen sonra ANLIK CANLI SANİYEYİ enjekte et!
+                    if (line === '#EXTM3U') {
+                        newLines.push(line);
+                        newLines.push(`#EXT-X-START:TIME-OFFSET=${offsetSeconds}`);
+                    } else if (line && !line.startsWith('#') && !line.startsWith('http')) {
+                        newLines.push(baseUrl + line);
+                    } else {
+                        newLines.push(line);
+                    }
+                });
+
+                res.send(newLines.join('\n'));
+            });
+        }).on('error', () => res.status(500).send("Canlı yayın verisi okunamadı"));
+    } catch (e) {
+        res.status(500).send("Geçersiz Adres");
+    }
 }
 
 app.get('/player_api.php', (req, res) => {
@@ -115,18 +178,20 @@ app.get('/player_api.php', (req, res) => {
         return res.json({ epg_listings: [] });
     }
 
-    // --- 1. TV MENÜSÜ ---
+    // --- 1. TV MENÜSÜ KATEGORİLERİ ---
     if (action === 'get_live_categories') {
         const liveItems = readM3UFile('tv.m3u');
-        let categories = [{ category_id: "724", category_name: "7/24 Canlı Diziler", parent_id: 0 }];
+        
+        let categories = [{ category_id: "724", category_name: "📺 7/24 DİZİ KANALLARI", parent_id: 0 }];
         
         if (liveItems.length > 0) {
             const cats = Array.from(new Set(liveItems.map(i => i.group)));
-            cats.forEach((c, i) => categories.push({ category_id: (i + 1).toString(), category_name: c, parent_id: 0 }));
+            cats.forEach((c, i) => categories.push({ category_id: (i + 100).toString(), category_name: c, parent_id: 0 }));
         }
         return res.json(categories);
     }
 
+    // --- TV KANALLARI VE 7/24 KANALLAR ---
     if (action === 'get_live_streams') {
         const liveItems = readM3UFile('tv.m3u');
         const seriesItems = readM3UFile('series.m3u');
@@ -143,7 +208,7 @@ app.get('/player_api.php', (req, res) => {
             
             streams.push({
                 num: index + 1,
-                name: (liveState && liveState.episode) ? `${sName} 7/24 (${liveState.episode.name})` : `${sName} (7/24 Canlı TV)`,
+                name: (liveState && liveState.episode) ? `7/24 ${sName} (${liveState.episode.name})` : `7/24 ${sName}`,
                 stream_id: streamIdCounter + index,
                 stream_type: "live",
                 stream_icon: logo || "https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg",
@@ -162,7 +227,7 @@ app.get('/player_api.php', (req, res) => {
                 stream_id: index + 1,
                 stream_type: "live",
                 stream_icon: item.logo,
-                category_id: (cats.indexOf(item.group) + 1).toString(),
+                category_id: (cats.indexOf(item.group) + 100).toString(),
                 container_extension: "m3u8",
                 direct_source: item.url
             });
@@ -264,7 +329,7 @@ app.get('/player_api.php', (req, res) => {
     res.json([]);
 });
 
-// Oynatma Yönlendiricisi (Hızlı ve Doğrudan .m3u8 Redirection)
+// Oynatma Yönlendiricisi (Canlı Saniye Offset Enjeksiyonlu)
 app.get('/:type/:user/:pass/:id', (req, res) => {
     const { user, pass, id } = req.params;
     if (user !== USERNAME || pass !== PASSWORD) return res.status(403).send("Yetkisiz Erişim");
@@ -281,8 +346,8 @@ app.get('/:type/:user/:pass/:id', (req, res) => {
         if (targetSeriesName) {
             const liveState = getLiveStateForSeries(targetSeriesName);
             if (liveState && liveState.episode && liveState.episode.url) {
-                // Doğrudan çalışan orijinal m3u8 adresine yönlendirir
-                return res.redirect(302, liveState.episode.url);
+                // Bölümü 0. saniyeden değil, o anki canlı saniyesinden başlatan özel fonksiyon:
+                return serveLiveManifestWithOffset(liveState.episode.url, liveState.offsetSeconds, res);
             }
         }
     }
