@@ -1,8 +1,6 @@
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
-const https = require('https');
-const http = require('http');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -242,22 +240,7 @@ app.get('/player_api.php', (req, res) => {
     res.json([]);
 });
 
-// PROXY (YÖNLENDİRME YAPMADAN DOĞRUDAN YAYIN AKITMA MOTORU)
-function proxyStream(targetUrl, res) {
-    try {
-        const client = targetUrl.startsWith('https') ? https : http;
-        client.get(targetUrl, (streamRes) => {
-            res.writeHead(streamRes.statusCode, streamRes.headers);
-            streamRes.pipe(res);
-        }).on('error', (err) => {
-            res.status(500).send("Yayın çekilemedi.");
-        });
-    } catch (e) {
-        res.status(500).send("Sunucu hatası.");
-    }
-}
-
-// Oynatma İstekleri
+// HAFİF VE DONMAYAN YÖNLENDİRİCİ
 app.get('/:type/:user/:pass/:id', (req, res) => {
     const { user, pass, id } = req.params;
     if (user !== USERNAME || pass !== PASSWORD) return res.status(403).send("Yetkisiz Erişim");
@@ -268,7 +251,7 @@ app.get('/:type/:user/:pass/:id', (req, res) => {
     if (cleanId === 999) {
         const currentEpisode = getSurekliDiziLoop();
         if (currentEpisode && currentEpisode.url) {
-            return proxyStream(currentEpisode.url, res);
+            return res.redirect(307, currentEpisode.url);
         }
     }
 
@@ -276,9 +259,9 @@ app.get('/:type/:user/:pass/:id', (req, res) => {
     const movieItems = readM3UFile('movie.m3u');
     const seriesItems = readM3UFile('series.m3u');
 
-    if (cleanId <= 900 && tvItems[cleanId - 1]) return proxyStream(tvItems[cleanId - 1].url, res);
-    if (cleanId > 1000 && cleanId < 2000 && movieItems[cleanId - 1001]) return proxyStream(movieItems[cleanId - 1001].url, res);
-    if (cleanId >= 2000 && seriesItems[cleanId - 2000]) return proxyStream(seriesItems[cleanId - 2000].url, res);
+    if (cleanId <= 900 && tvItems[cleanId - 1]) return res.redirect(307, tvItems[cleanId - 1].url);
+    if (cleanId > 1000 && cleanId < 2000 && movieItems[cleanId - 1001]) return res.redirect(307, movieItems[cleanId - 1001].url);
+    if (cleanId >= 2000 && seriesItems[cleanId - 2000]) return res.redirect(307, seriesItems[cleanId - 2000].url);
 
     res.status(404).send("Yayın bulunamadı");
 });
