@@ -8,9 +8,10 @@ const PORT = process.env.PORT || 3000;
 const USERNAME = "admin";
 const PASSWORD = "123";
 
-// 📌 YAYIN AKIŞI BAŞLANGIÇ TEMA TARIHI (1. Sezon 1. Bölüm Referansı)
-const BROADCAST_START_TIME = 1786233600; 
+// 📌 1. Sezon 1. Bölümden başlatacak olan başlangıç noktası (Bugünün zaman damgası)
+const START_ANCHOR_TIME = 1786233600; 
 
+// M3U Okuyucu
 function readM3UFile(fileName) {
     try {
         const filePath = path.join(__dirname, fileName);
@@ -66,7 +67,7 @@ function readM3UFile(fileName) {
     }
 }
 
-// 🕒 7/24 Kesintisiz Arka Plan Yayın Akış Motoru
+// 🕒 1. Sezon 1. Bölümden Başlayan Sıralı Yayın Motoru
 function getLiveStateForSeries(targetSeriesName) {
     const allSeries = readM3UFile('series.m3u');
     
@@ -77,14 +78,16 @@ function getLiveStateForSeries(targetSeriesName) {
     const episodes = filteredEpisodes.length > 0 ? filteredEpisodes : allSeries;
     if (episodes.length === 0) return null;
 
-    const episodeDuration = 11 * 60; // Her bölüm 11 dakika (660 saniye)
+    const episodeDuration = 11 * 60; // 11 Dakika
     const totalLoopDuration = episodes.length * episodeDuration;
     
     const nowInSeconds = Math.floor(Date.now() / 1000);
-    let totalElapsedSeconds = nowInSeconds - BROADCAST_START_TIME;
-    if (totalElapsedSeconds < 0) totalElapsedSeconds = 0;
+    
+    // Geçen toplam süreye göre 1. Sezon 1. Bölümden sırayla akış hesabı
+    let elapsedSeconds = nowInSeconds - START_ANCHOR_TIME;
+    if (elapsedSeconds < 0) elapsedSeconds = 0;
 
-    const currentLoopPosition = totalElapsedSeconds % totalLoopDuration;
+    const currentLoopPosition = elapsedSeconds % totalLoopDuration;
     const currentIndex = Math.floor(currentLoopPosition / episodeDuration);
 
     return {
@@ -145,6 +148,7 @@ app.get('/player_api.php', (req, res) => {
                 stream_type: "live",
                 stream_icon: logo || "https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg",
                 category_id: "724",
+                container_extension: "m3u8",
                 custom_sid: "",
                 direct_source: ""
             });
@@ -159,6 +163,7 @@ app.get('/player_api.php', (req, res) => {
                 stream_type: "live",
                 stream_icon: item.logo,
                 category_id: (cats.indexOf(item.group) + 1).toString(),
+                container_extension: "m3u8",
                 direct_source: item.url
             });
         });
@@ -259,7 +264,7 @@ app.get('/player_api.php', (req, res) => {
     res.json([]);
 });
 
-// Oynatma Yönlendiricisi (Hızlı Yönlendirme)
+// Oynatma Yönlendiricisi (Hızlı ve Doğrudan .m3u8 Redirection)
 app.get('/:type/:user/:pass/:id', (req, res) => {
     const { user, pass, id } = req.params;
     if (user !== USERNAME || pass !== PASSWORD) return res.status(403).send("Yetkisiz Erişim");
@@ -276,6 +281,7 @@ app.get('/:type/:user/:pass/:id', (req, res) => {
         if (targetSeriesName) {
             const liveState = getLiveStateForSeries(targetSeriesName);
             if (liveState && liveState.episode && liveState.episode.url) {
+                // Doğrudan çalışan orijinal m3u8 adresine yönlendirir
                 return res.redirect(302, liveState.episode.url);
             }
         }
