@@ -64,7 +64,7 @@ function readM3UFile(fileName) {
     }
 }
 
-// 🕒 7/24 Arka Plan Saat Motoru (Kesintisiz Dönen Döngü)
+// 🕒 7/24 Kesintisiz Saat Motoru (Sen bakmasan da arka planda akar)
 function getSurekliDiziLoop() {
     const allSeries = readM3UFile('series.m3u');
     
@@ -77,10 +77,10 @@ function getSurekliDiziLoop() {
     const targetEpisodes = surekliDiziEpisodes.length > 0 ? surekliDiziEpisodes : allSeries;
     if (targetEpisodes.length === 0) return null;
 
-    const episodeDuration = 11 * 60; // 11 Dakika (660 Saniye)
+    const episodeDuration = 11 * 60; // 11 Dakika
     const totalDuration = targetEpisodes.length * episodeDuration;
     
-    // Dünya saati tıkır tıkır işler (Sen baksan da bakmasan da akar)
+    // Anlık dünya saati hesabı
     const nowInSeconds = Math.floor(Date.now() / 1000);
     const currentLoopPos = nowInSeconds % totalDuration;
     const currentIndex = Math.floor(currentLoopPos / episodeDuration);
@@ -123,6 +123,7 @@ app.get('/player_api.php', (req, res) => {
         const cats = Array.from(new Set(liveItems.map(i => i.group)));
         const currentLoopEp = getSurekliDiziLoop();
         
+        // 🎯 DİREKT CANLI YAYIN MOTORU (Alt barı silen direct_source enjeksiyonu)
         let streams = [{
             num: 1,
             name: currentLoopEp ? `Sürekli Dizi 7/24 (${currentLoopEp.name})` : "Sürekli Dizi (7/24 Canlı TV)",
@@ -130,7 +131,8 @@ app.get('/player_api.php', (req, res) => {
             stream_type: "live",
             stream_icon: "https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg",
             category_id: "724",
-            direct_source: ""
+            custom_sid: "",
+            direct_source: currentLoopEp ? currentLoopEp.url : "" // Doğrudan canlı kaynak verilir
         }];
 
         liveItems.forEach((item, index) => {
@@ -241,14 +243,13 @@ app.get('/player_api.php', (req, res) => {
     res.json([]);
 });
 
-// Oynatma İstekleri (Orijinal Doğrudan Redirection)
+// Oynatma İstekleri
 app.get('/:type/:user/:pass/:id', (req, res) => {
     const { user, pass, id } = req.params;
     if (user !== USERNAME || pass !== PASSWORD) return res.status(403).send("Yetkisiz Erişim");
 
     const cleanId = parseInt(id.replace(/\.[^/.]+$/, ""));
 
-    // 7/24 Canlı Yayın
     if (cleanId === 999) {
         const currentEpisode = getSurekliDiziLoop();
         if (currentEpisode && currentEpisode.url) {
