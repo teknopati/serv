@@ -1,8 +1,6 @@
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
-const https = require('https');
-const http = require('http');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -10,7 +8,7 @@ const PORT = process.env.PORT || 3000;
 const USERNAME = "admin";
 const PASSWORD = "123";
 
-// 📌 1. Sezon 1. Bölüm 0. Saniye Referansı (Dünya Saati Anchor)
+// 📌 1. Sezon 1. Bölüm Başlangıç Sabiti
 const START_ANCHOR_TIME = 1786233600; 
 
 // M3U Okuyucu
@@ -69,7 +67,7 @@ function readM3UFile(fileName) {
     }
 }
 
-// 🕒 ARKA PLANDA KESİNTİSİZ DÖNEN CANLI SAAT MOTORU
+// 🕒 ARKA PLANDA SÜREKLİ DÖNEN HESAP MOTORU
 function getLiveStateForSeries(targetSeriesName) {
     const allSeries = readM3UFile('series.m3u');
     
@@ -80,84 +78,21 @@ function getLiveStateForSeries(targetSeriesName) {
     const episodes = filteredEpisodes.length > 0 ? filteredEpisodes : allSeries;
     if (episodes.length === 0) return null;
 
-    const episodeDuration = 11 * 60; // Her bölüm 11 Dakika (660 Saniye)
+    const episodeDuration = 11 * 60; // 11 Dakika (660 Saniye)
     const totalLoopDuration = episodes.length * episodeDuration;
     
     const nowInSeconds = Math.floor(Date.now() / 1000);
-    
-    // Sen bakmasan da arka planda akan toplam saniye
     let elapsedSeconds = nowInSeconds - START_ANCHOR_TIME;
     if (elapsedSeconds < 0) elapsedSeconds = 0;
 
-    // Döngüdeki anlık saniye konumu
     const currentLoopPosition = elapsedSeconds % totalLoopDuration;
-    
-    // Hangi bölümdeyiz?
     const currentIndex = Math.floor(currentLoopPosition / episodeDuration);
-    
-    // O bölümün TAM KAÇINCI SANİYESİNDEYİZ? (1 ile 660 saniye arası)
-    const offsetSeconds = currentLoopPosition % episodeDuration;
 
     return {
         episode: episodes[currentIndex],
         currentIndex: currentIndex,
-        offsetSeconds: offsetSeconds,
         totalEpisodes: episodes.length
     };
-}
-
-// 📡 M3U8 Dosyasına Canlı Yayın Saniyesini Enjekte Eden Motor
-function serveLiveManifestWithOffset(targetUrl, offsetSeconds, res) {
-    try {
-        const parsedUrl = new URL(targetUrl);
-        const options = {
-            hostname: parsedUrl.hostname,
-            path: parsedUrl.pathname + parsedUrl.search,
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                'Referer': `${parsedUrl.protocol}//${parsedUrl.hostname}/`
-            }
-        };
-
-        const client = parsedUrl.protocol === 'https:' ? https : http;
-
-        client.get(options, (streamRes) => {
-            let data = '';
-            streamRes.on('data', chunk => data += chunk);
-            streamRes.on('end', () => {
-                res.setHeader('Content-Type', 'application/vnd.apple.mpegurl');
-                res.setHeader('Access-Control-Allow-Origin', '*');
-                res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-
-                const baseUrl = targetUrl.substring(0, targetUrl.lastIndexOf('/') + 1);
-                let lines = data.split('\n');
-                let newLines = [];
-
-                lines.forEach(line => {
-                    line = line.trim();
-                    
-                    // Video bitiş etiketini sil (Televizyon yayını canlı sanıp durdurmasın)
-                    if (line === '#EXT-X-ENDLIST') {
-                        return;
-                    }
-
-                    // EXTM3U etiketinden hemen sonra ANLIK CANLI SANİYEYİ enjekte et!
-                    if (line === '#EXTM3U') {
-                        newLines.push(line);
-                        newLines.push(`#EXT-X-START:TIME-OFFSET=${offsetSeconds}`);
-                    } else if (line && !line.startsWith('#') && !line.startsWith('http')) {
-                        newLines.push(baseUrl + line);
-                    } else {
-                        newLines.push(line);
-                    }
-                });
-
-                res.send(newLines.join('\n'));
-            });
-        }).on('error', () => res.status(500).send("Canlı yayın verisi okunamadı"));
-    } catch (e) {
-        res.status(500).send("Geçersiz Adres");
-    }
 }
 
 app.get('/player_api.php', (req, res) => {
@@ -178,10 +113,9 @@ app.get('/player_api.php', (req, res) => {
         return res.json({ epg_listings: [] });
     }
 
-    // --- 1. TV MENÜSÜ KATEGORİLERİ ---
+    // --- 1. TV MENÜSÜ ---
     if (action === 'get_live_categories') {
         const liveItems = readM3UFile('tv.m3u');
-        
         let categories = [{ category_id: "724", category_name: "📺 7/24 DİZİ KANALLARI", parent_id: 0 }];
         
         if (liveItems.length > 0) {
@@ -191,7 +125,6 @@ app.get('/player_api.php', (req, res) => {
         return res.json(categories);
     }
 
-    // --- TV KANALLARI VE 7/24 KANALLAR ---
     if (action === 'get_live_streams') {
         const liveItems = readM3UFile('tv.m3u');
         const seriesItems = readM3UFile('series.m3u');
@@ -205,6 +138,7 @@ app.get('/player_api.php', (req, res) => {
         uniqueSeriesNames.forEach((sName, index) => {
             const liveState = getLiveStateForSeries(sName);
             const logo = seriesItems.find(i => i.seriesName === sName)?.logo || "";
+            const currentUrl = (liveState && liveState.episode) ? liveState.episode.url : "";
             
             streams.push({
                 num: index + 1,
@@ -215,7 +149,7 @@ app.get('/player_api.php', (req, res) => {
                 category_id: "724",
                 container_extension: "m3u8",
                 custom_sid: "",
-                direct_source: ""
+                direct_source: currentUrl // XCIPTV'nin engelsiz doğrudan oynatması için direct_source enjekte edildi
             });
         });
 
@@ -329,14 +263,13 @@ app.get('/player_api.php', (req, res) => {
     res.json([]);
 });
 
-// Oynatma Yönlendiricisi (Canlı Saniye Offset Enjeksiyonlu)
+// Direct Source Yedek Yönlendirici
 app.get('/:type/:user/:pass/:id', (req, res) => {
     const { user, pass, id } = req.params;
     if (user !== USERNAME || pass !== PASSWORD) return res.status(403).send("Yetkisiz Erişim");
 
     const cleanId = parseInt(id.replace(/\.[^/.]+$/, ""));
 
-    // 7/24 Canlı Dizi Kanalları İsteği (9000+)
     if (cleanId >= 9000 && cleanId < 9999) {
         const seriesItems = readM3UFile('series.m3u');
         const uniqueSeriesNames = Array.from(new Set(seriesItems.map(i => i.seriesName)));
@@ -346,8 +279,7 @@ app.get('/:type/:user/:pass/:id', (req, res) => {
         if (targetSeriesName) {
             const liveState = getLiveStateForSeries(targetSeriesName);
             if (liveState && liveState.episode && liveState.episode.url) {
-                // Bölümü 0. saniyeden değil, o anki canlı saniyesinden başlatan özel fonksiyon:
-                return serveLiveManifestWithOffset(liveState.episode.url, liveState.offsetSeconds, res);
+                return res.redirect(302, liveState.episode.url);
             }
         }
     }
