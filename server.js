@@ -92,6 +92,7 @@ app.get('/player_api.php', (req, res) => {
 
     const { seriesMap, streams } = parseM3U();
 
+    // 1. Giriş Kontrolü
     if (!action) {
         return res.json({
             user_info: { username: USERNAME, auth: 1, status: "Active", exp_date: "1999999999" },
@@ -99,30 +100,28 @@ app.get('/player_api.php', (req, res) => {
         });
     }
 
-    // --- KATEGORİ TALEPLERİ (Çökme/Donmayı Önleyen Güvenli Yanıtlar) ---
+    // 2. DONMAYI ÖNLEYEN EPG KORUMASI (TV Rehber İsteklerini Hızlıca Kapatır)
+    if (action === 'get_epg' || action === 'get_short_epg' || action === 'get_simple_data_table') {
+        return res.json({ epg_listings: [] });
+    }
+
+    // 3. KATEGORİ TALEPLERİ
     if (action === 'get_live_categories') {
-        return res.json([{ category_id: "1", category_name: "Genel TV", parent_id: 0 }]);
+        return res.json([]); // Canlı TV kategorisini direkt boş dön
     }
     if (action === 'get_vod_categories') {
-        return res.json([{ category_id: "1", category_name: "Genel Filmler", parent_id: 0 }]);
+        return res.json([]); // Film kategorisini direkt boş dön
     }
     if (action === 'get_series_categories') {
         return res.json([{ category_id: "1", category_name: "Çizgi Diziler", parent_id: 0 }]);
     }
 
-    // --- İÇERİK TALEPLERİ ---
-    
-    // TV (Canlı) Kısmına Girilirse Boş Liste Ver (Cihazın Donmasını/Kilitlenmesini Önler)
-    if (action === 'get_live_streams') {
-        return res.json([]);
+    // 4. İÇERİK TALEPLERİ
+    if (action === 'get_live_streams' || action === 'get_vod_streams') {
+        return res.json([]); // Canlı TV ve Filmleri boş dön
     }
 
-    // MOVIE (Film) Kısmına Girilirse Boş Liste Ver
-    if (action === 'get_vod_streams') {
-        return res.json([]);
-    }
-
-    // SERIES (Dizi) Kısmı (Dizileri Getir)
+    // 5. SERIES (Dizi) Talebi
     if (action === 'get_series') {
         let seriesList = [];
         let idCounter = 1;
@@ -148,7 +147,7 @@ app.get('/player_api.php', (req, res) => {
         return res.json(seriesList);
     }
 
-    // Dizi Detayı ve Sezonlar (Sezon 1..8)
+    // 6. Dizi Detayı ve Sezonlar (1..8 Sezon)
     if (action === 'get_series_info') {
         const targetId = parseInt(series_id) || 1;
         const seriesNames = Array.from(seriesMap.keys());
@@ -213,7 +212,7 @@ app.get('/player_api.php', (req, res) => {
     res.json([]);
 });
 
-// Video Oynatma Linki
+// Stream Yönlendirmesi
 app.get('/:type/:user/:pass/:id', (req, res) => {
     const { user, pass, id } = req.params;
     if (user !== USERNAME || pass !== PASSWORD) return res.status(403).send("Yetkisiz Erişim");
