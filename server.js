@@ -8,9 +8,6 @@ const PORT = process.env.PORT || 3000;
 const USERNAME = "admin";
 const PASSWORD = "123";
 
-// 📌 1. Sezon 1. Bölüm Başlangıç Sabiti (9 Ağustos 2026, 00:00 UTC)
-const START_ANCHOR_TIME = 1786233600; 
-
 // M3U Okuyucu
 function readM3UFile(fileName) {
     try {
@@ -67,7 +64,7 @@ function readM3UFile(fileName) {
     }
 }
 
-// 🕒 7/24 Kesintisiz Saat Motoru (Sen İzlesen de İzlemesen de Arka Plan Akar)
+// 🕒 Türkiye Saatine Göre Kesintisiz 7/24 Akan Saat Motoru
 function getSurekliDiziLoop() {
     const allSeries = readM3UFile('series.m3u');
     
@@ -80,16 +77,12 @@ function getSurekliDiziLoop() {
     const targetEpisodes = surekliDiziEpisodes.length > 0 ? surekliDiziEpisodes : allSeries;
     if (targetEpisodes.length === 0) return null;
 
-    const episodeDuration = 11 * 60; // 11 Dakika (660 Saniye)
+    const episodeDuration = 11 * 60; // Her bölüm 11 Dakika (660 Saniye)
     const totalDuration = targetEpisodes.length * episodeDuration;
     
+    // Türkiye saati / Dünya Epoch zamanı üzerinden sen baksan da bakmasan da akan zaman
     const nowInSeconds = Math.floor(Date.now() / 1000);
-    
-    // 1. Sezon 1. Bölümden itibaren geçen toplam süre
-    let elapsedSeconds = nowInSeconds - START_ANCHOR_TIME;
-    if (elapsedSeconds < 0) elapsedSeconds = 0;
-
-    const currentLoopPos = elapsedSeconds % totalDuration;
+    const currentLoopPos = nowInSeconds % totalDuration;
     const currentIndex = Math.floor(currentLoopPos / episodeDuration);
 
     return targetEpisodes[currentIndex];
@@ -116,7 +109,7 @@ app.get('/player_api.php', (req, res) => {
     // --- 1. TV MENÜSÜ ---
     if (action === 'get_live_categories') {
         const liveItems = readM3UFile('tv.m3u');
-        let categories = [{ category_id: "724", category_name: "📺 7/24 Canlı Diziler", parent_id: 0 }];
+        let categories = [{ category_id: "724", category_name: "7/24 Canlı Diziler", parent_id: 0 }];
         
         if (liveItems.length > 0) {
             const cats = Array.from(new Set(liveItems.map(i => i.group)));
@@ -130,7 +123,6 @@ app.get('/player_api.php', (req, res) => {
         const cats = Array.from(new Set(liveItems.map(i => i.group)));
         const currentLoopEp = getSurekliDiziLoop();
         
-        // 🎯 7/24 CANLI DİZİ KANALI (Direct Source ile Alttaki Bar Kaldırıldı)
         let streams = [{
             num: 1,
             name: currentLoopEp ? `Sürekli Dizi 7/24 (${currentLoopEp.name})` : "Sürekli Dizi (7/24 Canlı TV)",
@@ -138,12 +130,9 @@ app.get('/player_api.php', (req, res) => {
             stream_type: "live",
             stream_icon: "https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg",
             category_id: "724",
-            container_extension: "m3u8",
-            custom_sid: "",
-            direct_source: currentLoopEp ? currentLoopEp.url : "" // Doğrudan kaynak verilerek canlı moda sokulur
+            direct_source: ""
         }];
 
-        // 📺 DİĞER NORMAL TV KANALLARI (TRT 1, ATV vb.)
         liveItems.forEach((item, index) => {
             streams.push({
                 num: index + 2,
@@ -152,8 +141,7 @@ app.get('/player_api.php', (req, res) => {
                 stream_type: "live",
                 stream_icon: item.logo,
                 category_id: (cats.indexOf(item.group) + 1).toString(),
-                container_extension: "m3u8",
-                direct_source: item.url
+                direct_source: ""
             });
         });
 
@@ -253,13 +241,14 @@ app.get('/player_api.php', (req, res) => {
     res.json([]);
 });
 
-// Oynatma Yönlendiricisi (Yedek Hat)
+// Oynatma İstekleri (Standart Hızlı Yönlendirme)
 app.get('/:type/:user/:pass/:id', (req, res) => {
     const { user, pass, id } = req.params;
     if (user !== USERNAME || pass !== PASSWORD) return res.status(403).send("Yetkisiz Erişim");
 
     const cleanId = parseInt(id.replace(/\.[^/.]+$/, ""));
 
+    // 7/24 Canlı Dizi Akışı
     if (cleanId === 999) {
         const currentEpisode = getSurekliDiziLoop();
         if (currentEpisode && currentEpisode.url) {
