@@ -8,7 +8,7 @@ const PORT = process.env.PORT || 3000;
 const USERNAME = "admin";
 const PASSWORD = "123";
 
-// M3U Dosyasını Otomatik Sezon / Bölüm Parse Etme
+// M3U Dosyasını Güvenli Parse Etme
 function parseM3U() {
     try {
         const filePath = path.join(__dirname, 'liste.m3u');
@@ -24,24 +24,18 @@ function parseM3U() {
         lines.forEach(line => {
             line = line.trim();
             if (line.startsWith('#EXTINF:')) {
-                // Görsel / Kapak Fotoğrafı
                 const logoMatch = line.match(/tvg-logo="([^"]+)"/);
                 const logo = logoMatch ? logoMatch[1] : "";
 
-                // Group Title Parsing (Örn: "Sürekli Dizi - Sezon 1" veya "Sürekli Dizi")
                 const groupMatch = line.match(/group-title="([^"]+)"/);
                 const rawGroup = groupMatch ? groupMatch[1] : "Sürekli Dizi";
                 
-                // Dizi Adı ve Sezon Numarasını Otomatik Ayrıştır
-                let seriesName = rawGroup.split('-')[0].trim(); // "Sürekli Dizi"
+                let seriesName = rawGroup.split('-')[0].trim();
                 let season = 1;
 
                 const seasonInGroup = rawGroup.match(/Sezon\s*(\d+)/i);
-                if (seasonInGroup) {
-                    season = parseInt(seasonInGroup[1]);
-                }
+                if (seasonInGroup) season = parseInt(seasonInGroup[1]);
 
-                // tvg-name parsing (Örn: "S01E02")
                 const tvgNameMatch = line.match(/tvg-name="([^"]+)"/);
                 let episode = 1;
                 if (tvgNameMatch) {
@@ -52,7 +46,6 @@ function parseM3U() {
                     if (seMatch) season = parseInt(seMatch[1]);
                 }
 
-                // Bölüm Adı (Virgülden sonrası)
                 const titleParts = line.split(',');
                 const name = titleParts.length > 1 ? titleParts[titleParts.length - 1].trim() : `${episode}. Bölüm`;
 
@@ -62,7 +55,6 @@ function parseM3U() {
                     currentStream.url = line;
                     streams.push(currentStream);
 
-                    // Diziye Göre Grupla
                     if (!seriesMap.has(currentStream.seriesName)) {
                         seriesMap.set(currentStream.seriesName, {
                             name: currentStream.seriesName,
@@ -71,7 +63,6 @@ function parseM3U() {
                         });
                     }
                     
-                    // Kapak resmi güncelle
                     if (currentStream.logo && !seriesMap.get(currentStream.seriesName).cover) {
                         seriesMap.get(currentStream.seriesName).cover = currentStream.logo;
                     }
@@ -108,12 +99,30 @@ app.get('/player_api.php', (req, res) => {
         });
     }
 
-    // Kategoriler
+    // --- KATEGORİ TALEPLERİ (Çökme/Donmayı Önleyen Güvenli Yanıtlar) ---
+    if (action === 'get_live_categories') {
+        return res.json([{ category_id: "1", category_name: "Genel TV", parent_id: 0 }]);
+    }
+    if (action === 'get_vod_categories') {
+        return res.json([{ category_id: "1", category_name: "Genel Filmler", parent_id: 0 }]);
+    }
     if (action === 'get_series_categories') {
         return res.json([{ category_id: "1", category_name: "Çizgi Diziler", parent_id: 0 }]);
     }
 
-    // 1. Ana Ekranda Görünecek Dizi Kartı (Sadece "Sürekli Dizi" Görünür)
+    // --- İÇERİK TALEPLERİ ---
+    
+    // TV (Canlı) Kısmına Girilirse Boş Liste Ver (Cihazın Donmasını/Kilitlenmesini Önler)
+    if (action === 'get_live_streams') {
+        return res.json([]);
+    }
+
+    // MOVIE (Film) Kısmına Girilirse Boş Liste Ver
+    if (action === 'get_vod_streams') {
+        return res.json([]);
+    }
+
+    // SERIES (Dizi) Kısmı (Dizileri Getir)
     if (action === 'get_series') {
         let seriesList = [];
         let idCounter = 1;
@@ -139,7 +148,7 @@ app.get('/player_api.php', (req, res) => {
         return res.json(seriesList);
     }
 
-    // 2. Diziye Basılınca Tüm Sezonları (Sezon 1, 2 ... 8) ve Bölümleri Getir
+    // Dizi Detayı ve Sezonlar (Sezon 1..8)
     if (action === 'get_series_info') {
         const targetId = parseInt(series_id) || 1;
         const seriesNames = Array.from(seriesMap.keys());
@@ -177,7 +186,6 @@ app.get('/player_api.php', (req, res) => {
             });
         });
 
-        // Sezonları Küçükten Büyüğe Sırala (1, 2, 3 ... 8)
         const sortedSeasons = Array.from(seasonsSet).sort((a, b) => a - b);
 
         const seasonsList = sortedSeasons.map(s => ({
