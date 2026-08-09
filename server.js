@@ -64,7 +64,7 @@ function readM3UFile(fileName) {
     }
 }
 
-// 🕒 7/24 Kesintisiz Saat Motoru (Sen bakmasan da arka planda akar)
+// 🕒 7/24 Kesintisiz Arka Plan Saat Motoru
 function getSurekliDiziLoop() {
     const allSeries = readM3UFile('series.m3u');
     
@@ -80,7 +80,6 @@ function getSurekliDiziLoop() {
     const episodeDuration = 11 * 60; // 11 Dakika
     const totalDuration = targetEpisodes.length * episodeDuration;
     
-    // Anlık dünya saati hesabı
     const nowInSeconds = Math.floor(Date.now() / 1000);
     const currentLoopPos = nowInSeconds % totalDuration;
     const currentIndex = Math.floor(currentLoopPos / episodeDuration);
@@ -123,7 +122,7 @@ app.get('/player_api.php', (req, res) => {
         const cats = Array.from(new Set(liveItems.map(i => i.group)));
         const currentLoopEp = getSurekliDiziLoop();
         
-        // 🎯 DİREKT CANLI YAYIN MOTORU (Alt barı silen direct_source enjeksiyonu)
+        // 🎯 KESİN CANLI YAYIN YAPILANDIRMASI (ts formatı zorlaması)
         let streams = [{
             num: 1,
             name: currentLoopEp ? `Sürekli Dizi 7/24 (${currentLoopEp.name})` : "Sürekli Dizi (7/24 Canlı TV)",
@@ -131,8 +130,9 @@ app.get('/player_api.php', (req, res) => {
             stream_type: "live",
             stream_icon: "https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg",
             category_id: "724",
+            container_extension: "ts", // m3u8 yerine ts zorlayarak video barını kaldırıyoruz
             custom_sid: "",
-            direct_source: currentLoopEp ? currentLoopEp.url : "" // Doğrudan canlı kaynak verilir
+            direct_source: ""
         }];
 
         liveItems.forEach((item, index) => {
@@ -143,6 +143,7 @@ app.get('/player_api.php', (req, res) => {
                 stream_type: "live",
                 stream_icon: item.logo,
                 category_id: (cats.indexOf(item.group) + 1).toString(),
+                container_extension: "ts",
                 direct_source: item.url
             });
         });
