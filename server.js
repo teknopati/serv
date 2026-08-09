@@ -1,6 +1,8 @@
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
+const https = require('https');
+const http = require('http');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -8,7 +10,7 @@ const PORT = process.env.PORT || 3000;
 const USERNAME = "admin";
 const PASSWORD = "123";
 
-// 📌 1. Sezon 1. Bölümden Başlatmak İçin Sabit Referans Noktası (Epoch Anchor)
+// 📌 1. Sezon 1. Bölüm Başlangıç Sabiti
 const START_ANCHOR_TIME = 1786233600; 
 
 // M3U Okuyucu
@@ -67,7 +69,7 @@ function readM3UFile(fileName) {
     }
 }
 
-// 🕒 1. Sezon 1. Bölümden Başlayan Sürekli Dönüş Motoru
+// 🕒 7/24 Döngüsel Saat Motoru
 function getSurekliDiziLoop() {
     const allSeries = readM3UFile('series.m3u');
     
@@ -84,8 +86,6 @@ function getSurekliDiziLoop() {
     const totalDuration = targetEpisodes.length * episodeDuration;
     
     const nowInSeconds = Math.floor(Date.now() / 1000);
-    
-    // Geçen süreye göre 1. Sezon 1. Bölümden itibaren sırayla ilerleme
     let elapsedSeconds = nowInSeconds - START_ANCHOR_TIME;
     if (elapsedSeconds < 0) elapsedSeconds = 0;
 
@@ -93,6 +93,56 @@ function getSurekliDiziLoop() {
     const currentIndex = Math.floor(currentLoopPos / episodeDuration);
 
     return targetEpisodes[currentIndex];
+}
+
+// 📡 Canlı TV Manifest Temizleyici (Alttaki Barı ve Süreyi Kaldırır)
+function servePureLivePlaylist(targetUrl, res) {
+    try {
+        const parsedUrl = new URL(targetUrl);
+        const options = {
+            hostname: parsedUrl.hostname,
+            path: parsedUrl.pathname + parsedUrl.search,
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Referer': `${parsedUrl.protocol}//${parsedUrl.hostname}/`
+            }
+        };
+
+        const client = parsedUrl.protocol === 'https:' ? https : http;
+
+        client.get(options, (streamRes) => {
+            let data = '';
+            streamRes.on('data', chunk => data += chunk);
+            streamRes.on('end', () => {
+                res.setHeader('Content-Type', 'application/vnd.apple.mpegurl');
+                res.setHeader('Access-Control-Allow-Origin', '*');
+                res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+
+                const baseUrl = targetUrl.substring(0, targetUrl.lastIndexOf('/') + 1);
+                let lines = data.split('\n');
+                let newLines = [];
+
+                lines.forEach(line => {
+                    line = line.trim();
+                    // Video bitiş ve VOD etiketlerini silerek TV canlı yayınına dönüştürür
+                    if (line === '#EXT-X-ENDLIST' || line.startsWith('#EXT-X-PLAYLIST-TYPE')) {
+                        return;
+                    }
+                    if (line && !line.startsWith('#') && !line.startsWith('http')) {
+                        newLines.push(baseUrl + line);
+                    } else {
+                        newLines.push(line);
+                    }
+                });
+
+                res.send(newLines.join('\n'));
+            });
+        }).on('error', () => {
+            res.redirect(302, targetUrl);
+        });
+    } catch (e) {
+        res.redirect(302, targetUrl);
+    }
 }
 
 app.get('/player_api.php', (req, res) => {
@@ -137,6 +187,7 @@ app.get('/player_api.php', (req, res) => {
             stream_type: "live",
             stream_icon: "https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg",
             category_id: "724",
+            container_extension: "m3u8",
             direct_source: ""
         }];
 
@@ -148,6 +199,7 @@ app.get('/player_api.php', (req, res) => {
                 stream_type: "live",
                 stream_icon: item.logo,
                 category_id: (cats.indexOf(item.group) + 1).toString(),
+                container_extension: "m3u8",
                 direct_source: item.url
             });
         });
@@ -248,18 +300,17 @@ app.get('/player_api.php', (req, res) => {
     res.json([]);
 });
 
-// Oynatma İstekleri (Çalışan Doğrudan Redirection Yapısı)
+// Oynatma Yönlendiricisi (Canlı Yayın Temizleyicili)
 app.get('/:type/:user/:pass/:id', (req, res) => {
     const { user, pass, id } = req.params;
     if (user !== USERNAME || pass !== PASSWORD) return res.status(403).send("Yetkisiz Erişim");
 
     const cleanId = parseInt(id.replace(/\.[^/.]+$/, ""));
 
-    // 7/24 Canlı Yayın
     if (cleanId === 999) {
         const currentEpisode = getSurekliDiziLoop();
         if (currentEpisode && currentEpisode.url) {
-            return res.redirect(302, currentEpisode.url);
+            return servePureLivePlaylist(currentEpisode.url, res);
         }
     }
 
