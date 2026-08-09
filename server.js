@@ -1,8 +1,6 @@
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
-const https = require('https');
-const http = require('http');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -10,8 +8,7 @@ const PORT = process.env.PORT || 3000;
 const USERNAME = "admin";
 const PASSWORD = "123";
 
-// 📌 YAYIN AKIŞI BAŞLANGIÇ TEMA TARIHI (Sabit Referans Numarası)
-// Yayın akışı bu andan itibaren 1. Sezon 1. Bölümden itibaren 7/24 akar.
+// 📌 YAYIN AKIŞI BAŞLANGIÇ TEMA TARIHI (1. Sezon 1. Bölüm Referansı)
 const BROADCAST_START_TIME = 1786233600; 
 
 function readM3UFile(fileName) {
@@ -83,17 +80,11 @@ function getLiveStateForSeries(targetSeriesName) {
     const episodeDuration = 11 * 60; // Her bölüm 11 dakika (660 saniye)
     const totalLoopDuration = episodes.length * episodeDuration;
     
-    // Şu anki gerçek zaman (Saniye cinsinden)
     const nowInSeconds = Math.floor(Date.now() / 1000);
-    
-    // Yayın başlangıcından bugüne kadar geçen toplam saniye (Sen izlesen de izlemesen de akan zaman)
     let totalElapsedSeconds = nowInSeconds - BROADCAST_START_TIME;
     if (totalElapsedSeconds < 0) totalElapsedSeconds = 0;
 
-    // 300 bölüm bittiğinde otomatikman 1. bölüme sıfırlayan mod hesabı (%)
     const currentLoopPosition = totalElapsedSeconds % totalLoopDuration;
-    
-    // Akışta şu an kaçıncı bölümdeyiz?
     const currentIndex = Math.floor(currentLoopPosition / episodeDuration);
 
     return {
@@ -101,34 +92,6 @@ function getLiveStateForSeries(targetSeriesName) {
         currentIndex: currentIndex,
         totalEpisodes: episodes.length
     };
-}
-
-// Stream Akış Aktarıcısı (TV Formatı)
-function pipeLiveStream(targetUrl, res) {
-    try {
-        const parsedUrl = new URL(targetUrl);
-        const options = {
-            hostname: parsedUrl.hostname,
-            path: parsedUrl.pathname + parsedUrl.search,
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                'Referer': `${parsedUrl.protocol}//${parsedUrl.hostname}/`
-            }
-        };
-
-        const client = parsedUrl.protocol === 'https:' ? https : http;
-
-        client.get(options, (remoteRes) => {
-            res.setHeader('Content-Type', 'video/mp2t');
-            res.setHeader('Access-Control-Allow-Origin', '*');
-            res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-            remoteRes.pipe(res);
-        }).on('error', () => {
-            res.status(500).send("Yayın akışı çekilemedi.");
-        });
-    } catch (e) {
-        res.status(500).send("Aktarım hatası.");
-    }
 }
 
 app.get('/player_api.php', (req, res) => {
@@ -296,7 +259,7 @@ app.get('/player_api.php', (req, res) => {
     res.json([]);
 });
 
-// Oynatma Yönlendiricisi
+// Oynatma Yönlendiricisi (Hızlı Yönlendirme)
 app.get('/:type/:user/:pass/:id', (req, res) => {
     const { user, pass, id } = req.params;
     if (user !== USERNAME || pass !== PASSWORD) return res.status(403).send("Yetkisiz Erişim");
@@ -313,7 +276,7 @@ app.get('/:type/:user/:pass/:id', (req, res) => {
         if (targetSeriesName) {
             const liveState = getLiveStateForSeries(targetSeriesName);
             if (liveState && liveState.episode && liveState.episode.url) {
-                return pipeLiveStream(liveState.episode.url, res);
+                return res.redirect(302, liveState.episode.url);
             }
         }
     }
@@ -322,7 +285,7 @@ app.get('/:type/:user/:pass/:id', (req, res) => {
     const movieItems = readM3UFile('movie.m3u');
     const seriesItems = readM3UFile('series.m3u');
 
-    if (cleanId <= 900 && tvItems[cleanId - 1]) return pipeLiveStream(tvItems[cleanId - 1].url, res);
+    if (cleanId <= 900 && tvItems[cleanId - 1]) return res.redirect(302, tvItems[cleanId - 1].url);
     if (cleanId > 1000 && cleanId < 2000 && movieItems[cleanId - 1001]) return res.redirect(302, movieItems[cleanId - 1001].url);
     if (cleanId >= 2000 && seriesItems[cleanId - 2000]) return res.redirect(302, seriesItems[cleanId - 2000].url);
 
