@@ -1,8 +1,6 @@
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
-const https = require('https');
-const http = require('http');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -10,7 +8,7 @@ const PORT = process.env.PORT || 3000;
 const USERNAME = "admin";
 const PASSWORD = "123";
 
-// 📌 Yayın Akışı Başlangıç Sabiti (1. Sezon 1. Bölüm Referansı)
+// 📌 1. Sezon 1. Bölüm Başlangıç Sabiti (9 Ağustos 2026, 00:00 UTC)
 const START_ANCHOR_TIME = 1786233600; 
 
 // M3U Okuyucu
@@ -69,7 +67,7 @@ function readM3UFile(fileName) {
     }
 }
 
-// 🕒 7/24 Kesintisiz Yayın Akış Motoru
+// 🕒 7/24 Kesintisiz Saat Motoru (Sen İzlesen de İzlemesen de Arka Plan Akar)
 function getSurekliDiziLoop() {
     const allSeries = readM3UFile('series.m3u');
     
@@ -82,10 +80,12 @@ function getSurekliDiziLoop() {
     const targetEpisodes = surekliDiziEpisodes.length > 0 ? surekliDiziEpisodes : allSeries;
     if (targetEpisodes.length === 0) return null;
 
-    const episodeDuration = 11 * 60; // Her bölüm varsayılan 11 Dakika
+    const episodeDuration = 11 * 60; // 11 Dakika (660 Saniye)
     const totalDuration = targetEpisodes.length * episodeDuration;
     
     const nowInSeconds = Math.floor(Date.now() / 1000);
+    
+    // 1. Sezon 1. Bölümden itibaren geçen toplam süre
     let elapsedSeconds = nowInSeconds - START_ANCHOR_TIME;
     if (elapsedSeconds < 0) elapsedSeconds = 0;
 
@@ -93,56 +93,6 @@ function getSurekliDiziLoop() {
     const currentIndex = Math.floor(currentLoopPos / episodeDuration);
 
     return targetEpisodes[currentIndex];
-}
-
-// 📡 Gerçek Canlı TV Akış Oluşturucu (VOD Barını Kaldırır)
-function proxyLiveManifest(targetUrl, res) {
-    try {
-        const parsedUrl = new URL(targetUrl);
-        const client = parsedUrl.protocol === 'https:' ? https : http;
-
-        const reqOptions = {
-            hostname: parsedUrl.hostname,
-            path: parsedUrl.pathname + parsedUrl.search,
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-                'Referer': `${parsedUrl.protocol}//${parsedUrl.hostname}/`
-            }
-        };
-
-        client.get(reqOptions, (remoteRes) => {
-            let data = '';
-            remoteRes.on('data', chunk => data += chunk);
-            remoteRes.on('end', () => {
-                res.setHeader('Content-Type', 'application/vnd.apple.mpegurl');
-                res.setHeader('Access-Control-Allow-Origin', '*');
-                res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-
-                const baseUrl = targetUrl.substring(0, targetUrl.lastIndexOf('/') + 1);
-                const lines = data.split('\n');
-                let output = [];
-
-                lines.forEach(line => {
-                    const trimmed = line.trim();
-                    // Video bitiş ve VOD tanımlarını temizleyip canlı TV akışına dönüştürür
-                    if (trimmed === '#EXT-X-ENDLIST' || trimmed.startsWith('#EXT-X-PLAYLIST-TYPE')) {
-                        return;
-                    }
-                    if (trimmed && !trimmed.startsWith('#') && !trimmed.startsWith('http')) {
-                        output.push(baseUrl + trimmed);
-                    } else {
-                        output.push(trimmed);
-                    }
-                });
-
-                res.send(output.join('\n'));
-            });
-        }).on('error', () => {
-            res.redirect(302, targetUrl);
-        });
-    } catch (e) {
-        res.redirect(302, targetUrl);
-    }
 }
 
 app.get('/player_api.php', (req, res) => {
@@ -180,6 +130,7 @@ app.get('/player_api.php', (req, res) => {
         const cats = Array.from(new Set(liveItems.map(i => i.group)));
         const currentLoopEp = getSurekliDiziLoop();
         
+        // 🎯 7/24 CANLI DİZİ KANALI (Direct Source ile Alttaki Bar Kaldırıldı)
         let streams = [{
             num: 1,
             name: currentLoopEp ? `Sürekli Dizi 7/24 (${currentLoopEp.name})` : "Sürekli Dizi (7/24 Canlı TV)",
@@ -188,9 +139,11 @@ app.get('/player_api.php', (req, res) => {
             stream_icon: "https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg",
             category_id: "724",
             container_extension: "m3u8",
-            direct_source: ""
+            custom_sid: "",
+            direct_source: currentLoopEp ? currentLoopEp.url : "" // Doğrudan kaynak verilerek canlı moda sokulur
         }];
 
+        // 📺 DİĞER NORMAL TV KANALLARI (TRT 1, ATV vb.)
         liveItems.forEach((item, index) => {
             streams.push({
                 num: index + 2,
@@ -300,18 +253,17 @@ app.get('/player_api.php', (req, res) => {
     res.json([]);
 });
 
-// Oynatma Yönlendiricisi
+// Oynatma Yönlendiricisi (Yedek Hat)
 app.get('/:type/:user/:pass/:id', (req, res) => {
     const { user, pass, id } = req.params;
     if (user !== USERNAME || pass !== PASSWORD) return res.status(403).send("Yetkisiz Erişim");
 
     const cleanId = parseInt(id.replace(/\.[^/.]+$/, ""));
 
-    // 7/24 Canlı Dizi Kanalı İsteği
     if (cleanId === 999) {
         const currentEpisode = getSurekliDiziLoop();
         if (currentEpisode && currentEpisode.url) {
-            return proxyLiveManifest(currentEpisode.url, res);
+            return res.redirect(302, currentEpisode.url);
         }
     }
 
