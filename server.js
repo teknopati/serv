@@ -8,7 +8,7 @@ const PORT = process.env.PORT || 3000;
 const USERNAME = "admin";
 const PASSWORD = "123";
 
-// Genel M3U Okuyucu
+// M3U Dosyasını Hata Vermeden Güvenle Okuyan Fonksiyon
 function readM3UFile(fileName) {
     try {
         const filePath = path.join(__dirname, fileName);
@@ -29,7 +29,6 @@ function readM3UFile(fileName) {
                 const groupMatch = line.match(/group-title="([^"]+)"/);
                 const rawGroup = groupMatch ? groupMatch[1] : "Genel";
                 
-                // Dizi Adını Ayıkla (Örn: "Sürekli Dizi - Sezon 1" -> "Sürekli Dizi")
                 let seriesName = rawGroup.split('-')[0].trim();
                 let season = 1;
 
@@ -51,7 +50,7 @@ function readM3UFile(fileName) {
 
                 currentItem = { name, group: rawGroup, seriesName, logo, season, episode };
             } else if (line.startsWith('http://') || line.startsWith('https://')) {
-                if (currentStream.name || currentItem.name) {
+                if (currentItem.name) {
                     currentItem.url = line;
                     items.push(currentItem);
                     currentItem = {};
@@ -65,27 +64,30 @@ function readM3UFile(fileName) {
     }
 }
 
-// 🕒 Sadece "Sürekli Dizi" İçin 7/24 Arka Plan Döngüsü
+// 7/24 Sürekli Dizi Döngü Hesabı
 function getSurekliDiziLoop() {
     const allSeries = readM3UFile('series.m3u');
     
-    // Sadece adı "Sürekli Dizi" olan bölümleri filtrele
+    // Sadece "Sürekli Dizi" olanları seç
     const surekliDiziEpisodes = allSeries.filter(item => 
         item.seriesName.toLowerCase().includes("sürekli dizi") || 
-        item.seriesName.toLowerCase().includes("regular show")
+        item.seriesName.toLowerCase().includes("regular show") ||
+        item.group.toLowerCase().includes("sürekli dizi")
     );
 
-    if (surekliDiziEpisodes.length === 0) return null;
+    // Bulamazsa varsayılan olarak series.m3u'daki ilk diziyi al
+    const targetEpisodes = surekliDiziEpisodes.length > 0 ? surekliDiziEpisodes : allSeries;
+
+    if (targetEpisodes.length === 0) return null;
 
     const episodeDuration = 11 * 60; // 11 Dakika
-    const totalDuration = surekliDiziEpisodes.length * episodeDuration;
+    const totalDuration = targetEpisodes.length * episodeDuration;
     const nowInSeconds = Math.floor(Date.now() / 1000);
 
-    // Otomatik Başa Dönme Hesabı (%)
     const currentLoopPos = nowInSeconds % totalDuration;
     const currentIndex = Math.floor(currentLoopPos / episodeDuration);
 
-    return surekliDiziEpisodes[currentIndex];
+    return targetEpisodes[currentIndex];
 }
 
 app.get('/player_api.php', (req, res) => {
@@ -102,6 +104,7 @@ app.get('/player_api.php', (req, res) => {
         });
     }
 
+    // EPG Donma Koruması
     if (action === 'get_epg' || action === 'get_short_epg' || action === 'get_simple_data_table') {
         return res.json({ epg_listings: [] });
     }
@@ -110,6 +113,7 @@ app.get('/player_api.php', (req, res) => {
     if (action === 'get_live_categories') {
         const liveItems = readM3UFile('tv.m3u');
         let categories = [{ category_id: "724", category_name: "7/24 Canlı Diziler", parent_id: 0 }];
+        
         if (liveItems.length > 0) {
             const cats = Array.from(new Set(liveItems.map(i => i.group)));
             cats.forEach((c, i) => categories.push({ category_id: (i + 1).toString(), category_name: c, parent_id: 0 }));
@@ -121,6 +125,7 @@ app.get('/player_api.php', (req, res) => {
         const liveItems = readM3UFile('tv.m3u');
         const cats = Array.from(new Set(liveItems.map(i => i.group)));
         
+        // 1. Sıraya 7/24 Canlı Kanalı Yerleştir
         let streams = [{
             num: 1,
             name: "Sürekli Dizi (7/24 Canlı TV)",
@@ -131,6 +136,7 @@ app.get('/player_api.php', (req, res) => {
             direct_source: ""
         }];
 
+        // tv.m3u içindeki Kanalları Ekle (TRT1, ATV vs.)
         liveItems.forEach((item, index) => {
             streams.push({
                 num: index + 2,
@@ -150,7 +156,7 @@ app.get('/player_api.php', (req, res) => {
     if (action === 'get_vod_categories') return res.json([{ category_id: "1", category_name: "Film Yok", parent_id: 0 }]);
     if (action === 'get_vod_streams') return res.json([]);
 
-    // --- 3. SERIES MENÜSÜ (Çoklu Dizi Desteği) ---
+    // --- 3. SERIES MENÜSÜ ---
     if (action === 'get_series_categories') {
         const seriesItems = readM3UFile('series.m3u');
         if (seriesItems.length === 0) return res.json([{ category_id: "1", category_name: "Dizi Yok", parent_id: 0 }]);
@@ -161,7 +167,6 @@ app.get('/player_api.php', (req, res) => {
         const seriesItems = readM3UFile('series.m3u');
         let seriesMap = new Map();
 
-        // series.m3u içindeki FARKLI tüm dizileri ayıkla
         seriesItems.forEach(item => {
             if (!seriesMap.has(item.seriesName)) {
                 seriesMap.set(item.seriesName, { name: item.seriesName, cover: item.logo });
@@ -240,14 +245,14 @@ app.get('/player_api.php', (req, res) => {
     res.json([]);
 });
 
-// Stream Oynatıcı
+// Stream Link Yönlendiricisi
 app.get('/:type/:user/:pass/:id', (req, res) => {
     const { user, pass, id } = req.params;
     if (user !== USERNAME || pass !== PASSWORD) return res.status(403).send("Yetkisiz Erişim");
 
     const cleanId = parseInt(id.replace(/\.[^/.]+$/, ""));
 
-    // 7/24 Sürekli Dizi TV İsteği
+    // 7/24 Sürekli Dizi Yönlendirmesi
     if (cleanId === 99999) {
         const currentEpisode = getSurekliDiziLoop();
         if (currentEpisode && currentEpisode.url) {
