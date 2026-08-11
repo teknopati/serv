@@ -1,6 +1,6 @@
 #EXTM3U
 
-#EXTINF:-1 tvg-name="https://cdn.sinemalar.com/images/movie/82643/poster/av-mevsimi-1660917865_225x336.jpg" group-title="Filmler", Av Mevsimi
+#EXTINF:-1 tvg-name="Av Mevsimi" tvg-logo="https://cdn.sinemalar.com/images/movie/82643/poster/av-mevsimi-1660917865_225x336.jpg" group-title="Filmler", Av Mevsimi
 smb://admin:Hsyndmrts4747@192.168.1.1/volume(sda1)/Filmler/Av Mevsimi.mp4
 
 #EXTINF:-1 tvg-name="Babam Ve Oğlum" tvg-logo="https://m.media-amazon.com/images/S/pv-target-images/71abe771121ef33a8183f6ebcf29e04ae0e4a936532b5225fdf461e684554a67.jpg" group-title="Filmler", Babam Ve Oğlum
