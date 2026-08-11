@@ -23,7 +23,6 @@ function readM3UFile(fileName) {
         lines.forEach(line => {
             line = line.trim();
             if (line.startsWith('#EXTINF:')) {
-                // Saniye cinsinden süre bilgisini al (#EXTINF:660)
                 const durationMatch = line.match(/#EXTINF:(-?\d+)/);
                 let parsedDuration = durationMatch ? parseInt(durationMatch[1]) : -1;
 
@@ -31,7 +30,7 @@ function readM3UFile(fileName) {
                 const logo = logoMatch ? logoMatch[1] : "";
 
                 const groupMatch = line.match(/group-title="([^"]+)"/);
-                const rawGroup = groupMatch ? groupMatch[1] : "Genel";
+                const rawGroup = groupMatch ? groupMatch[1] : "Filmler";
                 
                 let seriesName = rawGroup.split('-')[0].trim();
                 let season = 1;
@@ -52,14 +51,13 @@ function readM3UFile(fileName) {
                 const titleParts = line.split(',');
                 const name = titleParts.length > 1 ? titleParts[titleParts.length - 1].trim() : `${episode}. Bölüm`;
 
-                // Bölüm bazlı dinamik süre tespiti
-                let durationInSeconds = 11 * 60; // Varsayılan 11 dk
+                let durationInSeconds = 11 * 60;
                 if (parsedDuration > 0) {
                     durationInSeconds = parsedDuration;
                 } else {
                     const nameLower = name.toLowerCase();
                     if (nameLower.includes("özel") || nameLower.includes("noel") || nameLower.includes("part") || nameLower.includes("bölüm 1") || nameLower.includes("movie")) {
-                        durationInSeconds = 22 * 60; // Çift/Özel bölüm: 22 dk
+                        durationInSeconds = 22 * 60;
                     }
                 }
 
@@ -98,7 +96,6 @@ const ALPHABET_GROUPS = [
     { id: "alpha_10", name: "🔤 [ Y - Z - # ]", chars: ['y', 'z'] }
 ];
 
-// Bir kanal adının hangi alfabe kategorisine girdiğini tespit eden yardımcı fonksiyon
 function getAlphabetCategoryId(channelName) {
     if (!channelName) return "alpha_10";
     const firstChar = channelName.trim().charAt(0).toLowerCase();
@@ -108,23 +105,19 @@ function getAlphabetCategoryId(channelName) {
             return group.id;
         }
     }
-    return "alpha_10"; // Rakam veya özel semboller için varsayılan grup
+    return "alpha_10";
 }
 
-// 🕒 OTOMATİK 7/24 YAYIN MOTORU (Tüm Diziler İçin)
+// 🕒 OTOMATİK 7/24 YAYIN MOTORU
 function getSeriesLiveState(seriesNameTarget) {
     const allSeries = readM3UFile('series.m3u');
-    
-    // İstenen diziye ait tüm bölümleri filtrele
     const seriesEpisodes = allSeries.filter(item => 
         item.seriesName.toLowerCase() === seriesNameTarget.toLowerCase()
     );
 
     if (seriesEpisodes.length === 0) return null;
 
-    // Toplam yayın döngü süresi
     const totalDuration = seriesEpisodes.reduce((acc, ep) => acc + ep.durationInSeconds, 0);
-    
     const nowInSeconds = Math.floor(Date.now() / 1000);
     let currentLoopPos = nowInSeconds % totalDuration;
 
@@ -141,27 +134,17 @@ function getSeriesLiveState(seriesNameTarget) {
         }
     }
 
-    return {
-        episode: currentEpisode,
-        currentIndex: currentIndex,
-        totalEpisodes: seriesEpisodes.length
-    };
+    return { episode: currentEpisode, currentIndex, totalEpisodes: seriesEpisodes.length };
 }
 
-// 📺 Sistemdeki Tüm Dizileri Gruplayan Yardımcı Fonksiyon
 function getAllUniqueSeries() {
     const seriesItems = readM3UFile('series.m3u');
     let seriesMap = new Map();
-
     seriesItems.forEach(item => {
         if (!seriesMap.has(item.seriesName)) {
-            seriesMap.set(item.seriesName, {
-                name: item.seriesName,
-                logo: item.logo
-            });
+            seriesMap.set(item.seriesName, { name: item.seriesName, logo: item.logo });
         }
     });
-
     return Array.from(seriesMap.values());
 }
 
@@ -183,11 +166,9 @@ app.get('/player_api.php', (req, res) => {
         return res.json({ epg_listings: [] });
     }
 
-    // --- 1. CANLI TV MENÜSÜ VE KATEGORİLER ---
+    // --- 1. CANLI TV MENÜSÜ ---
     if (action === 'get_live_categories') {
         const liveItems = readM3UFile('tv.m3u');
-        
-        // 1. Orijinal Kategoriler
         let categories = [{ category_id: "724", category_name: "7/24 Canlı Diziler", parent_id: 0 }];
         
         if (liveItems.length > 0) {
@@ -195,13 +176,8 @@ app.get('/player_api.php', (req, res) => {
             cats.forEach((c, i) => categories.push({ category_id: (i + 1).toString(), category_name: c, parent_id: 0 }));
         }
 
-        // 2. Alfabe Kategorileri (Diğer tüm kategorilerin altından başlar)
         ALPHABET_GROUPS.forEach(group => {
-            categories.push({
-                category_id: group.id,
-                category_name: group.name,
-                parent_id: 0
-            });
+            categories.push({ category_id: group.id, category_name: group.name, parent_id: 0 });
         });
 
         return res.json(categories);
@@ -214,13 +190,11 @@ app.get('/player_api.php', (req, res) => {
         
         let streams = [];
 
-        // 🌟 OTOMATİK 7/24 KANAL OLUŞTURUCU (series.m3u içindeki HER dizi için 1 kanal açar)
         uniqueSeries.forEach((series, index) => {
             const liveState = getSeriesLiveState(series.name);
             const streamId = 9000 + index;
             const channelName = (liveState && liveState.episode) ? `${series.name} 7/24 TV (${liveState.episode.name})` : `${series.name} (7/24 TV)`;
 
-            // Orijinal 7/24 Kategorisindeki Yayın
             streams.push({
                 num: streams.length + 1,
                 name: channelName,
@@ -231,7 +205,6 @@ app.get('/player_api.php', (req, res) => {
                 direct_source: ""
             });
 
-            // Alfabe Kategorisine Çift Eşleme
             streams.push({
                 num: streams.length + 1,
                 name: channelName,
@@ -243,12 +216,10 @@ app.get('/player_api.php', (req, res) => {
             });
         });
 
-        // tv.m3u içindeki harici canlı TV kanalları
         liveItems.forEach((item, index) => {
             const origCatId = (cats.indexOf(item.group) + 1).toString();
             const alphaCatId = getAlphabetCategoryId(item.name);
 
-            // Orijinal Kategorideki Yayın
             streams.push({
                 num: streams.length + 1,
                 name: item.name,
@@ -259,7 +230,6 @@ app.get('/player_api.php', (req, res) => {
                 direct_source: item.url
             });
 
-            // Alfabe Kategorisindeki Çift Eşleme
             streams.push({
                 num: streams.length + 1,
                 name: item.name,
@@ -271,7 +241,6 @@ app.get('/player_api.php', (req, res) => {
             });
         });
 
-        // Eğer kullanıcı sol menüden belirli bir kategoriye tıkladıysa filtrele
         if (category_id) {
             streams = streams.filter(s => s.category_id === category_id.toString());
         }
@@ -279,11 +248,51 @@ app.get('/player_api.php', (req, res) => {
         return res.json(streams);
     }
 
-    // --- 2. MOVIE MENÜSÜ ---
-    if (action === 'get_vod_categories') return res.json([{ category_id: "1", category_name: "Film Yok", parent_id: 0 }]);
-    if (action === 'get_vod_streams') return res.json([]);
+    // --- 2. MOVIE (FILM / VOD) MENÜSÜ ---
+    if (action === 'get_vod_categories') {
+        const movieItems = readM3UFile('movie.m3u');
+        if (movieItems.length === 0) return res.json([{ category_id: "1", category_name: "Film Yok", parent_id: 0 }]);
+        
+        const cats = Array.from(new Set(movieItems.map(i => i.group)));
+        let categories = [];
+        cats.forEach((c, i) => categories.push({ category_id: (i + 1).toString(), category_name: c || "Filmler", parent_id: 0 }));
+        return res.json(categories);
+    }
 
-    // --- 3. SERIES (VOD DİZİ) MENÜSÜ ---
+    if (action === 'get_vod_streams') {
+        const movieItems = readM3UFile('movie.m3u');
+        const cats = Array.from(new Set(movieItems.map(i => i.group)));
+        let vodList = [];
+
+        movieItems.forEach((item, index) => {
+            let ext = "mp4";
+            if (item.url) {
+                if (item.url.toLowerCase().endsWith('.avi')) ext = "avi";
+                if (item.url.toLowerCase().endsWith('.ts')) ext = "ts";
+                if (item.url.toLowerCase().endsWith('.mkv')) ext = "mkv";
+            }
+
+            vodList.push({
+                num: index + 1,
+                name: item.name,
+                stream_id: index + 1001, // Filmler için 1001'den başlayan ID alanı
+                stream_type: "movie",
+                stream_icon: item.logo || "",
+                category_id: (cats.indexOf(item.group) + 1).toString(),
+                container_extension: ext,
+                rating: "8.0",
+                added: "1600000000"
+            });
+        });
+
+        if (category_id) {
+            vodList = vodList.filter(v => v.category_id === category_id.toString());
+        }
+
+        return res.json(vodList);
+    }
+
+    // --- 3. SERIES (DIZI / VOD) MENÜSÜ ---
     if (action === 'get_series_categories') {
         const seriesItems = readM3UFile('series.m3u');
         if (seriesItems.length === 0) return res.json([{ category_id: "1", category_name: "Dizi Yok", parent_id: 0 }]);
@@ -359,14 +368,14 @@ app.get('/player_api.php', (req, res) => {
     res.json([]);
 });
 
-// 🎬 OYNATMA İSTEKLERİ VE 7/24 YÖNLENDİRİCİ
+// 🎬 OYNATMA İSTEKLERİ VE YÖNLENDİRİCİ
 app.get('/:type/:user/:pass/:id', (req, res) => {
     const { user, pass, id } = req.params;
     if (user !== USERNAME || pass !== PASSWORD) return res.status(403).send("Yetkisiz Erişim");
 
     const cleanId = parseInt(id.replace(/\.[^/.]+$/, ""));
 
-    // 7/24 CANLI YAYIN KANALLARI İSTEĞİ (ID'ler 9000 ve üstü)
+    // 1. 7/24 CANLI YAYIN DİZİ KANALLARI (9000+)
     if (cleanId >= 9000) {
         const seriesIndex = cleanId - 9000;
         const uniqueSeries = getAllUniqueSeries();
@@ -384,8 +393,13 @@ app.get('/:type/:user/:pass/:id', (req, res) => {
     const movieItems = readM3UFile('movie.m3u');
     const seriesItems = readM3UFile('series.m3u');
 
+    // 2. NORMAL CANLI TV KANALLARI (1 - 900)
     if (cleanId <= 900 && tvItems[cleanId - 1]) return res.redirect(302, tvItems[cleanId - 1].url);
+    
+    // 3. FİLMLER / VOD (1001 - 1999)
     if (cleanId > 1000 && cleanId < 2000 && movieItems[cleanId - 1001]) return res.redirect(302, movieItems[cleanId - 1001].url);
+    
+    // 4. DİZİ BÖLÜMLERİ (2000+)
     if (cleanId >= 2000 && cleanId < 9000 && seriesItems[cleanId - 2000]) return res.redirect(302, seriesItems[cleanId - 2000].url);
 
     res.status(404).send("Yayın bulunamadı");
