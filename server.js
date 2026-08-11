@@ -8,7 +8,7 @@ const PORT = process.env.PORT || 3000;
 const USERNAME = "admin";
 const PASSWORD = "123";
 
-// M3U Okuyucu
+// M3U Okuyucu (HTTP, HTTPS, SMB ve FILE destekli)
 function readM3UFile(fileName) {
     try {
         const filePath = path.join(__dirname, fileName);
@@ -49,7 +49,12 @@ function readM3UFile(fileName) {
                 const name = titleParts.length > 1 ? titleParts[titleParts.length - 1].trim() : `${episode}. Bölüm`;
 
                 currentItem = { name, group: rawGroup, seriesName, logo, season, episode };
-            } else if (line.startsWith('http://') || line.startsWith('https://')) {
+            } else if (
+                line.startsWith('http://') || 
+                line.startsWith('https://') || 
+                line.startsWith('smb://') || 
+                line.startsWith('file://')
+            ) {
                 if (currentItem.name) {
                     currentItem.url = line;
                     items.push(currentItem);
@@ -220,11 +225,19 @@ app.get('/player_api.php', (req, res) => {
 
             if (!episodesObj[seasonKey]) episodesObj[seasonKey] = [];
 
+            // Dosya uzantısını dinamik belirleme (SMB/MP4 desteği için)
+            let ext = "m3u8";
+            if (ep.url && ep.url.toLowerCase().endsWith('.mp4')) {
+                ext = "mp4";
+            } else if (ep.url && ep.url.toLowerCase().endsWith('.mkv')) {
+                ext = "mkv";
+            }
+
             episodesObj[seasonKey].push({
                 id: (index + 2000).toString(),
                 episode_num: ep.episode,
                 title: ep.name,
-                container_extension: "m3u8",
+                container_extension: ext,
                 info: { duration: "11 min", plot: ep.name, movie_image: ep.logo || seriesData.cover }
             });
         });
