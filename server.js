@@ -84,6 +84,33 @@ function readM3UFile(fileName) {
     }
 }
 
+// 🔤 ALFABE KATEGORİ GRUPLARI TANIMI
+const ALPHABET_GROUPS = [
+    { id: "alpha_1", name: "🔤 [ A - B - C ]", chars: ['a', 'b', 'c'] },
+    { id: "alpha_2", name: "🔤 [ Ç - D - E ]", chars: ['ç', 'd', 'e'] },
+    { id: "alpha_3", name: "🔤 [ F - G - Ğ ]", chars: ['f', 'g', 'ğ'] },
+    { id: "alpha_4", name: "🔤 [ H - I - İ ]", chars: ['h', 'ı', 'i'] },
+    { id: "alpha_5", name: "🔤 [ J - K - L ]", chars: ['j', 'k', 'l'] },
+    { id: "alpha_6", name: "🔤 [ M - N - O ]", chars: ['m', 'n', 'o'] },
+    { id: "alpha_7", name: "🔤 [ Ö - P - R ]", chars: ['ö', 'p', 'r'] },
+    { id: "alpha_8", name: "🔤 [ S - Ş - T ]", chars: ['s', 'ş', 't'] },
+    { id: "alpha_9", name: "🔤 [ U - Ü - V ]", chars: ['u', 'ü', 'v'] },
+    { id: "alpha_10", name: "🔤 [ Y - Z - # ]", chars: ['y', 'z'] }
+];
+
+// Bir kanal adının hangi alfabe kategorisine girdiğini tespit eden yardımcı fonksiyon
+function getAlphabetCategoryId(channelName) {
+    if (!channelName) return "alpha_10";
+    const firstChar = channelName.trim().charAt(0).toLowerCase();
+
+    for (let group of ALPHABET_GROUPS) {
+        if (group.chars.includes(firstChar)) {
+            return group.id;
+        }
+    }
+    return "alpha_10"; // Rakam veya özel semboller için varsayılan grup
+}
+
 // 🕒 OTOMATİK 7/24 YAYIN MOTORU (Tüm Diziler İçin)
 function getSeriesLiveState(seriesNameTarget) {
     const allSeries = readM3UFile('series.m3u');
@@ -139,7 +166,7 @@ function getAllUniqueSeries() {
 }
 
 app.get('/player_api.php', (req, res) => {
-    const { username, password, action, series_id } = req.query;
+    const { username, password, action, series_id, category_id } = req.query;
 
     if (username !== USERNAME || password !== PASSWORD) {
         return res.status(401).json({ user_info: { auth: 0 } });
@@ -156,15 +183,27 @@ app.get('/player_api.php', (req, res) => {
         return res.json({ epg_listings: [] });
     }
 
-    // --- 1. CANLI TV MENÜSÜ ---
+    // --- 1. CANLI TV MENÜSÜ VE KATEGORİLER ---
     if (action === 'get_live_categories') {
         const liveItems = readM3UFile('tv.m3u');
+        
+        // 1. Orijinal Kategoriler
         let categories = [{ category_id: "724", category_name: "7/24 Canlı Diziler", parent_id: 0 }];
         
         if (liveItems.length > 0) {
             const cats = Array.from(new Set(liveItems.map(i => i.group)));
             cats.forEach((c, i) => categories.push({ category_id: (i + 1).toString(), category_name: c, parent_id: 0 }));
         }
+
+        // 2. Alfabe Kategorileri (Diğer tüm kategorilerin altından başlar)
+        ALPHABET_GROUPS.forEach(group => {
+            categories.push({
+                category_id: group.id,
+                category_name: group.name,
+                parent_id: 0
+            });
+        });
+
         return res.json(categories);
     }
 
@@ -178,31 +217,64 @@ app.get('/player_api.php', (req, res) => {
         // 🌟 OTOMATİK 7/24 KANAL OLUŞTURUCU (series.m3u içindeki HER dizi için 1 kanal açar)
         uniqueSeries.forEach((series, index) => {
             const liveState = getSeriesLiveState(series.name);
-            const streamId = 9000 + index; // 7/24 Kanalları için özel ID serisi
+            const streamId = 9000 + index;
+            const channelName = (liveState && liveState.episode) ? `${series.name} 7/24 TV (${liveState.episode.name})` : `${series.name} (7/24 TV)`;
 
+            // Orijinal 7/24 Kategorisindeki Yayın
             streams.push({
-                num: index + 1,
-                name: (liveState && liveState.episode) ? `${series.name} 7/24 TV (${liveState.episode.name})` : `${series.name} (7/24 TV)`,
+                num: streams.length + 1,
+                name: channelName,
                 stream_id: streamId,
                 stream_type: "live",
                 stream_icon: series.logo || "https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg",
                 category_id: "724",
                 direct_source: ""
             });
+
+            // Alfabe Kategorisine Çift Eşleme
+            streams.push({
+                num: streams.length + 1,
+                name: channelName,
+                stream_id: streamId,
+                stream_type: "live",
+                stream_icon: series.logo || "https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg",
+                category_id: getAlphabetCategoryId(series.name),
+                direct_source: ""
+            });
         });
 
         // tv.m3u içindeki harici canlı TV kanalları
         liveItems.forEach((item, index) => {
+            const origCatId = (cats.indexOf(item.group) + 1).toString();
+            const alphaCatId = getAlphabetCategoryId(item.name);
+
+            // Orijinal Kategorideki Yayın
             streams.push({
-                num: uniqueSeries.length + index + 1,
+                num: streams.length + 1,
                 name: item.name,
                 stream_id: index + 1,
                 stream_type: "live",
                 stream_icon: item.logo,
-                category_id: (cats.indexOf(item.group) + 1).toString(),
+                category_id: origCatId,
+                direct_source: item.url
+            });
+
+            // Alfabe Kategorisindeki Çift Eşleme
+            streams.push({
+                num: streams.length + 1,
+                name: item.name,
+                stream_id: index + 1,
+                stream_type: "live",
+                stream_icon: item.logo,
+                category_id: alphaCatId,
                 direct_source: item.url
             });
         });
+
+        // Eğer kullanıcı sol menüden belirli bir kategoriye tıkladıysa filtrele
+        if (category_id) {
+            streams = streams.filter(s => s.category_id === category_id.toString());
+        }
 
         return res.json(streams);
     }
