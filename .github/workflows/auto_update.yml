@@ -1,0 +1,30 @@
+name: Auto Update M3U Links
+
+on:
+  schedule:
+    # Her gece TSİ 03:00'te çalışır (UTC 00:00)
+    - cron: '0 0 * * *'
+  workflow_dispatch: # İstersen GitHub'dan "Run workflow" butonuyla elle de çalıştırabilirsin
+
+jobs:
+  update-m3u:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Depoyu Klonla
+        uses: actions/checkout@v3
+
+      - name: Python Ortamını Kur
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: M3U Güncelleme Betiğini Çalıştır
+        run: python update_m3u.py
+
+      - name: Değişiklikleri GitHub'a Otomatik Kaydet (Commit & Push)
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add tv.m3u
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Auto-update tv.m3u links" && git push)
