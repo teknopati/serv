@@ -1,7 +1,6 @@
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
-const ftp = require('basic-ftp');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -9,13 +8,6 @@ const PORT = process.env.PORT || 3000;
 // 🔐 IPTV Giriş Bilgileri
 const USERNAME = "admin";
 const PASSWORD = "123";
-
-// 🏠 EVİNİZİN DIŞ IP ADRESİ VE MODEM PORTU
-// Evinizin dış IP'si değiştiğinde SADECE buradaki IP adresini güncellemeniz yeterlidir!
-const HOME_PUBLIC_IP = "188.119.13.80";
-const HOME_FTP_PORT = 2121;
-const MODEM_FTP_USER = "admin";
-const MODEM_FTP_PASS = "Hsyndmrts4747";
 
 // 📝 M3U Okuyucu
 function readM3UFile(fileName) {
@@ -367,8 +359,8 @@ app.get('/player_api.php', (req, res) => {
     res.json([]);
 });
 
-// 🎬 OYNATMA İSTEKLERİ VE DINAMİK STREAM PROXY
-app.get('/:type/:user/:pass/:id', async (req, res) => {
+// 🎬 OYNATMA İSTEKLERİ VE YEREL AĞ YÖNLENDİRİCİSİ
+app.get('/:type/:user/:pass/:id', (req, res) => {
     const { user, pass, id } = req.params;
 
     if (user !== USERNAME || pass !== PASSWORD) {
@@ -431,38 +423,20 @@ app.get('/:type/:user/:pass/:id', async (req, res) => {
         return res.status(404).send("Yayın bulunamadı");
     }
 
-    // 🟢 EĞER HARİCİ WEB ADRESİ İSE DİREKT YÖNLENDİR (HTTP/HTTPS)
+    // 🟢 EĞER HARİCİ İNTERNET ADRESİ İSE DİREKT YÖNLENDİR (HTTP/HTTPS)
     if (targetPath.startsWith('http://') || targetPath.startsWith('https://')) {
         return res.redirect(302, targetPath);
     }
 
-    // 🟢 LOCAL DOSYA VEYA FTP YOLU İSE EVDEKİ MODEME DİNAMİK OLARAK BAĞLAN
-    let cleanFilePath = targetPath.replace(/^(ftp:\/\/|smb:\/\/|file:\/\/)?([^\/]+@)?[^\/]+\//, '');
-    if (!cleanFilePath.startsWith('/')) {
-        cleanFilePath = '/' + cleanFilePath;
+    // 🟢 YEREL MODEM DOSYA YOLU YÖNLENDİRMESİ
+    // Temizlenen dosya yolunu evdeki modem IP'sine bağlar ve televizyona iletir.
+    let cleanPath = targetPath.replace(/^(ftp:\/\/|http:\/\/|smb:\/\/)?([^\/]+@)?[^\/]+\//, '');
+    if (!cleanPath.startsWith('/')) {
+        cleanPath = '/' + cleanPath;
     }
-    
-    const client = new ftp.Client();
-    client.ftp.verbose = false;
 
-    try {
-        await client.access({
-            host: HOME_PUBLIC_IP,
-            port: HOME_FTP_PORT,
-            user: MODEM_FTP_USER,
-            password: MODEM_FTP_PASS,
-            secure: false
-        });
-
-        res.setHeader('Content-Type', 'video/mp4');
-        await client.downloadToSocket(res, cleanFilePath);
-        client.close();
-        return;
-    } catch (err) {
-        console.error("FTP Akış Hatası:", err);
-        client.close();
-        return res.status(500).send("Video akışı sağlanamadı.");
-    }
+    const localUrl = `http://192.168.1.1${cleanPath}`;
+    return res.redirect(302, localUrl);
 });
 
 app.listen(PORT, () => console.log(`Sunucu ${PORT} portunda çalışıyor.`));
