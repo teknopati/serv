@@ -1,15 +1,23 @@
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
-const ftp = require('basic-ftp'); // 🟢 FTP Stream Proxy için eklendi
+const ftp = require('basic-ftp');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// 🔐 IPTV Giriş Bilgileri
 const USERNAME = "admin";
 const PASSWORD = "123";
 
-// 📝 M3U Okuyucu (HTTP, HTTPS, SMB, FTP, FILE ve Süre Destekli)
+// 🏠 EVİNİZİN DIŞ IP ADRESİ VE MODEM PORTU
+// Evinizin dış IP'si değiştiğinde SADECE buradaki IP adresini güncellemeniz yeterlidir!
+const HOME_PUBLIC_IP = "188.119.13.80";
+const HOME_FTP_PORT = 2121;
+const MODEM_FTP_USER = "admin";
+const MODEM_FTP_PASS = "Hsyndmrts4747";
+
+// 📝 M3U Okuyucu
 function readM3UFile(fileName) {
     try {
         const filePath = path.join(__dirname, fileName);
@@ -63,13 +71,7 @@ function readM3UFile(fileName) {
                 }
 
                 currentItem = { name, group: rawGroup, seriesName, logo, season, episode, durationInSeconds };
-            } else if (
-                line.startsWith('http://') || 
-                line.startsWith('https://') || 
-                line.startsWith('smb://') || 
-                line.startsWith('ftp://') ||
-                line.startsWith('file://')
-            ) {
+            } else if (line && !line.startsWith('#')) {
                 if (currentItem.name) {
                     currentItem.url = line;
                     items.push(currentItem);
@@ -150,6 +152,7 @@ function getAllUniqueSeries() {
     return Array.from(seriesMap.values());
 }
 
+// 📺 XTREAM PLAYER API ENDPOINT
 app.get('/player_api.php', (req, res) => {
     const { username, password, action, series_id, category_id } = req.query;
 
@@ -364,7 +367,7 @@ app.get('/player_api.php', (req, res) => {
     res.json([]);
 });
 
-// 🎬 OYNATMA İSTEKLERİ VE YÖNLENDİRİCİ
+// 🎬 OYNATMA İSTEKLERİ VE DINAMİK STREAM PROXY
 app.get('/:type/:user/:pass/:id', async (req, res) => {
     const { user, pass, id } = req.params;
 
@@ -378,8 +381,7 @@ app.get('/:type/:user/:pass/:id', async (req, res) => {
     }
 
     const cleanId = parseInt(cleanIdMatch[1]);
-
-    let targetUrl = null;
+    let targetPath = null;
 
     // 1. 7/24 CANLI YAYIN DİZİ KANALLARI (9000+)
     if (cleanId >= 9000) {
@@ -390,7 +392,7 @@ app.get('/:type/:user/:pass/:id', async (req, res) => {
         if (targetSeries) {
             const liveState = getSeriesLiveState(targetSeries.name);
             if (liveState && liveState.episode && liveState.episode.url) {
-                targetUrl = liveState.episode.url;
+                targetPath = liveState.episode.url;
             }
         }
     }
@@ -400,17 +402,17 @@ app.get('/:type/:user/:pass/:id', async (req, res) => {
     const seriesItems = readM3UFile('series.m3u');
 
     // 2. NORMAL CANLI TV KANALLARI (1 - 900)
-    if (!targetUrl && cleanId <= 900 && tvItems[cleanId - 1]) {
-        targetUrl = tvItems[cleanId - 1].url;
+    if (!targetPath && cleanId <= 900 && tvItems[cleanId - 1]) {
+        targetPath = tvItems[cleanId - 1].url;
     }
     
     // 3. FİLMLER / VOD (1001 - 1999)
-    if (!targetUrl && cleanId > 1000 && cleanId < 2000 && movieItems[cleanId - 1001]) {
-        targetUrl = movieItems[cleanId - 1001].url;
+    if (!targetPath && cleanId > 1000 && cleanId < 2000 && movieItems[cleanId - 1001]) {
+        targetPath = movieItems[cleanId - 1001].url;
     }
     
     // 4. DİZİ BÖLÜMLERİ (Series VOD)
-    if (!targetUrl && cleanId >= 10000) {
+    if (!targetPath && cleanId >= 10000) {
         const seriesIndex = Math.floor(cleanId / 10000) - 1;
         const episodeIndex = (cleanId % 10000) - 1;
         
@@ -420,44 +422,47 @@ app.get('/:type/:user/:pass/:id', async (req, res) => {
         if (targetSeries) {
             const targetEpisodes = seriesItems.filter(item => item.seriesName.toLowerCase() === targetSeries.name.toLowerCase());
             if (targetEpisodes[episodeIndex] && targetEpisodes[episodeIndex].url) {
-                targetUrl = targetEpisodes[episodeIndex].url;
+                targetPath = targetEpisodes[episodeIndex].url;
             }
         }
     }
 
-    if (!targetUrl) {
+    if (!targetPath) {
         return res.status(404).send("Yayın bulunamadı");
     }
 
-    // 🟢 FTP ADRESLERİNİ Doğrudan HTTP STREAM PROXY OLARAK YAYINLA
-    if (targetUrl.startsWith('ftp://')) {
-        const client = new ftp.Client();
-        client.ftp.verbose = false;
-
-        try {
-            const parsedUrl = new URL(targetUrl);
-            
-            await client.access({
-                host: parsedUrl.hostname,
-                port: parsedUrl.port ? parseInt(parsedUrl.port) : 21,
-                user: parsedUrl.username ? decodeURIComponent(parsedUrl.username) : 'admin',
-                password: parsedUrl.password ? decodeURIComponent(parsedUrl.password) : '',
-                secure: false
-            });
-
-            res.setHeader('Content-Type', 'video/mp4');
-            await client.downloadToSocket(res, decodeURIComponent(parsedUrl.pathname));
-            client.close();
-            return;
-        } catch (err) {
-            console.error("FTP Proxy Hatası:", err);
-            client.close();
-            return res.status(500).send("Video akışı sağlanamadı.");
-        }
+    // 🟢 EĞER HARİCİ WEB ADRESİ İSE DİREKT YÖNLENDİR (HTTP/HTTPS)
+    if (targetPath.startsWith('http://') || targetPath.startsWith('https://')) {
+        return res.redirect(302, targetPath);
     }
 
-    // Normal HTTP/HTTPS ve SMB bağlantıları için direkt yönlendirme
-    res.redirect(302, targetUrl);
+    // 🟢 LOCAL DOSYA VEYA FTP YOLU İSE EVDEKİ MODEME DİNAMİK OLARAK BAĞLAN
+    let cleanFilePath = targetPath.replace(/^(ftp:\/\/|smb:\/\/|file:\/\/)?([^\/]+@)?[^\/]+\//, '');
+    if (!cleanFilePath.startsWith('/')) {
+        cleanFilePath = '/' + cleanFilePath;
+    }
+    
+    const client = new ftp.Client();
+    client.ftp.verbose = false;
+
+    try {
+        await client.access({
+            host: HOME_PUBLIC_IP,
+            port: HOME_FTP_PORT,
+            user: MODEM_FTP_USER,
+            password: MODEM_FTP_PASS,
+            secure: false
+        });
+
+        res.setHeader('Content-Type', 'video/mp4');
+        await client.downloadToSocket(res, cleanFilePath);
+        client.close();
+        return;
+    } catch (err) {
+        console.error("FTP Akış Hatası:", err);
+        client.close();
+        return res.status(500).send("Video akışı sağlanamadı.");
+    }
 });
 
 app.listen(PORT, () => console.log(`Sunucu ${PORT} portunda çalışıyor.`));
