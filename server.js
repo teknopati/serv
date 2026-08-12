@@ -1,6 +1,7 @@
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
+const ftp = require('basic-ftp'); // 🟢 FTP Stream Proxy için eklendi
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -8,7 +9,7 @@ const PORT = process.env.PORT || 3000;
 const USERNAME = "admin";
 const PASSWORD = "123";
 
-// 📝 M3U Okuyucu (HTTP, HTTPS, SMB, FILE ve Süre Destekli)
+// 📝 M3U Okuyucu (HTTP, HTTPS, SMB, FTP, FILE ve Süre Destekli)
 function readM3UFile(fileName) {
     try {
         const filePath = path.join(__dirname, fileName);
@@ -364,7 +365,7 @@ app.get('/player_api.php', (req, res) => {
 });
 
 // 🎬 OYNATMA İSTEKLERİ VE YÖNLENDİRİCİ
-app.get('/:type/:user/:pass/:id', (req, res) => {
+app.get('/:type/:user/:pass/:id', async (req, res) => {
     const { user, pass, id } = req.params;
 
     if (user !== USERNAME || pass !== PASSWORD) {
@@ -428,15 +429,34 @@ app.get('/:type/:user/:pass/:id', (req, res) => {
         return res.status(404).send("Yayın bulunamadı");
     }
 
-// 🟢 FTP / SMB İçin Doğrudan HTTP Stream / Port Yönlendirmesi
-    if (targetUrl.startsWith('smb://') || targetUrl.startsWith('ftp://')) {
-        // Kullanıcı adı ve şifreli yerel ağ adreslerini doğrudan HTTP isteğine uyarlar
-        return res.redirect(302, targetUrl);
+    // 🟢 FTP ADRESLERİNİ Doğrudan HTTP STREAM PROXY OLARAK YAYINLA
+    if (targetUrl.startsWith('ftp://')) {
+        const client = new ftp.Client();
+        client.ftp.verbose = false;
+
+        try {
+            const parsedUrl = new URL(targetUrl);
+            
+            await client.access({
+                host: parsedUrl.hostname,
+                port: parsedUrl.port ? parseInt(parsedUrl.port) : 21,
+                user: parsedUrl.username ? decodeURIComponent(parsedUrl.username) : 'admin',
+                password: parsedUrl.password ? decodeURIComponent(parsedUrl.password) : '',
+                secure: false
+            });
+
+            res.setHeader('Content-Type', 'video/mp4');
+            await client.downloadToSocket(res, decodeURIComponent(parsedUrl.pathname));
+            client.close();
+            return;
+        } catch (err) {
+            console.error("FTP Proxy Hatası:", err);
+            client.close();
+            return res.status(500).send("Video akışı sağlanamadı.");
+        }
     }
 
-    res.redirect(302, targetUrl);
-
-    // Normal HTTP/HTTPS bağlantıları direkt yönlendirilir
+    // Normal HTTP/HTTPS ve SMB bağlantıları için direkt yönlendirme
     res.redirect(302, targetUrl);
 });
 
