@@ -66,6 +66,7 @@ function readM3UFile(fileName) {
                 line.startsWith('http://') || 
                 line.startsWith('https://') || 
                 line.startsWith('smb://') || 
+                line.startsWith('ftp://') ||
                 line.startsWith('file://')
             ) {
                 if (currentItem.name) {
