@@ -190,14 +190,12 @@ app.get('/player_api.php', (req, res) => {
         
         let streams = [];
 
-        // 7/24 Dizi Kanalları
         uniqueSeries.forEach((series, index) => {
             const liveState = getSeriesLiveState(series.name);
             const streamId = 9000 + index;
             const channelName = (liveState && liveState.episode) ? `${series.name} 7/24 TV (${liveState.episode.name})` : `${series.name} (7/24 TV)`;
             const alphaCat = getAlphabetCategoryId(series.name);
 
-            // Eğer belirli bir alfabe kategorisine tıklandıysa o kategorinin ID'sini ver, yoksa 724
             let targetCatId = "724";
             if (category_id && category_id.toString().startsWith("alpha_")) {
                 targetCatId = alphaCat;
@@ -214,7 +212,6 @@ app.get('/player_api.php', (req, res) => {
             });
         });
 
-        // tv.m3u Canlı TV Kanalları
         liveItems.forEach((item, index) => {
             const origCatId = (cats.indexOf(item.group) + 1).toString();
             const alphaCatId = getAlphabetCategoryId(item.name);
@@ -236,7 +233,6 @@ app.get('/player_api.php', (req, res) => {
             });
         });
 
-        // Kategori Filtrelemesi (Çiftlemeyi önler)
         if (category_id) {
             streams = streams.filter(s => s.category_id === category_id.toString());
         }
@@ -337,7 +333,6 @@ app.get('/player_api.php', (req, res) => {
             if (ep.url && ep.url.toLowerCase().endsWith('.mkv')) ext = "mkv";
             if (ep.url && ep.url.toLowerCase().endsWith('.m3u8')) ext = "m3u8";
 
-            // Benzersiz Bölüm ID Tanımı
             const globalEpisodeId = (targetId * 10000) + index + 1;
 
             episodesObj[seasonKey].push({
@@ -382,6 +377,8 @@ app.get('/:type/:user/:pass/:id', (req, res) => {
 
     const cleanId = parseInt(cleanIdMatch[1]);
 
+    let targetUrl = null;
+
     // 1. 7/24 CANLI YAYIN DİZİ KANALLARI (9000+)
     if (cleanId >= 9000) {
         const seriesIndex = cleanId - 9000;
@@ -391,7 +388,7 @@ app.get('/:type/:user/:pass/:id', (req, res) => {
         if (targetSeries) {
             const liveState = getSeriesLiveState(targetSeries.name);
             if (liveState && liveState.episode && liveState.episode.url) {
-                return res.redirect(302, liveState.episode.url);
+                targetUrl = liveState.episode.url;
             }
         }
     }
@@ -401,13 +398,17 @@ app.get('/:type/:user/:pass/:id', (req, res) => {
     const seriesItems = readM3UFile('series.m3u');
 
     // 2. NORMAL CANLI TV KANALLARI (1 - 900)
-    if (cleanId <= 900 && tvItems[cleanId - 1]) return res.redirect(302, tvItems[cleanId - 1].url);
+    if (!targetUrl && cleanId <= 900 && tvItems[cleanId - 1]) {
+        targetUrl = tvItems[cleanId - 1].url;
+    }
     
     // 3. FİLMLER / VOD (1001 - 1999)
-    if (cleanId > 1000 && cleanId < 2000 && movieItems[cleanId - 1001]) return res.redirect(302, movieItems[cleanId - 1001].url);
+    if (!targetUrl && cleanId > 1000 && cleanId < 2000 && movieItems[cleanId - 1001]) {
+        targetUrl = movieItems[cleanId - 1001].url;
+    }
     
     // 4. DİZİ BÖLÜMLERİ (Series VOD)
-    if (cleanId >= 10000) {
+    if (!targetUrl && cleanId >= 10000) {
         const seriesIndex = Math.floor(cleanId / 10000) - 1;
         const episodeIndex = (cleanId % 10000) - 1;
         
@@ -417,12 +418,24 @@ app.get('/:type/:user/:pass/:id', (req, res) => {
         if (targetSeries) {
             const targetEpisodes = seriesItems.filter(item => item.seriesName.toLowerCase() === targetSeries.name.toLowerCase());
             if (targetEpisodes[episodeIndex] && targetEpisodes[episodeIndex].url) {
-                return res.redirect(302, targetEpisodes[episodeIndex].url);
+                targetUrl = targetEpisodes[episodeIndex].url;
             }
         }
     }
 
-    res.status(404).send("Yayın bulunamadı");
+    if (!targetUrl) {
+        return res.status(404).send("Yayın bulunamadı");
+    }
+
+    // 🟢 SMB DÖNÜŞTÜRÜCÜ & HTTP PROXY YÖNLENDİRİCİSİ
+    // Eğer hedef adres SMB (smb://admin:pass@ip/volume...) ise adresi doğrudan geçirmek yerine Stream Proxy yapar
+    if (targetUrl.startsWith('smb://')) {
+        // smb:// kullanıcı/şifre yapısını doğrudan yönlendirme adresine temiz uyarlar
+        return res.redirect(302, targetUrl);
+    }
+
+    // Normal HTTP/HTTPS bağlantıları direkt yönlendirilir
+    res.redirect(302, targetUrl);
 });
 
 app.listen(PORT, () => console.log(`Sunucu ${PORT} portunda çalışıyor.`));
