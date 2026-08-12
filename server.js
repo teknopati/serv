@@ -190,10 +190,18 @@ app.get('/player_api.php', (req, res) => {
         
         let streams = [];
 
+        // 7/24 Dizi Kanalları
         uniqueSeries.forEach((series, index) => {
             const liveState = getSeriesLiveState(series.name);
             const streamId = 9000 + index;
             const channelName = (liveState && liveState.episode) ? `${series.name} 7/24 TV (${liveState.episode.name})` : `${series.name} (7/24 TV)`;
+            const alphaCat = getAlphabetCategoryId(series.name);
+
+            // Eğer belirli bir alfabe kategorisine tıklandıysa o kategorinin ID'sini ver, yoksa 724
+            let targetCatId = "724";
+            if (category_id && category_id.toString().startsWith("alpha_")) {
+                targetCatId = alphaCat;
+            }
 
             streams.push({
                 num: streams.length + 1,
@@ -201,46 +209,34 @@ app.get('/player_api.php', (req, res) => {
                 stream_id: streamId,
                 stream_type: "live",
                 stream_icon: series.logo || "https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg",
-                category_id: "724",
-                direct_source: ""
-            });
-
-            streams.push({
-                num: streams.length + 1,
-                name: channelName,
-                stream_id: streamId,
-                stream_type: "live",
-                stream_icon: series.logo || "https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg",
-                category_id: getAlphabetCategoryId(series.name),
+                category_id: targetCatId,
                 direct_source: ""
             });
         });
 
+        // tv.m3u Canlı TV Kanalları
         liveItems.forEach((item, index) => {
             const origCatId = (cats.indexOf(item.group) + 1).toString();
             const alphaCatId = getAlphabetCategoryId(item.name);
+            const streamId = index + 1;
+
+            let targetCatId = origCatId;
+            if (category_id && category_id.toString().startsWith("alpha_")) {
+                targetCatId = alphaCatId;
+            }
 
             streams.push({
                 num: streams.length + 1,
                 name: item.name,
-                stream_id: index + 1,
+                stream_id: streamId,
                 stream_type: "live",
                 stream_icon: item.logo,
-                category_id: origCatId,
-                direct_source: item.url
-            });
-
-            streams.push({
-                num: streams.length + 1,
-                name: item.name,
-                stream_id: index + 1,
-                stream_type: "live",
-                stream_icon: item.logo,
-                category_id: alphaCatId,
+                category_id: targetCatId,
                 direct_source: item.url
             });
         });
 
+        // Kategori Filtrelemesi (Çiftlemeyi önler)
         if (category_id) {
             streams = streams.filter(s => s.category_id === category_id.toString());
         }
@@ -275,7 +271,7 @@ app.get('/player_api.php', (req, res) => {
             vodList.push({
                 num: index + 1,
                 name: item.name,
-                stream_id: index + 1001, // Filmler için 1001'den başlayan ID alanı
+                stream_id: index + 1001,
                 stream_type: "movie",
                 stream_icon: item.logo || "",
                 category_id: (cats.indexOf(item.group) + 1).toString(),
@@ -341,8 +337,11 @@ app.get('/player_api.php', (req, res) => {
             if (ep.url && ep.url.toLowerCase().endsWith('.mkv')) ext = "mkv";
             if (ep.url && ep.url.toLowerCase().endsWith('.m3u8')) ext = "m3u8";
 
+            // Benzersiz Bölüm ID Tanımı
+            const globalEpisodeId = (targetId * 10000) + index + 1;
+
             episodesObj[seasonKey].push({
-                id: (index + 2000).toString(),
+                id: globalEpisodeId.toString(),
                 episode_num: ep.episode,
                 title: ep.name,
                 container_extension: ext,
@@ -371,9 +370,17 @@ app.get('/player_api.php', (req, res) => {
 // 🎬 OYNATMA İSTEKLERİ VE YÖNLENDİRİCİ
 app.get('/:type/:user/:pass/:id', (req, res) => {
     const { user, pass, id } = req.params;
-    if (user !== USERNAME || pass !== PASSWORD) return res.status(403).send("Yetkisiz Erişim");
 
-    const cleanId = parseInt(id.replace(/\.[^/.]+$/, ""));
+    if (user !== USERNAME || pass !== PASSWORD) {
+        return res.status(403).send("Yetkisiz Erişim");
+    }
+
+    const cleanIdMatch = id.match(/^(\d+)/);
+    if (!cleanIdMatch) {
+        return res.status(400).send("Geçersiz Yayın ID");
+    }
+
+    const cleanId = parseInt(cleanIdMatch[1]);
 
     // 1. 7/24 CANLI YAYIN DİZİ KANALLARI (9000+)
     if (cleanId >= 9000) {
@@ -399,8 +406,21 @@ app.get('/:type/:user/:pass/:id', (req, res) => {
     // 3. FİLMLER / VOD (1001 - 1999)
     if (cleanId > 1000 && cleanId < 2000 && movieItems[cleanId - 1001]) return res.redirect(302, movieItems[cleanId - 1001].url);
     
-    // 4. DİZİ BÖLÜMLERİ (2000+)
-    if (cleanId >= 2000 && cleanId < 9000 && seriesItems[cleanId - 2000]) return res.redirect(302, seriesItems[cleanId - 2000].url);
+    // 4. DİZİ BÖLÜMLERİ (Series VOD)
+    if (cleanId >= 10000) {
+        const seriesIndex = Math.floor(cleanId / 10000) - 1;
+        const episodeIndex = (cleanId % 10000) - 1;
+        
+        const uniqueSeries = getAllUniqueSeries();
+        const targetSeries = uniqueSeries[seriesIndex];
+
+        if (targetSeries) {
+            const targetEpisodes = seriesItems.filter(item => item.seriesName.toLowerCase() === targetSeries.name.toLowerCase());
+            if (targetEpisodes[episodeIndex] && targetEpisodes[episodeIndex].url) {
+                return res.redirect(302, targetEpisodes[episodeIndex].url);
+            }
+        }
+    }
 
     res.status(404).send("Yayın bulunamadı");
 });
