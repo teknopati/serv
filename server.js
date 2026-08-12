@@ -428,12 +428,13 @@ app.get('/:type/:user/:pass/:id', (req, res) => {
         return res.status(404).send("Yayın bulunamadı");
     }
 
-    // 🟢 SMB DÖNÜŞTÜRÜCÜ & HTTP PROXY YÖNLENDİRİCİSİ
-    // Eğer hedef adres SMB (smb://admin:pass@ip/volume...) ise adresi doğrudan geçirmek yerine Stream Proxy yapar
-    if (targetUrl.startsWith('smb://')) {
-        // smb:// kullanıcı/şifre yapısını doğrudan yönlendirme adresine temiz uyarlar
+// 🟢 FTP / SMB İçin Doğrudan HTTP Stream / Port Yönlendirmesi
+    if (targetUrl.startsWith('smb://') || targetUrl.startsWith('ftp://')) {
+        // Kullanıcı adı ve şifreli yerel ağ adreslerini doğrudan HTTP isteğine uyarlar
         return res.redirect(302, targetUrl);
     }
+
+    res.redirect(302, targetUrl);
 
     // Normal HTTP/HTTPS bağlantıları direkt yönlendirilir
     res.redirect(302, targetUrl);
