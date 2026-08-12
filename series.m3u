@@ -2,7 +2,7 @@
 
 # ================= SEZON 1 =================
 #EXTINF:-1 tvg-name="S01E01" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 1", SurekliDizi - Sezon 1 Bölüm 1
-ftp://admin:Hsyndmrts4747@188.119.13.80:2121/volume(sda1)/Diziler/SurekliDizi/1-1.mp4
+volume(sda1)/Diziler/SurekliDizi/1-1.mp4
 
 #EXTINF:-1 tvg-name="S01E02" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 1", SurekliDizi - Sezon 1 Bölüm 2
 ftp://admin:Hsyndmrts4747@192.168.1.1:21/volume(sda1)/Diziler/SurekliDizi/1-2.mp4
