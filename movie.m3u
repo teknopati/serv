@@ -1,85 +1,85 @@
 #EXTM3U
 
 #EXTINF:-1 tvg-name="Av Mevsimi" tvg-logo="https://cdn.sinemalar.com/images/movie/82643/poster/av-mevsimi-1660917865_225x336.jpg" group-title="Filmler", Av Mevsimi
-ftp://admin:Hsyndmrts4747@192.168.1.1:21/volume(sda1)/Filmler/Av Mevsimi.mp4
+volume(sda1)/Filmler/Av Mevsimi.mp4
 
 #EXTINF:-1 tvg-name="Babam Ve Oğlum" tvg-logo="https://m.media-amazon.com/images/S/pv-target-images/71abe771121ef33a8183f6ebcf29e04ae0e4a936532b5225fdf461e684554a67.jpg" group-title="Filmler", Babam Ve Oğlum
-ftp://admin:Hsyndmrts4747@192.168.1.1:21/volume(sda1)/Filmler/Babam Ve Oğlum.mp4
+volume(sda1)/Filmler/Babam Ve Oğlum.mp4
 
 #EXTINF:-1 tvg-name="Dedemin İnsanları" tvg-logo="https://cdn.sinemalar.com/images/movie/165883/poster/dedemin-insanlari-1660920782.jpg" group-title="Filmler", Dedemin İnsanları
-ftp://admin:Hsyndmrts4747@192.168.1.1:21/volume(sda1)/Filmler/Dedemin İnsanları.mp4
+volume(sda1)/Filmler/Dedemin İnsanları.mp4
 
 #EXTINF:-1 tvg-name="Eşkıya" tvg-logo="https://image.tmdb.org/t/p/original/y15l8sCWivMbz48CrVhodJtMtWa.jpg" group-title="Filmler", Eşkıya
-ftp://admin:Hsyndmrts4747@192.168.1.1:21/volume(sda1)/Filmler/Eşkıya.mp4
+volume(sda1)/Filmler/Eşkıya.mp4
 
 #EXTINF:-1 tvg-name="Gönül Yarası" tvg-logo="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRT8ul5o8Xxya-JQwEvKQjafY99jasPeMH244PB79F66g&s=10" group-title="Filmler", Gönül Yarası
-ftp://admin:Hsyndmrts4747@192.168.1.1:21/volume(sda1)/Filmler/Gönül Yarası.mp4
+volume(sda1)/Filmler/Gönül Yarası.mp4
 
 #EXTINF:-1 tvg-name="Green Book" tvg-logo="https://m.media-amazon.com/images/S/pv-target-images/152cb27107a339c0828b8d576dac1b65cde898744ad0f0b4e49f06770c2103e8.jpg" group-title="Filmler", Green Book
-ftp://admin:Hsyndmrts4747@192.168.1.1:21/volume(sda1)/Filmler/Green Book.avi
+volume(sda1)/Filmler/Green Book.avi
 
 #EXTINF:-1 tvg-name="Interstellar (2014)" tvg-logo="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRM7rWuKNCcg9dKXD2dW5ALwCJZavhWkl6CvW12VoIm56QSpBBzGnSROx-5&s=10" group-title="Filmler", Interstellar (2014)
-ftp://admin:Hsyndmrts4747@192.168.1.1:21/volume(sda1)/Filmler/Interstellar (2014).mp4
+volume(sda1)/Filmler/Interstellar (2014).mp4
 
 #EXTINF:-1 tvg-name="Kader" tvg-logo="https://i.pinimg.com/474x/e5/4b/94/e54b94e876d0d9eeebc5b3c83c0573f0.jpg" group-title="Filmler", Kader
-ftp://admin:Hsyndmrts4747@192.168.1.1:21/volume(sda1)/Filmler/Kader.mp4
+volume(sda1)/Filmler/Kader.mp4
 
 #EXTINF:-1 tvg-name="Kelebeğin Rüyası" tvg-logo="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSKIkMZvOHvWQeh5e2nn0AQcn2ylHpqKaPVXc4GL_peDw&s=10" group-title="Filmler", Kelebeğin Rüyası
-ftp://admin:Hsyndmrts4747@192.168.1.1:21/volume(sda1)/Filmler/Kelebeğin Rüyası.mp4
+volume(sda1)/Filmler/Kelebeğin Rüyası.mp4
 
 #EXTINF:-1 tvg-name="Kingdom of Heaven" tvg-logo="https://iaftm.tmgrup.com.tr/a262e0/0/0/0/0/666/1000?u=https://iftm.tmgrup.com.tr/2022/05/04/cennetin-kralligi-film-konusu-nedir-oyunculari-kimler-cennetin-kralligi-kingdom-of-heaven-filmi-nerede-ne-zama-1651653404016.jpg&mw=700" group-title="Filmler", Kingdom of Heaven
-ftp://admin:Hsyndmrts4747@192.168.1.1:21/volume(sda1)/Filmler/Kingdom of Heaven.avi
+volume(sda1)/Filmler/Kingdom of Heaven.avi
 
 #EXTINF:-1 tvg-name="Persona" tvg-logo="https://s3.amazonaws.com/criterion-production/films/d5c135c95f58e74e2ee28cb92659bafd/DoD5SlisIFjKyi0zucupnwj2B3ADGy_large.jpg" group-title="Filmler", Persona
-ftp://admin:Hsyndmrts4747@192.168.1.1:21/volume(sda1)/Filmler/Persona.ts
+volume(sda1)/Filmler/Persona.ts
 
 #EXTINF:-1 tvg-name="Rain Man" tvg-logo="https://blob.cede.com/catalog/10059000/10059522_1_92.jpg?v=1" group-title="Filmler", Rain Man
-ftp://admin:Hsyndmrts4747@192.168.1.1:21/volume(sda1)/Filmler/Rain Man.mp4
+volume(sda1)/Filmler/Rain Man.mp4
 
 #EXTINF:-1 tvg-name="Requiem for a Dream" tvg-logo="https://upload.wikimedia.org/wikipedia/en/3/39/Kronos_requiem.jpg" group-title="Filmler", Requiem for a Dream
-ftp://admin:Hsyndmrts4747@192.168.1.1:21/volume(sda1)/Filmler/Requiem for a Dream.ts
+volume(sda1)/Filmler/Requiem for a Dream.ts
 
 #EXTINF:-1 tvg-name="Scarface" tvg-logo="https://media.themoviedb.org/t/p/w500/iQ5ztdjvteGeboxtmRdXEChJOHh.jpg" group-title="Filmler", Scarface
-ftp://admin:Hsyndmrts4747@192.168.1.1:21/volume(sda1)/Filmler/Scarface.mp4
+volume(sda1)/Filmler/Scarface.mp4
 
 #EXTINF:-1 tvg-name="Sen Aydınlatırsın Geceyi" tvg-logo="https://upload.wikimedia.org/wikipedia/tr/b/b9/Sen_Ayd%C4%B1nlat%C4%B1rs%C4%B1n_Geceyi.jpeg" group-title="Filmler", Sen Aydınlatırsın Geceyi
-ftp://admin:Hsyndmrts4747@192.168.1.1:21/volume(sda1)/Filmler/Sen Aydınlatırsın Geceyi.mp4
+volume(sda1)/Filmler/Sen Aydınlatırsın Geceyi.mp4
 
 #EXTINF:-1 tvg-name="Tabutta Rövaşata" tvg-logo="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS9dTaVXVJA_lV7NwVEmSLpk5Bo_Qt364MV1v2Hnl12HunPogswdEEvhCA&s=10" group-title="Filmler", Tabutta Rövaşata
-ftp://admin:Hsyndmrts4747@192.168.1.1:21/volume(sda1)/Filmler/Tabutta Rövaşata.mp4
+volume(sda1)/Filmler/Tabutta Rövaşata.mp4
 
 #EXTINF:-1 tvg-name="Ters Yüz" tvg-logo="https://upload.wikimedia.org/wikipedia/tr/2/29/Ters_Y%C3%BCz_-_afi%C5%9F.jpg?utm_source=tr.wikipedia.org&utm_campaign=index&utm_content=original" group-title="Filmler", Ters Yüz
-ftp://admin:Hsyndmrts4747@192.168.1.1:21/volume(sda1)/Filmler/Ters Yüz.mp4
+volume(sda1)/Filmler/Ters Yüz.mp4
 
 #EXTINF:-1 tvg-name="Ters Yüz 2" tvg-logo="https://cdn-web.marsgate.tr/342//files/movie_posters/HO00006367_638463863135896921_ters-yuz-2.png" group-title="Filmler", Ters Yüz 2
-ftp://admin:Hsyndmrts4747@192.168.1.1:21/volume(sda1)/Filmler/Ters Yüz 2.mp4
+volume(sda1)/Filmler/Ters Yüz 2.mp4
 
 #EXTINF:-1 tvg-name="The Departed" tvg-logo="https://cdn.sinemalar.com/images/movie/218/poster/kostebek-1660915232.jpg" group-title="Filmler", The Departed
-ftp://admin:Hsyndmrts4747@192.168.1.1:21/volume(sda1)/Filmler/The Departed.mp4
+volume(sda1)/Filmler/The Departed.mp4
 
 #EXTINF:-1 tvg-name="The Devils Advocate" tvg-logo="https://image.tmdb.org/t/p/original/oWAgga8zBHP1NVU5D9SOCtTNt7.jpg" group-title="Filmler", The Devils Advocate
-ftp://admin:Hsyndmrts4747@192.168.1.1:21/volume(sda1)/Filmler/The Devils Advocate.mp4
+volume(sda1)/Filmler/The Devils Advocate.mp4
 
 #EXTINF:-1 tvg-name="The Godfather" tvg-logo="https://m.media-amazon.com/images/M/MV5BNGEwYjgwOGQtYjg5ZS00Njc1LTk2ZGEtM2QwZWQ2NjdhZTE5XkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg" group-title="Filmler", The Godfather
-ftp://admin:Hsyndmrts4747@192.168.1.1:21/volume(sda1)/Filmler/The Godfather.mp4
+volume(sda1)/Filmler/The Godfather.mp4
 
 #EXTINF:-1 tvg-name="The Godfather Part II" tvg-logo="https://m.media-amazon.com/images/M/MV5BMDIxMzBlZDktZjMxNy00ZGI4LTgxNDEtYWRlNzRjMjJmOGQ1XkEyXkFqcGc@._V1_.jpg" group-title="Filmler", The Godfather Part II
-ftp://admin:Hsyndmrts4747@192.168.1.1:21/volume(sda1)/Filmler/The Godfather Part II.mp4
+volume(sda1)/Filmler/The Godfather Part II.mp4
 
 #EXTINF:-1 tvg-name="The Godfather Part III (1990)" tvg-logo="https://m.media-amazon.com/images/M/MV5BMDVjODgzNTEtNjBiNS00ODBjLWEwZjUtMDljZTFhOTA4M2MxXkEyXkFqcGc@._V1_.jpg" group-title="Filmler", The Godfather Part III (1990)
-ftp://admin:Hsyndmrts4747@192.168.1.1:21/volume(sda1)/Filmler/The Godfather Part III (1990).mp4
+volume(sda1)/Filmler/The Godfather Part III (1990).mp4
 
 #EXTINF:-1 tvg-name="The Prestige (2006)" tvg-logo="https://i.pinimg.com/736x/4f/4d/fa/4f4dfabe5c46358c8d821bd2716e8186.jpg" group-title="Filmler", The Prestige (2006)
-ftp://admin:Hsyndmrts4747@192.168.1.1:21/volume(sda1)/Filmler/The Prestige (2006).mp4
+volume(sda1)/Filmler/The Prestige (2006).mp4
 
 #EXTINF:-1 tvg-name="The Substance" tvg-logo="https://arapahoenews.com/wp-content/uploads/2025/03/The-Substance-Movie-Poster-800x1200.jpg" group-title="Filmler", The Substance
-ftp://admin:Hsyndmrts4747@192.168.1.1:21/volume(sda1)/Filmler/The Substance.mp4
+volume(sda1)/Filmler/The Substance.mp4
 
 #EXTINF:-1 tvg-name="Toy Story 2 (1999)" tvg-logo="https://m.media-amazon.com/images/I/719aV3ujFKL.jpg" group-title="Filmler", Toy Story 2 (1999)
-ftp://admin:Hsyndmrts4747@192.168.1.1:21/volume(sda1)/Filmler/Toy Story 2 (1999).mp4
+volume(sda1)/Filmler/Toy Story 2 (1999).mp4
 
 #EXTINF:-1 tvg-name="Üç Maymun" tvg-logo="https://dogankitap.com.tr/files/kitaplar/img/9786050906325.jpg" group-title="Filmler", Üç Maymun
-ftp://admin:Hsyndmrts4747@192.168.1.1:21/volume(sda1)/Filmler/Üç Maymun.mp4
+volume(sda1)/Filmler/Üç Maymun.mp4
 
 #EXTINF:-1 tvg-name="Yazgı" tvg-logo="https://www.baskasinema.com/wp-content/uploads/2023/12/Yazgi-afis.jpg" group-title="Filmler", Yazgı
-ftp://admin:Hsyndmrts4747@192.168.1.1:21/volume(sda1)/Filmler/Yazgı.mp4
+volume(sda1)/Filmler/Yazgı.mp4
