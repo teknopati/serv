@@ -1,7 +1,7 @@
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
-const axios = require('axios'); // Drive akışı için eklendi
+const axios = require('axios');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -362,7 +362,7 @@ app.get('/player_api.php', (req, res) => {
 
 // 🎬 OYNATMA İSTEKLERİ VE KESİNTİSİZ AKIŞ YÖNLENDİRİCİSİ
 app.get('/:type/:user/:pass/:id', async (req, res) => {
-    const { user, pass, id } = req.params;
+    const { type, user, pass, id } = req.params;
 
     if (user !== USERNAME || pass !== PASSWORD) {
         return res.status(403).send("Yetkisiz Erişim");
@@ -376,8 +376,12 @@ app.get('/:type/:user/:pass/:id', async (req, res) => {
     const cleanId = parseInt(cleanIdMatch[1]);
     let targetPath = null;
 
+    const tvItems = readM3UFile('tv.m3u');
+    const movieItems = readM3UFile('movie.m3u');
+    const seriesItems = readM3UFile('series.m3u');
+
     // 1. 7/24 CANLI YAYIN DİZİ KANALLARI (9000+)
-    if (cleanId >= 9000) {
+    if (cleanId >= 9000 && cleanId < 10000) {
         const seriesIndex = cleanId - 9000;
         const uniqueSeries = getAllUniqueSeries();
         const targetSeries = uniqueSeries[seriesIndex];
@@ -390,10 +394,6 @@ app.get('/:type/:user/:pass/:id', async (req, res) => {
         }
     }
 
-    const tvItems = readM3UFile('tv.m3u');
-    const movieItems = readM3UFile('movie.m3u');
-    const seriesItems = readM3UFile('series.m3u');
-
     // 2. NORMAL CANLI TV KANALLARI (1 - 900)
     if (!targetPath && cleanId <= 900 && tvItems[cleanId - 1]) {
         targetPath = tvItems[cleanId - 1].url;
@@ -404,8 +404,8 @@ app.get('/:type/:user/:pass/:id', async (req, res) => {
         targetPath = movieItems[cleanId - 1001].url;
     }
     
-    // 4. DİZİ BÖLÜMLERİ (Series VOD)
-    if (!targetPath && cleanId >= 10000) {
+    // 4. DİZİ BÖLÜMLERİ (Series VOD) (10001+)
+    if (!targetPath && cleanId >= 10001) {
         const seriesIndex = Math.floor(cleanId / 10000) - 1;
         const episodeIndex = (cleanId % 10000) - 1;
         
@@ -420,11 +420,20 @@ app.get('/:type/:user/:pass/:id', async (req, res) => {
         }
     }
 
+    // Eğer ID bazlı bulunamadıysa tek tek listeleri tara
+    if (!targetPath) {
+        if (type === 'movie' && movieItems[0]) targetPath = movieItems[0].url;
+        if (type === 'series' && seriesItems[0]) targetPath = seriesItems[0].url;
+        if (type === 'live' && tvItems[0]) targetPath = tvItems[0].url;
+    }
+
     if (!targetPath) {
         return res.status(404).send("Yayın bulunamadı");
     }
 
-    // 🟢 GOOGLE DRIVE KESİNTİSİZ AKIŞ PROXY (10. SANİYE ENGELİNİ ÇÖZER)
+    console.log(`[STREAMING] İstenen ID: ${cleanId} -> Hedef URL: ${targetPath}`);
+
+    // 🟢 GOOGLE DRIVE KESİNTİSİZ AKIŞ PROXY
     if (targetPath.includes('drive.google.com') || targetPath.includes('googleusercontent.com')) {
         let driveId = "";
         const match = targetPath.match(/\/d\/([a-zA-Z0-9_-]+)/) || targetPath.match(/id=([a-zA-Z0-9_-]+)/);
