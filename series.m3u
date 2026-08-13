@@ -1,3 +1,937 @@
 #EXTM3U
+
+# ================= SEZON 1 =================
+#EXTINF:-1 tvg-name="S01E01" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 1", SurekliDizi - Sezon 1 Bölüm 1
+volume(sda1)/Diziler/SurekliDizi/1-1.mp4
+
+#EXTINF:-1 tvg-name="S01E02" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 1", SurekliDizi - Sezon 1 Bölüm 2
+volume(sda1)/Diziler/SurekliDizi/1-2.mp4
+
+#EXTINF:-1 tvg-name="S01E03" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 1", SurekliDizi - Sezon 1 Bölüm 3
+volume(sda1)/Diziler/SurekliDizi/1-3.mp4
+
+#EXTINF:-1 tvg-name="S01E04" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 1", SurekliDizi - Sezon 1 Bölüm 4
+volume(sda1)/Diziler/SurekliDizi/1-4.mp4
+
+#EXTINF:-1 tvg-name="S01E05" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 1", SurekliDizi - Sezon 1 Bölüm 5
+volume(sda1)/Diziler/SurekliDizi/1-5.mp4
+
+#EXTINF:-1 tvg-name="S01E06" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 1", SurekliDizi - Sezon 1 Bölüm 6
+volume(sda1)/Diziler/SurekliDizi/1-6.mp4
+
+#EXTINF:-1 tvg-name="S01E07" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 1", SurekliDizi - Sezon 1 Bölüm 7
+volume(sda1)/Diziler/SurekliDizi/1-7.mp4
+
+#EXTINF:-1 tvg-name="S01E08" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 1", SurekliDizi - Sezon 1 Bölüm 8
+volume(sda1)/Diziler/SurekliDizi/1-8.mp4
+
+#EXTINF:-1 tvg-name="S01E09" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 1", SurekliDizi - Sezon 1 Bölüm 9
+volume(sda1)/Diziler/SurekliDizi/1-9.mp4
+
+#EXTINF:-1 tvg-name="S01E10" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 1", SurekliDizi - Sezon 1 Bölüm 10
+volume(sda1)/Diziler/SurekliDizi/1-10.mp4
+
+#EXTINF:-1 tvg-name="S01E11" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 1", SurekliDizi - Sezon 1 Bölüm 11
+volume(sda1)/Diziler/SurekliDizi/1-11.mp4
+
+#EXTINF:-1 tvg-name="S01E12" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 1", SurekliDizi - Sezon 1 Bölüm 12
+volume(sda1)/Diziler/SurekliDizi/1-12.mp4
+
+# ================= SEZON 2 =================
+#EXTINF:-1 tvg-name="S02E01" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 2", SurekliDizi - Sezon 2 Bölüm 1
+volume(sda1)/Diziler/SurekliDizi/2-1.mp4
+
+#EXTINF:-1 tvg-name="S02E02" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 2", SurekliDizi - Sezon 2 Bölüm 2
+volume(sda1)/Diziler/SurekliDizi/2-2.mp4
+
+#EXTINF:-1 tvg-name="S02E03" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 2", SurekliDizi - Sezon 2 Bölüm 3
+volume(sda1)/Diziler/SurekliDizi/2-3.mp4
+
+#EXTINF:-1 tvg-name="S02E04" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 2", SurekliDizi - Sezon 2 Bölüm 4
+volume(sda1)/Diziler/SurekliDizi/2-4.mp4
+
+#EXTINF:-1 tvg-name="S02E05" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 2", SurekliDizi - Sezon 2 Bölüm 5
+volume(sda1)/Diziler/SurekliDizi/2-5.mp4
+
+#EXTINF:-1 tvg-name="S02E06" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 2", SurekliDizi - Sezon 2 Bölüm 6
+volume(sda1)/Diziler/SurekliDizi/2-6.mp4
+
+#EXTINF:-1 tvg-name="S02E07" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 2", SurekliDizi - Sezon 2 Bölüm 7
+volume(sda1)/Diziler/SurekliDizi/2-7.mp4
+
+#EXTINF:-1 tvg-name="S02E08" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 2", SurekliDizi - Sezon 2 Bölüm 8
+volume(sda1)/Diziler/SurekliDizi/2-8.mp4
+
+#EXTINF:-1 tvg-name="S02E09" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 2", SurekliDizi - Sezon 2 Bölüm 9
+volume(sda1)/Diziler/SurekliDizi/2-9.mp4
+
+#EXTINF:-1 tvg-name="S02E10" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 2", SurekliDizi - Sezon 2 Bölüm 10
+volume(sda1)/Diziler/SurekliDizi/2-10.mp4
+
+#EXTINF:-1 tvg-name="S02E11" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 2", SurekliDizi - Sezon 2 Bölüm 11
+volume(sda1)/Diziler/SurekliDizi/2-11.mp4
+
+#EXTINF:-1 tvg-name="S02E12" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 2", SurekliDizi - Sezon 2 Bölüm 12
+volume(sda1)/Diziler/SurekliDizi/2-12.mp4
+
+#EXTINF:-1 tvg-name="S02E13" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 2", SurekliDizi - Sezon 2 Bölüm 13
+volume(sda1)/Diziler/SurekliDizi/2-13.mp4
+
+#EXTINF:-1 tvg-name="S02E14" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 2", SurekliDizi - Sezon 2 Bölüm 14
+volume(sda1)/Diziler/SurekliDizi/2-14.mp4
+
+#EXTINF:-1 tvg-name="S02E15" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 2", SurekliDizi - Sezon 2 Bölüm 15
+volume(sda1)/Diziler/SurekliDizi/2-15.mp4
+
+#EXTINF:-1 tvg-name="S02E16" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 2", SurekliDizi - Sezon 2 Bölüm 16
+volume(sda1)/Diziler/SurekliDizi/2-16.mp4
+
+#EXTINF:-1 tvg-name="S02E17" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 2", SurekliDizi - Sezon 2 Bölüm 17
+volume(sda1)/Diziler/SurekliDizi/2-17.mp4
+
+#EXTINF:-1 tvg-name="S02E18" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 2", SurekliDizi - Sezon 2 Bölüm 18
+volume(sda1)/Diziler/SurekliDizi/2-18.mp4
+
+#EXTINF:-1 tvg-name="S02E19" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 2", SurekliDizi - Sezon 2 Bölüm 19
+volume(sda1)/Diziler/SurekliDizi/2-19.mp4
+
+#EXTINF:-1 tvg-name="S02E20" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 2", SurekliDizi - Sezon 2 Bölüm 20
+volume(sda1)/Diziler/SurekliDizi/2-20.mp4
+
+#EXTINF:-1 tvg-name="S02E21" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 2", SurekliDizi - Sezon 2 Bölüm 21
+volume(sda1)/Diziler/SurekliDizi/2-21.mp4
+
+#EXTINF:-1 tvg-name="S02E22" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 2", SurekliDizi - Sezon 2 Bölüm 22
+volume(sda1)/Diziler/SurekliDizi/2-22.mp4
+
+#EXTINF:-1 tvg-name="S02E23" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 2", SurekliDizi - Sezon 2 Bölüm 23
+volume(sda1)/Diziler/SurekliDizi/2-23.mp4
+
+#EXTINF:-1 tvg-name="S02E24" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 2", SurekliDizi - Sezon 2 Bölüm 24
+volume(sda1)/Diziler/SurekliDizi/2-24.mp4
+
+#EXTINF:-1 tvg-name="S02E25" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 2", SurekliDizi - Sezon 2 Bölüm 25
+volume(sda1)/Diziler/SurekliDizi/2-25.mp4
+
+#EXTINF:-1 tvg-name="S02E26" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 2", SurekliDizi - Sezon 2 Bölüm 26
+volume(sda1)/Diziler/SurekliDizi/2-26.mp4
+
+#EXTINF:-1 tvg-name="S02E27" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 2", SurekliDizi - Sezon 2 Bölüm 27
+volume(sda1)/Diziler/SurekliDizi/2-27.mp4
+
+#EXTINF:-1 tvg-name="S02E28" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 2", SurekliDizi - Sezon 2 Bölüm 28
+volume(sda1)/Diziler/SurekliDizi/2-28.mp4
+
+#EXTINF:-1 tvg-name="S02E29" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 2", SurekliDizi - Sezon 2 Bölüm 29
+volume(sda1)/Diziler/SurekliDizi/2-29.mp4
+
+# ================= SEZON 3 =================
 #EXTINF:-1 tvg-name="S03E01" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 3", SurekliDizi - Sezon 3 Bölüm 1
 https://drive.google.com/file/d/1s9BDOqJIe9p6_qcDHSo7QvmFN1f7nDwn/view?usp=drive_link
+
+#EXTINF:-1 tvg-name="S03E02" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 3", SurekliDizi - Sezon 3 Bölüm 2
+volume(sda1)/Diziler/SurekliDizi/3-2.mp4
+
+#EXTINF:-1 tvg-name="S03E03" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 3", SurekliDizi - Sezon 3 Bölüm 3
+volume(sda1)/Diziler/SurekliDizi/3-3.mp4
+
+#EXTINF:-1 tvg-name="S03E04" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 3", SurekliDizi - Sezon 3 Bölüm 4
+volume(sda1)/Diziler/SurekliDizi/3-4.mp4
+
+#EXTINF:-1 tvg-name="S03E05" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 3", SurekliDizi - Sezon 3 Bölüm 5
+volume(sda1)/Diziler/SurekliDizi/3-5.mp4
+
+#EXTINF:-1 tvg-name="S03E06" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 3", SurekliDizi - Sezon 3 Bölüm 6
+volume(sda1)/Diziler/SurekliDizi/3-6.mp4
+
+#EXTINF:-1 tvg-name="S03E07" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 3", SurekliDizi - Sezon 3 Bölüm 7
+volume(sda1)/Diziler/SurekliDizi/3-7.mp4
+
+#EXTINF:-1 tvg-name="S03E08" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 3", SurekliDizi - Sezon 3 Bölüm 8
+volume(sda1)/Diziler/SurekliDizi/3-8.mp4
+
+#EXTINF:-1 tvg-name="S03E09" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 3", SurekliDizi - Sezon 3 Bölüm 9
+volume(sda1)/Diziler/SurekliDizi/3-9.mp4
+
+#EXTINF:-1 tvg-name="S03E10" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 3", SurekliDizi - Sezon 3 Bölüm 10
+volume(sda1)/Diziler/SurekliDizi/3-10.mp4
+
+#EXTINF:-1 tvg-name="S03E11" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 3", SurekliDizi - Sezon 3 Bölüm 11
+volume(sda1)/Diziler/SurekliDizi/3-11.mp4
+
+#EXTINF:-1 tvg-name="S03E12" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 3", SurekliDizi - Sezon 3 Bölüm 12
+volume(sda1)/Diziler/SurekliDizi/3-12.mp4
+
+#EXTINF:-1 tvg-name="S03E13" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 3", SurekliDizi - Sezon 3 Bölüm 13
+volume(sda1)/Diziler/SurekliDizi/3-13.mp4
+
+#EXTINF:-1 tvg-name="S03E14" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 3", SurekliDizi - Sezon 3 Bölüm 14
+volume(sda1)/Diziler/SurekliDizi/3-14.mp4
+
+#EXTINF:-1 tvg-name="S03E15" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 3", SurekliDizi - Sezon 3 Bölüm 15
+volume(sda1)/Diziler/SurekliDizi/3-15.mp4
+
+#EXTINF:-1 tvg-name="S03E16" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 3", SurekliDizi - Sezon 3 Bölüm 16
+volume(sda1)/Diziler/SurekliDizi/3-16.mp4
+
+#EXTINF:-1 tvg-name="S03E17" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 3", SurekliDizi - Sezon 3 Bölüm 17
+volume(sda1)/Diziler/SurekliDizi/3-17.mp4
+
+#EXTINF:-1 tvg-name="S03E18" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 3", SurekliDizi - Sezon 3 Bölüm 18
+volume(sda1)/Diziler/SurekliDizi/3-18.mp4
+
+#EXTINF:-1 tvg-name="S03E19" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 3", SurekliDizi - Sezon 3 Bölüm 19
+volume(sda1)/Diziler/SurekliDizi/3-19.mp4
+
+#EXTINF:-1 tvg-name="S03E20" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 3", SurekliDizi - Sezon 3 Bölüm 20
+volume(sda1)/Diziler/SurekliDizi/3-20.mp4
+
+#EXTINF:-1 tvg-name="S03E21" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 3", SurekliDizi - Sezon 3 Bölüm 21
+volume(sda1)/Diziler/SurekliDizi/3-21.mp4
+
+#EXTINF:-1 tvg-name="S03E22" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 3", SurekliDizi - Sezon 3 Bölüm 22
+volume(sda1)/Diziler/SurekliDizi/3-22.mp4
+
+#EXTINF:-1 tvg-name="S03E23" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 3", SurekliDizi - Sezon 3 Bölüm 23
+volume(sda1)/Diziler/SurekliDizi/3-23.mp4
+
+#EXTINF:-1 tvg-name="S03E24" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 3", SurekliDizi - Sezon 3 Bölüm 24
+volume(sda1)/Diziler/SurekliDizi/3-24.mp4
+
+#EXTINF:-1 tvg-name="S03E25" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 3", SurekliDizi - Sezon 3 Bölüm 25
+volume(sda1)/Diziler/SurekliDizi/3-25.mp4
+
+#EXTINF:-1 tvg-name="S03E26" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 3", SurekliDizi - Sezon 3 Bölüm 26
+volume(sda1)/Diziler/SurekliDizi/3-26.mp4
+
+#EXTINF:-1 tvg-name="S03E27" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 3", SurekliDizi - Sezon 3 Bölüm 27
+volume(sda1)/Diziler/SurekliDizi/3-27.mp4
+
+#EXTINF:-1 tvg-name="S03E28" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 3", SurekliDizi - Sezon 3 Bölüm 28
+volume(sda1)/Diziler/SurekliDizi/3-28.mp4
+
+#EXTINF:-1 tvg-name="S03E29" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 3", SurekliDizi - Sezon 3 Bölüm 29
+volume(sda1)/Diziler/SurekliDizi/3-29.mp4
+
+#EXTINF:-1 tvg-name="S03E30" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 3", SurekliDizi - Sezon 3 Bölüm 30
+volume(sda1)/Diziler/SurekliDizi/3-30.mp4
+
+#EXTINF:-1 tvg-name="S03E31" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 3", SurekliDizi - Sezon 3 Bölüm 31
+volume(sda1)/Diziler/SurekliDizi/3-31.mp4
+
+#EXTINF:-1 tvg-name="S03E32" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 3", SurekliDizi - Sezon 3 Bölüm 32
+volume(sda1)/Diziler/SurekliDizi/3-32.mp4
+
+#EXTINF:-1 tvg-name="S03E33" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 3", SurekliDizi - Sezon 3 Bölüm 33
+volume(sda1)/Diziler/SurekliDizi/3-33.mp4
+
+#EXTINF:-1 tvg-name="S03E34" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 3", SurekliDizi - Sezon 3 Bölüm 34
+volume(sda1)/Diziler/SurekliDizi/3-34.mp4
+
+#EXTINF:-1 tvg-name="S03E35" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 3", SurekliDizi - Sezon 3 Bölüm 35
+volume(sda1)/Diziler/SurekliDizi/3-35.mp4
+
+#EXTINF:-1 tvg-name="S03E36" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 3", SurekliDizi - Sezon 3 Bölüm 36
+volume(sda1)/Diziler/SurekliDizi/3-36.mp4
+
+#EXTINF:-1 tvg-name="S03E37" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 3", SurekliDizi - Sezon 3 Bölüm 37
+volume(sda1)/Diziler/SurekliDizi/3-37.mp4
+
+#EXTINF:-1 tvg-name="S03E38" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 3", SurekliDizi - Sezon 3 Bölüm 38
+volume(sda1)/Diziler/SurekliDizi/3-38.mp4
+
+#EXTINF:-1 tvg-name="S03E39" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 3", SurekliDizi - Sezon 3 Bölüm 39
+volume(sda1)/Diziler/SurekliDizi/3-39.mp4
+
+# ================= SEZON 4 =================
+#EXTINF:-1 tvg-name="S04E01" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 4", SurekliDizi - Sezon 4 Bölüm 1
+volume(sda1)/Diziler/SurekliDizi/4-1.mp4
+
+#EXTINF:-1 tvg-name="S04E02" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 4", SurekliDizi - Sezon 4 Bölüm 2
+volume(sda1)/Diziler/SurekliDizi/4-2.mp4
+
+#EXTINF:-1 tvg-name="S04E03" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 4", SurekliDizi - Sezon 4 Bölüm 3
+volume(sda1)/Diziler/SurekliDizi/4-3.mp4
+
+#EXTINF:-1 tvg-name="S04E04" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 4", SurekliDizi - Sezon 4 Bölüm 4
+volume(sda1)/Diziler/SurekliDizi/4-4.mp4
+
+#EXTINF:-1 tvg-name="S04E05" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 4", SurekliDizi - Sezon 4 Bölüm 5
+volume(sda1)/Diziler/SurekliDizi/4-5.mp4
+
+#EXTINF:-1 tvg-name="S04E06" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 4", SurekliDizi - Sezon 4 Bölüm 6
+volume(sda1)/Diziler/SurekliDizi/4-6.mp4
+
+#EXTINF:-1 tvg-name="S04E07" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 4", SurekliDizi - Sezon 4 Bölüm 7
+volume(sda1)/Diziler/SurekliDizi/4-7.mp4
+
+#EXTINF:-1 tvg-name="S04E08" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 4", SurekliDizi - Sezon 4 Bölüm 8
+volume(sda1)/Diziler/SurekliDizi/4-8.mp4
+
+#EXTINF:-1 tvg-name="S04E09" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 4", SurekliDizi - Sezon 4 Bölüm 9
+volume(sda1)/Diziler/SurekliDizi/4-9.mp4
+
+#EXTINF:-1 tvg-name="S04E10" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 4", SurekliDizi - Sezon 4 Bölüm 10
+volume(sda1)/Diziler/SurekliDizi/4-10.mp4
+
+#EXTINF:-1 tvg-name="S04E11" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 4", SurekliDizi - Sezon 4 Bölüm 11
+volume(sda1)/Diziler/SurekliDizi/4-11.mp4
+
+#EXTINF:-1 tvg-name="S04E12" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 4", SurekliDizi - Sezon 4 Bölüm 12
+volume(sda1)/Diziler/SurekliDizi/4-12.mp4
+
+#EXTINF:-1 tvg-name="S04E13" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 4", SurekliDizi - Sezon 4 Bölüm 13
+volume(sda1)/Diziler/SurekliDizi/4-13.mp4
+
+#EXTINF:-1 tvg-name="S04E14" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 4", SurekliDizi - Sezon 4 Bölüm 14
+volume(sda1)/Diziler/SurekliDizi/4-14.mp4
+
+#EXTINF:-1 tvg-name="S04E15" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 4", SurekliDizi - Sezon 4 Bölüm 15
+volume(sda1)/Diziler/SurekliDizi/4-15.mp4
+
+#EXTINF:-1 tvg-name="S04E16" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 4", SurekliDizi - Sezon 4 Bölüm 16
+volume(sda1)/Diziler/SurekliDizi/4-16.mp4
+
+#EXTINF:-1 tvg-name="S04E17" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 4", SurekliDizi - Sezon 4 Bölüm 17
+volume(sda1)/Diziler/SurekliDizi/4-17.mp4
+
+#EXTINF:-1 tvg-name="S04E18" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 4", SurekliDizi - Sezon 4 Bölüm 18
+volume(sda1)/Diziler/SurekliDizi/4-18.mp4
+
+#EXTINF:-1 tvg-name="S04E19" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 4", SurekliDizi - Sezon 4 Bölüm 19
+volume(sda1)/Diziler/SurekliDizi/4-19.mp4
+
+#EXTINF:-1 tvg-name="S04E20" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 4", SurekliDizi - Sezon 4 Bölüm 20
+volume(sda1)/Diziler/SurekliDizi/4-20.mp4
+
+#EXTINF:-1 tvg-name="S04E21" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 4", SurekliDizi - Sezon 4 Bölüm 21
+volume(sda1)/Diziler/SurekliDizi/4-21.mp4
+
+#EXTINF:-1 tvg-name="S04E22" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 4", SurekliDizi - Sezon 4 Bölüm 22
+volume(sda1)/Diziler/SurekliDizi/4-22.mp4
+
+#EXTINF:-1 tvg-name="S04E23" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 4", SurekliDizi - Sezon 4 Bölüm 23
+volume(sda1)/Diziler/SurekliDizi/4-23.mp4
+
+#EXTINF:-1 tvg-name="S04E24" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 4", SurekliDizi - Sezon 4 Bölüm 24
+volume(sda1)/Diziler/SurekliDizi/4-24.mp4
+
+#EXTINF:-1 tvg-name="S04E25" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 4", SurekliDizi - Sezon 4 Bölüm 25
+volume(sda1)/Diziler/SurekliDizi/4-25.mp4
+
+#EXTINF:-1 tvg-name="S04E26" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 4", SurekliDizi - Sezon 4 Bölüm 26
+volume(sda1)/Diziler/SurekliDizi/4-26.mp4
+
+#EXTINF:-1 tvg-name="S04E27" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 4", SurekliDizi - Sezon 4 Bölüm 27
+volume(sda1)/Diziler/SurekliDizi/4-27.mp4
+
+#EXTINF:-1 tvg-name="S04E28" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 4", SurekliDizi - Sezon 4 Bölüm 28
+volume(sda1)/Diziler/SurekliDizi/4-28.mp4
+
+#EXTINF:-1 tvg-name="S04E29" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 4", SurekliDizi - Sezon 4 Bölüm 29
+volume(sda1)/Diziler/SurekliDizi/4-29.mp4
+
+#EXTINF:-1 tvg-name="S04E30" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 4", SurekliDizi - Sezon 4 Bölüm 30
+volume(sda1)/Diziler/SurekliDizi/4-30.mp4
+
+#EXTINF:-1 tvg-name="S04E31" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 4", SurekliDizi - Sezon 4 Bölüm 31
+volume(sda1)/Diziler/SurekliDizi/4-31.mp4
+
+#EXTINF:-1 tvg-name="S04E32" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 4", SurekliDizi - Sezon 4 Bölüm 32
+volume(sda1)/Diziler/SurekliDizi/4-32.mp4
+
+#EXTINF:-1 tvg-name="S04E33" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 4", SurekliDizi - Sezon 4 Bölüm 33
+volume(sda1)/Diziler/SurekliDizi/4-33.mp4
+
+#EXTINF:-1 tvg-name="S04E34" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 4", SurekliDizi - Sezon 4 Bölüm 34
+volume(sda1)/Diziler/SurekliDizi/4-34.mp4
+
+#EXTINF:-1 tvg-name="S04E35" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 4", SurekliDizi - Sezon 4 Bölüm 35
+volume(sda1)/Diziler/SurekliDizi/4-35.mp4
+
+#EXTINF:-1 tvg-name="S04E36" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 4", SurekliDizi - Sezon 4 Bölüm 36
+volume(sda1)/Diziler/SurekliDizi/4-36.mp4
+
+#EXTINF:-1 tvg-name="S04E37" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 4", SurekliDizi - Sezon 4 Bölüm 37
+volume(sda1)/Diziler/SurekliDizi/4-37.mp4
+
+# ================= SEZON 5 =================
+#EXTINF:-1 tvg-name="S05E01" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 5", SurekliDizi - Sezon 5 Bölüm 1
+volume(sda1)/Diziler/SurekliDizi/5-1.mp4
+
+#EXTINF:-1 tvg-name="S05E02" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 5", SurekliDizi - Sezon 5 Bölüm 2
+volume(sda1)/Diziler/SurekliDizi/5-2.mp4
+
+#EXTINF:-1 tvg-name="S05E03" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 5", SurekliDizi - Sezon 5 Bölüm 3
+volume(sda1)/Diziler/SurekliDizi/5-3.mp4
+
+#EXTINF:-1 tvg-name="S05E04" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 5", SurekliDizi - Sezon 5 Bölüm 4
+volume(sda1)/Diziler/SurekliDizi/5-4.mp4
+
+#EXTINF:-1 tvg-name="S05E05" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 5", SurekliDizi - Sezon 5 Bölüm 5
+volume(sda1)/Diziler/SurekliDizi/5-5.mp4
+
+#EXTINF:-1 tvg-name="S05E06" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 5", SurekliDizi - Sezon 5 Bölüm 6
+volume(sda1)/Diziler/SurekliDizi/5-6.mp4
+
+#EXTINF:-1 tvg-name="S05E07" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 5", SurekliDizi - Sezon 5 Bölüm 7
+volume(sda1)/Diziler/SurekliDizi/5-7.mp4
+
+#EXTINF:-1 tvg-name="S05E08" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 5", SurekliDizi - Sezon 5 Bölüm 8
+volume(sda1)/Diziler/SurekliDizi/5-8.mp4
+
+#EXTINF:-1 tvg-name="S05E09" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 5", SurekliDizi - Sezon 5 Bölüm 9
+volume(sda1)/Diziler/SurekliDizi/5-9.mp4
+
+#EXTINF:-1 tvg-name="S05E10" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 5", SurekliDizi - Sezon 5 Bölüm 10
+volume(sda1)/Diziler/SurekliDizi/5-10.mp4
+
+#EXTINF:-1 tvg-name="S05E11" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 5", SurekliDizi - Sezon 5 Bölüm 11
+volume(sda1)/Diziler/SurekliDizi/5-11.mp4
+
+#EXTINF:-1 tvg-name="S05E12" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 5", SurekliDizi - Sezon 5 Bölüm 12
+volume(sda1)/Diziler/SurekliDizi/5-12.mp4
+
+#EXTINF:-1 tvg-name="S05E13" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 5", SurekliDizi - Sezon 5 Bölüm 13
+volume(sda1)/Diziler/SurekliDizi/5-13.mp4
+
+#EXTINF:-1 tvg-name="S05E14" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 5", SurekliDizi - Sezon 5 Bölüm 14
+volume(sda1)/Diziler/SurekliDizi/5-14.mp4
+
+#EXTINF:-1 tvg-name="S05E15" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 5", SurekliDizi - Sezon 5 Bölüm 15
+volume(sda1)/Diziler/SurekliDizi/5-15.mp4
+
+#EXTINF:-1 tvg-name="S05E16" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 5", SurekliDizi - Sezon 5 Bölüm 16
+volume(sda1)/Diziler/SurekliDizi/5-16.mp4
+
+#EXTINF:-1 tvg-name="S05E17" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 5", SurekliDizi - Sezon 5 Bölüm 17
+volume(sda1)/Diziler/SurekliDizi/5-17.mp4
+
+#EXTINF:-1 tvg-name="S05E18" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 5", SurekliDizi - Sezon 5 Bölüm 18
+volume(sda1)/Diziler/SurekliDizi/5-18.mp4
+
+#EXTINF:-1 tvg-name="S05E19" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 5", SurekliDizi - Sezon 5 Bölüm 19
+volume(sda1)/Diziler/SurekliDizi/5-19.mp4
+
+#EXTINF:-1 tvg-name="S05E20" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 5", SurekliDizi - Sezon 5 Bölüm 20
+volume(sda1)/Diziler/SurekliDizi/5-20.mp4
+
+#EXTINF:-1 tvg-name="S05E21" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 5", SurekliDizi - Sezon 5 Bölüm 21
+volume(sda1)/Diziler/SurekliDizi/5-21.mp4
+
+#EXTINF:-1 tvg-name="S05E22" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 5", SurekliDizi - Sezon 5 Bölüm 22
+volume(sda1)/Diziler/SurekliDizi/5-22.mp4
+
+#EXTINF:-1 tvg-name="S05E23" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 5", SurekliDizi - Sezon 5 Bölüm 23
+volume(sda1)/Diziler/SurekliDizi/5-23.mp4
+
+#EXTINF:-1 tvg-name="S05E24" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 5", SurekliDizi - Sezon 5 Bölüm 24
+volume(sda1)/Diziler/SurekliDizi/5-24.mp4
+
+#EXTINF:-1 tvg-name="S05E25" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 5", SurekliDizi - Sezon 5 Bölüm 25
+volume(sda1)/Diziler/SurekliDizi/5-25.mp4
+
+#EXTINF:-1 tvg-name="S05E26" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 5", SurekliDizi - Sezon 5 Bölüm 26
+volume(sda1)/Diziler/SurekliDizi/5-26.mp4
+
+#EXTINF:-1 tvg-name="S05E27" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 5", SurekliDizi - Sezon 5 Bölüm 27
+volume(sda1)/Diziler/SurekliDizi/5-27.mp4
+
+#EXTINF:-1 tvg-name="S05E28" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 5", SurekliDizi - Sezon 5 Bölüm 28
+volume(sda1)/Diziler/SurekliDizi/5-28.mp4
+
+#EXTINF:-1 tvg-name="S05E29" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 5", SurekliDizi - Sezon 5 Bölüm 29
+volume(sda1)/Diziler/SurekliDizi/5-29.mp4
+
+#EXTINF:-1 tvg-name="S05E30" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 5", SurekliDizi - Sezon 5 Bölüm 30
+volume(sda1)/Diziler/SurekliDizi/5-30.mp4
+
+#EXTINF:-1 tvg-name="S05E31" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 5", SurekliDizi - Sezon 5 Bölüm 31
+volume(sda1)/Diziler/SurekliDizi/5-31.mp4
+
+#EXTINF:-1 tvg-name="S05E32" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 5", SurekliDizi - Sezon 5 Bölüm 32
+volume(sda1)/Diziler/SurekliDizi/5-32.mp4
+
+#EXTINF:-1 tvg-name="S05E33" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 5", SurekliDizi - Sezon 5 Bölüm 33
+volume(sda1)/Diziler/SurekliDizi/5-33.mp4
+
+#EXTINF:-1 tvg-name="S05E34" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 5", SurekliDizi - Sezon 5 Bölüm 34
+volume(sda1)/Diziler/SurekliDizi/5-34.mp4
+
+#EXTINF:-1 tvg-name="S05E35" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 5", SurekliDizi - Sezon 5 Bölüm 35
+volume(sda1)/Diziler/SurekliDizi/5-35.mp4
+
+#EXTINF:-1 tvg-name="S05E36" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 5", SurekliDizi - Sezon 5 Bölüm 36
+volume(sda1)/Diziler/SurekliDizi/5-36.mp4
+
+# ================= SEZON 6 =================
+#EXTINF:-1 tvg-name="S06E01" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 6", SurekliDizi - Sezon 6 Bölüm 1
+volume(sda1)/Diziler/SurekliDizi/6-1.mp4
+
+#EXTINF:-1 tvg-name="S06E02" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 6", SurekliDizi - Sezon 6 Bölüm 2
+volume(sda1)/Diziler/SurekliDizi/6-2.mp4
+
+#EXTINF:-1 tvg-name="S06E03" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 6", SurekliDizi - Sezon 6 Bölüm 3
+volume(sda1)/Diziler/SurekliDizi/6-3.mp4
+
+#EXTINF:-1 tvg-name="S06E04" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 6", SurekliDizi - Sezon 6 Bölüm 4
+volume(sda1)/Diziler/SurekliDizi/6-4.mp4
+
+#EXTINF:-1 tvg-name="S06E05" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 6", SurekliDizi - Sezon 6 Bölüm 5
+volume(sda1)/Diziler/SurekliDizi/6-5.mp4
+
+#EXTINF:-1 tvg-name="S06E06" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 6", SurekliDizi - Sezon 6 Bölüm 6
+volume(sda1)/Diziler/SurekliDizi/6-6.mp4
+
+#EXTINF:-1 tvg-name="S06E07" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 6", SurekliDizi - Sezon 6 Bölüm 7
+volume(sda1)/Diziler/SurekliDizi/6-7.mp4
+
+#EXTINF:-1 tvg-name="S06E08" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 6", SurekliDizi - Sezon 6 Bölüm 8
+volume(sda1)/Diziler/SurekliDizi/6-8.mp4
+
+#EXTINF:-1 tvg-name="S06E09" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 6", SurekliDizi - Sezon 6 Bölüm 9
+volume(sda1)/Diziler/SurekliDizi/6-9.mp4
+
+#EXTINF:-1 tvg-name="S06E10" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 6", SurekliDizi - Sezon 6 Bölüm 10
+volume(sda1)/Diziler/SurekliDizi/6-10.mp4
+
+#EXTINF:-1 tvg-name="S06E11" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 6", SurekliDizi - Sezon 6 Bölüm 11
+volume(sda1)/Diziler/SurekliDizi/6-11.mp4
+
+#EXTINF:-1 tvg-name="S06E12" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 6", SurekliDizi - Sezon 6 Bölüm 12
+volume(sda1)/Diziler/SurekliDizi/6-12.mp4
+
+#EXTINF:-1 tvg-name="S06E13" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 6", SurekliDizi - Sezon 6 Bölüm 13
+volume(sda1)/Diziler/SurekliDizi/6-13.mp4
+
+#EXTINF:-1 tvg-name="S06E14" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 6", SurekliDizi - Sezon 6 Bölüm 14
+volume(sda1)/Diziler/SurekliDizi/6-14.mp4
+
+#EXTINF:-1 tvg-name="S06E15" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 6", SurekliDizi - Sezon 6 Bölüm 15
+volume(sda1)/Diziler/SurekliDizi/6-15.mp4
+
+#EXTINF:-1 tvg-name="S06E16" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 6", SurekliDizi - Sezon 6 Bölüm 16
+volume(sda1)/Diziler/SurekliDizi/6-16.mp4
+
+#EXTINF:-1 tvg-name="S06E17" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 6", SurekliDizi - Sezon 6 Bölüm 17
+volume(sda1)/Diziler/SurekliDizi/6-17.mp4
+
+#EXTINF:-1 tvg-name="S06E18" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 6", SurekliDizi - Sezon 6 Bölüm 18
+volume(sda1)/Diziler/SurekliDizi/6-18.mp4
+
+#EXTINF:-1 tvg-name="S06E19" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 6", SurekliDizi - Sezon 6 Bölüm 19
+volume(sda1)/Diziler/SurekliDizi/6-19.mp4
+
+#EXTINF:-1 tvg-name="S06E20" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 6", SurekliDizi - Sezon 6 Bölüm 20
+volume(sda1)/Diziler/SurekliDizi/6-20.mp4
+
+#EXTINF:-1 tvg-name="S06E21" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 6", SurekliDizi - Sezon 6 Bölüm 21
+volume(sda1)/Diziler/SurekliDizi/6-21.mp4
+
+#EXTINF:-1 tvg-name="S06E22" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 6", SurekliDizi - Sezon 6 Bölüm 22
+volume(sda1)/Diziler/SurekliDizi/6-22.mp4
+
+#EXTINF:-1 tvg-name="S06E23" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 6", SurekliDizi - Sezon 6 Bölüm 23
+volume(sda1)/Diziler/SurekliDizi/6-23.mp4
+
+#EXTINF:-1 tvg-name="S06E24" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 6", SurekliDizi - Sezon 6 Bölüm 24
+volume(sda1)/Diziler/SurekliDizi/6-24.mp4
+
+#EXTINF:-1 tvg-name="S06E25" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 6", SurekliDizi - Sezon 6 Bölüm 25
+volume(sda1)/Diziler/SurekliDizi/6-25.mp4
+
+#EXTINF:-1 tvg-name="S06E26" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 6", SurekliDizi - Sezon 6 Bölüm 26
+volume(sda1)/Diziler/SurekliDizi/6-26.mp4
+
+#EXTINF:-1 tvg-name="S06E27" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 6", SurekliDizi - Sezon 6 Bölüm 27
+volume(sda1)/Diziler/SurekliDizi/6-27.mp4
+
+#EXTINF:-1 tvg-name="S06E28" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 6", SurekliDizi - Sezon 6 Bölüm 28
+volume(sda1)/Diziler/SurekliDizi/6-28.mp4
+
+# ================= SEZON 7 =================
+#EXTINF:-1 tvg-name="S07E01" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 7", SurekliDizi - Sezon 7 Bölüm 1
+volume(sda1)/Diziler/SurekliDizi/7-1.mp4
+
+#EXTINF:-1 tvg-name="S07E02" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 7", SurekliDizi - Sezon 7 Bölüm 2
+volume(sda1)/Diziler/SurekliDizi/7-2.mp4
+
+#EXTINF:-1 tvg-name="S07E03" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 7", SurekliDizi - Sezon 7 Bölüm 3
+volume(sda1)/Diziler/SurekliDizi/7-3.mp4
+
+#EXTINF:-1 tvg-name="S07E04" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 7", SurekliDizi - Sezon 7 Bölüm 4
+volume(sda1)/Diziler/SurekliDizi/7-4.mp4
+
+#EXTINF:-1 tvg-name="S07E05" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 7", SurekliDizi - Sezon 7 Bölüm 5
+volume(sda1)/Diziler/SurekliDizi/7-5.mp4
+
+#EXTINF:-1 tvg-name="S07E06" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 7", SurekliDizi - Sezon 7 Bölüm 6
+volume(sda1)/Diziler/SurekliDizi/7-6.mp4
+
+#EXTINF:-1 tvg-name="S07E07" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 7", SurekliDizi - Sezon 7 Bölüm 7
+volume(sda1)/Diziler/SurekliDizi/7-7.mp4
+
+#EXTINF:-1 tvg-name="S07E08" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 7", SurekliDizi - Sezon 7 Bölüm 8
+volume(sda1)/Diziler/SurekliDizi/7-8.mp4
+
+#EXTINF:-1 tvg-name="S07E09" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 7", SurekliDizi - Sezon 7 Bölüm 9
+volume(sda1)/Diziler/SurekliDizi/7-9.mp4
+
+#EXTINF:-1 tvg-name="S07E10" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 7", SurekliDizi - Sezon 7 Bölüm 10
+volume(sda1)/Diziler/SurekliDizi/7-10.mp4
+
+#EXTINF:-1 tvg-name="S07E11" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 7", SurekliDizi - Sezon 7 Bölüm 11
+volume(sda1)/Diziler/SurekliDizi/7-11.mp4
+
+#EXTINF:-1 tvg-name="S07E12" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 7", SurekliDizi - Sezon 7 Bölüm 12
+volume(sda1)/Diziler/SurekliDizi/7-12.mp4
+
+#EXTINF:-1 tvg-name="S07E13" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 7", SurekliDizi - Sezon 7 Bölüm 13
+volume(sda1)/Diziler/SurekliDizi/7-13.mp4
+
+#EXTINF:-1 tvg-name="S07E14" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 7", SurekliDizi - Sezon 7 Bölüm 14
+volume(sda1)/Diziler/SurekliDizi/7-14.mp4
+
+#EXTINF:-1 tvg-name="S07E15" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 7", SurekliDizi - Sezon 7 Bölüm 15
+volume(sda1)/Diziler/SurekliDizi/7-15.mp4
+
+#EXTINF:-1 tvg-name="S07E16" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 7", SurekliDizi - Sezon 7 Bölüm 16
+volume(sda1)/Diziler/SurekliDizi/7-16.mp4
+
+#EXTINF:-1 tvg-name="S07E17" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 7", SurekliDizi - Sezon 7 Bölüm 17
+volume(sda1)/Diziler/SurekliDizi/7-17.mp4
+
+#EXTINF:-1 tvg-name="S07E18" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 7", SurekliDizi - Sezon 7 Bölüm 18
+volume(sda1)/Diziler/SurekliDizi/7-18.mp4
+
+#EXTINF:-1 tvg-name="S07E19" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 7", SurekliDizi - Sezon 7 Bölüm 19
+volume(sda1)/Diziler/SurekliDizi/7-19.mp4
+
+#EXTINF:-1 tvg-name="S07E20" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 7", SurekliDizi - Sezon 7 Bölüm 20
+volume(sda1)/Diziler/SurekliDizi/7-20.mp4
+
+#EXTINF:-1 tvg-name="S07E21" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 7", SurekliDizi - Sezon 7 Bölüm 21
+volume(sda1)/Diziler/SurekliDizi/7-21.mp4
+
+#EXTINF:-1 tvg-name="S07E22" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 7", SurekliDizi - Sezon 7 Bölüm 22
+volume(sda1)/Diziler/SurekliDizi/7-22.mp4
+
+#EXTINF:-1 tvg-name="S07E23" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 7", SurekliDizi - Sezon 7 Bölüm 23
+volume(sda1)/Diziler/SurekliDizi/7-23.mp4
+
+#EXTINF:-1 tvg-name="S07E24" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 7", SurekliDizi - Sezon 7 Bölüm 24
+volume(sda1)/Diziler/SurekliDizi/7-24.mp4
+
+#EXTINF:-1 tvg-name="S07E25" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 7", SurekliDizi - Sezon 7 Bölüm 25
+volume(sda1)/Diziler/SurekliDizi/7-25.mp4
+
+#EXTINF:-1 tvg-name="S07E26" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 7", SurekliDizi - Sezon 7 Bölüm 26
+volume(sda1)/Diziler/SurekliDizi/7-26.mp4
+
+#EXTINF:-1 tvg-name="S07E27" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 7", SurekliDizi - Sezon 7 Bölüm 27
+volume(sda1)/Diziler/SurekliDizi/7-27.mp4
+
+#EXTINF:-1 tvg-name="S07E28" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 7", SurekliDizi - Sezon 7 Bölüm 28
+volume(sda1)/Diziler/SurekliDizi/7-28.mp4
+
+#EXTINF:-1 tvg-name="S07E29" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 7", SurekliDizi - Sezon 7 Bölüm 29
+volume(sda1)/Diziler/SurekliDizi/7-29.mp4
+
+#EXTINF:-1 tvg-name="S07E30" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 7", SurekliDizi - Sezon 7 Bölüm 30
+volume(sda1)/Diziler/SurekliDizi/7-30.mp4
+
+#EXTINF:-1 tvg-name="S07E31" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 7", SurekliDizi - Sezon 7 Bölüm 31
+volume(sda1)/Diziler/SurekliDizi/7-31.mp4
+
+#EXTINF:-1 tvg-name="S07E32" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 7", SurekliDizi - Sezon 7 Bölüm 32
+volume(sda1)/Diziler/SurekliDizi/7-32.mp4
+
+#EXTINF:-1 tvg-name="S07E33" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 7", SurekliDizi - Sezon 7 Bölüm 33
+volume(sda1)/Diziler/SurekliDizi/7-33.mp4
+
+#EXTINF:-1 tvg-name="S07E34" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 7", SurekliDizi - Sezon 7 Bölüm 34
+volume(sda1)/Diziler/SurekliDizi/7-34.mp4
+
+#EXTINF:-1 tvg-name="S07E35" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 7", SurekliDizi - Sezon 7 Bölüm 35
+volume(sda1)/Diziler/SurekliDizi/7-35.mp4
+
+#EXTINF:-1 tvg-name="S07E36" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 7", SurekliDizi - Sezon 7 Bölüm 36
+volume(sda1)/Diziler/SurekliDizi/7-36.mp4
+
+# ================= SEZON 8 =================
+#EXTINF:-1 tvg-name="S08E01" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 8", SurekliDizi - Sezon 8 Bölüm 1
+volume(sda1)/Diziler/SurekliDizi/8-1.mp4
+
+#EXTINF:-1 tvg-name="S08E02" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 8", SurekliDizi - Sezon 8 Bölüm 2
+volume(sda1)/Diziler/SurekliDizi/8-2.mp4
+
+#EXTINF:-1 tvg-name="S08E03" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 8", SurekliDizi - Sezon 8 Bölüm 3
+volume(sda1)/Diziler/SurekliDizi/8-3.mp4
+
+#EXTINF:-1 tvg-name="S08E04" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 8", SurekliDizi - Sezon 8 Bölüm 4
+volume(sda1)/Diziler/SurekliDizi/8-4.mp4
+
+#EXTINF:-1 tvg-name="S08E05" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 8", SurekliDizi - Sezon 8 Bölüm 5
+volume(sda1)/Diziler/SurekliDizi/8-5.mp4
+
+#EXTINF:-1 tvg-name="S08E06" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 8", SurekliDizi - Sezon 8 Bölüm 6
+volume(sda1)/Diziler/SurekliDizi/8-6.mp4
+
+#EXTINF:-1 tvg-name="S08E07" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 8", SurekliDizi - Sezon 8 Bölüm 7
+volume(sda1)/Diziler/SurekliDizi/8-7.mp4
+
+#EXTINF:-1 tvg-name="S08E08" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 8", SurekliDizi - Sezon 8 Bölüm 8
+volume(sda1)/Diziler/SurekliDizi/8-8.mp4
+
+#EXTINF:-1 tvg-name="S08E09" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 8", SurekliDizi - Sezon 8 Bölüm 9
+volume(sda1)/Diziler/SurekliDizi/8-9.mp4
+
+#EXTINF:-1 tvg-name="S08E10" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 8", SurekliDizi - Sezon 8 Bölüm 10
+volume(sda1)/Diziler/SurekliDizi/8-10.mp4
+
+#EXTINF:-1 tvg-name="S08E11" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 8", SurekliDizi - Sezon 8 Bölüm 11
+volume(sda1)/Diziler/SurekliDizi/8-11.mp4
+
+#EXTINF:-1 tvg-name="S08E12" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 8", SurekliDizi - Sezon 8 Bölüm 12
+volume(sda1)/Diziler/SurekliDizi/8-12.mp4
+
+#EXTINF:-1 tvg-name="S08E13" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 8", SurekliDizi - Sezon 8 Bölüm 13
+volume(sda1)/Diziler/SurekliDizi/8-13.mp4
+
+#EXTINF:-1 tvg-name="S08E14" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 8", SurekliDizi - Sezon 8 Bölüm 14
+volume(sda1)/Diziler/SurekliDizi/8-14.mp4
+
+#EXTINF:-1 tvg-name="S08E15" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 8", SurekliDizi - Sezon 8 Bölüm 15
+volume(sda1)/Diziler/SurekliDizi/8-15.mp4
+
+#EXTINF:-1 tvg-name="S08E16" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 8", SurekliDizi - Sezon 8 Bölüm 16
+volume(sda1)/Diziler/SurekliDizi/8-16.mp4
+
+#EXTINF:-1 tvg-name="S08E17" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 8", SurekliDizi - Sezon 8 Bölüm 17
+volume(sda1)/Diziler/SurekliDizi/8-17.mp4
+
+#EXTINF:-1 tvg-name="S08E18" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 8", SurekliDizi - Sezon 8 Bölüm 18
+volume(sda1)/Diziler/SurekliDizi/8-18.mp4
+
+#EXTINF:-1 tvg-name="S08E19" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 8", SurekliDizi - Sezon 8 Bölüm 19
+volume(sda1)/Diziler/SurekliDizi/8-19.mp4
+
+#EXTINF:-1 tvg-name="S08E20" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 8", SurekliDizi - Sezon 8 Bölüm 20
+volume(sda1)/Diziler/SurekliDizi/8-20.mp4
+
+#EXTINF:-1 tvg-name="S08E21" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 8", SurekliDizi - Sezon 8 Bölüm 21
+volume(sda1)/Diziler/SurekliDizi/8-21.mp4
+
+#EXTINF:-1 tvg-name="S08E22" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 8", SurekliDizi - Sezon 8 Bölüm 22
+volume(sda1)/Diziler/SurekliDizi/8-22.mp4
+
+#EXTINF:-1 tvg-name="S08E23" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 8", SurekliDizi - Sezon 8 Bölüm 23
+volume(sda1)/Diziler/SurekliDizi/8-23.mp4
+
+#EXTINF:-1 tvg-name="S08E24" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 8", SurekliDizi - Sezon 8 Bölüm 24
+volume(sda1)/Diziler/SurekliDizi/8-24.mp4
+
+#EXTINF:-1 tvg-name="S08E25" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 8", SurekliDizi - Sezon 8 Bölüm 25
+volume(sda1)/Diziler/SurekliDizi/8-25.mp4
+
+#EXTINF:-1 tvg-name="S08E26" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 8", SurekliDizi - Sezon 8 Bölüm 26
+volume(sda1)/Diziler/SurekliDizi/8-26.mp4
+
+#EXTINF:-1 tvg-name="S08E27" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 8", SurekliDizi - Sezon 8 Bölüm 27
+volume(sda1)/Diziler/SurekliDizi/8-27.mp4
+
+#EXTINF:-1 tvg-name="S08E28" tvg-logo="https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg" group-title="SurekliDizi - Sezon 8", SurekliDizi - Sezon 8 Bölüm 28
+volume(sda1)/Diziler/SurekliDizi/8-28.mp4
+
+# ================= KARDEŞ PAYI SEZON 1 =================
+#EXTINF:-1 tvg-name="S01E01" tvg-logo="https://ntcmedya.com/wp-content/uploads/2016/09/kardespayiposter-500x760.jpg" group-title="Kardeş Payı - Sezon 1", Kardeş Payı - Sezon 1 Bölüm 1
+volume(sda1)/Diziler/Kardeş Payi/1-1.mp4
+
+#EXTINF:-1 tvg-name="S01E02" tvg-logo="https://ntcmedya.com/wp-content/uploads/2016/09/kardespayiposter-500x760.jpg" group-title="Kardeş Payı - Sezon 1", Kardeş Payı - Sezon 1 Bölüm 2
+volume(sda1)/Diziler/Kardeş Payi/1-2.mp4
+
+#EXTINF:-1 tvg-name="S01E03" tvg-logo="https://ntcmedya.com/wp-content/uploads/2016/09/kardespayiposter-500x760.jpg" group-title="Kardeş Payı - Sezon 1", Kardeş Payı - Sezon 1 Bölüm 3
+volume(sda1)/Diziler/Kardeş Payi/1-3.mp4
+
+#EXTINF:-1 tvg-name="S01E04" tvg-logo="https://ntcmedya.com/wp-content/uploads/2016/09/kardespayiposter-500x760.jpg" group-title="Kardeş Payı - Sezon 1", Kardeş Payı - Sezon 1 Bölüm 4
+volume(sda1)/Diziler/Kardeş Payi/1-4.mp4
+
+#EXTINF:-1 tvg-name="S01E05" tvg-logo="https://ntcmedya.com/wp-content/uploads/2016/09/kardespayiposter-500x760.jpg" group-title="Kardeş Payı - Sezon 1", Kardeş Payı - Sezon 1 Bölüm 5
+volume(sda1)/Diziler/Kardeş Payi/1-5.mp4
+
+#EXTINF:-1 tvg-name="S01E06" tvg-logo="https://ntcmedya.com/wp-content/uploads/2016/09/kardespayiposter-500x760.jpg" group-title="Kardeş Payı - Sezon 1", Kardeş Payı - Sezon 1 Bölüm 6
+volume(sda1)/Diziler/Kardeş Payi/1-6.mp4
+
+#EXTINF:-1 tvg-name="S01E07" tvg-logo="https://ntcmedya.com/wp-content/uploads/2016/09/kardespayiposter-500x760.jpg" group-title="Kardeş Payı - Sezon 1", Kardeş Payı - Sezon 1 Bölüm 7
+volume(sda1)/Diziler/Kardeş Payi/1-7.mp4
+
+#EXTINF:-1 tvg-name="S01E08" tvg-logo="https://ntcmedya.com/wp-content/uploads/2016/09/kardespayiposter-500x760.jpg" group-title="Kardeş Payı - Sezon 1", Kardeş Payı - Sezon 1 Bölüm 8
+volume(sda1)/Diziler/Kardeş Payi/1-8.mp4
+
+#EXTINF:-1 tvg-name="S01E09" tvg-logo="https://ntcmedya.com/wp-content/uploads/2016/09/kardespayiposter-500x760.jpg" group-title="Kardeş Payı - Sezon 1", Kardeş Payı - Sezon 1 Bölüm 9
+volume(sda1)/Diziler/Kardeş Payi/1-9.mp4
+
+#EXTINF:-1 tvg-name="S01E10" tvg-logo="https://ntcmedya.com/wp-content/uploads/2016/09/kardespayiposter-500x760.jpg" group-title="Kardeş Payı - Sezon 1", Kardeş Payı - Sezon 1 Bölüm 10
+volume(sda1)/Diziler/Kardeş Payi/1-10.mp4
+
+#EXTINF:-1 tvg-name="S01E11" tvg-logo="https://ntcmedya.com/wp-content/uploads/2016/09/kardespayiposter-500x760.jpg" group-title="Kardeş Payı - Sezon 1", Kardeş Payı - Sezon 1 Bölüm 11
+volume(sda1)/Diziler/Kardeş Payi/1-11.mp4
+
+#EXTINF:-1 tvg-name="S01E12" tvg-logo="https://ntcmedya.com/wp-content/uploads/2016/09/kardespayiposter-500x760.jpg" group-title="Kardeş Payı - Sezon 1", Kardeş Payı - Sezon 1 Bölüm 12
+volume(sda1)/Diziler/Kardeş Payi/1-12.mp4
+
+#EXTINF:-1 tvg-name="S01E13" tvg-logo="https://ntcmedya.com/wp-content/uploads/2016/09/kardespayiposter-500x760.jpg" group-title="Kardeş Payı - Sezon 1", Kardeş Payı - Sezon 1 Bölüm 13
+volume(sda1)/Diziler/Kardeş Payi/1-13.mp4
+
+#EXTINF:-1 tvg-name="S01E14" tvg-logo="https://ntcmedya.com/wp-content/uploads/2016/09/kardespayiposter-500x760.jpg" group-title="Kardeş Payı - Sezon 1", Kardeş Payı - Sezon 1 Bölüm 14
+volume(sda1)/Diziler/Kardeş Payi/1-14.mp4
+
+#EXTINF:-1 tvg-name="S01E15" tvg-logo="https://ntcmedya.com/wp-content/uploads/2016/09/kardespayiposter-500x760.jpg" group-title="Kardeş Payı - Sezon 1", Kardeş Payı - Sezon 1 Bölüm 15
+volume(sda1)/Diziler/Kardeş Payi/1-15.mp4
+
+#EXTINF:-1 tvg-name="S01E16" tvg-logo="https://ntcmedya.com/wp-content/uploads/2016/09/kardespayiposter-500x760.jpg" group-title="Kardeş Payı - Sezon 1", Kardeş Payı - Sezon 1 Bölüm 16
+volume(sda1)/Diziler/Kardeş Payi/1-16.mp4
+
+#EXTINF:-1 tvg-name="S01E17" tvg-logo="https://ntcmedya.com/wp-content/uploads/2016/09/kardespayiposter-500x760.jpg" group-title="Kardeş Payı - Sezon 1", Kardeş Payı - Sezon 1 Bölüm 17
+volume(sda1)/Diziler/Kardeş Payi/1-17.mp4
+
+#EXTINF:-1 tvg-name="S01E18" tvg-logo="https://ntcmedya.com/wp-content/uploads/2016/09/kardespayiposter-500x760.jpg" group-title="Kardeş Payı - Sezon 1", Kardeş Payı - Sezon 1 Bölüm 18
+volume(sda1)/Diziler/Kardeş Payi/1-18.mp4
+
+#EXTINF:-1 tvg-name="S01E19" tvg-logo="https://ntcmedya.com/wp-content/uploads/2016/09/kardespayiposter-500x760.jpg" group-title="Kardeş Payı - Sezon 1", Kardeş Payı - Sezon 1 Bölüm 19
+volume(sda1)/Diziler/Kardeş Payi/1-19.mp4
+
+#EXTINF:-1 tvg-name="S01E20" tvg-logo="https://ntcmedya.com/wp-content/uploads/2016/09/kardespayiposter-500x760.jpg" group-title="Kardeş Payı - Sezon 1", Kardeş Payı - Sezon 1 Bölüm 20
+volume(sda1)/Diziler/Kardeş Payi/1-20.mp4
+
+#EXTINF:-1 tvg-name="S01E21" tvg-logo="https://ntcmedya.com/wp-content/uploads/2016/09/kardespayiposter-500x760.jpg" group-title="Kardeş Payı - Sezon 1", Kardeş Payı - Sezon 1 Bölüm 21
+volume(sda1)/Diziler/Kardeş Payi/1-21.mp4
+
+#EXTINF:-1 tvg-name="S01E22" tvg-logo="https://ntcmedya.com/wp-content/uploads/2016/09/kardespayiposter-500x760.jpg" group-title="Kardeş Payı - Sezon 1", Kardeş Payı - Sezon 1 Bölüm 22
+volume(sda1)/Diziler/Kardeş Payi/1-22.mp4
+
+# ================= KARDEŞ PAYI SEZON 2 =================
+#EXTINF:-1 tvg-name="S02E01" tvg-logo="https://ntcmedya.com/wp-content/uploads/2016/09/kardespayiposter-500x760.jpg" group-title="Kardeş Payı - Sezon 2", Kardeş Payı - Sezon 2 Bölüm 1
+volume(sda1)/Diziler/Kardeş Payi/2-1.mp4
+
+#EXTINF:-1 tvg-name="S02E02" tvg-logo="https://ntcmedya.com/wp-content/uploads/2016/09/kardespayiposter-500x760.jpg" group-title="Kardeş Payı - Sezon 2", Kardeş Payı - Sezon 2 Bölüm 2
+volume(sda1)/Diziler/Kardeş Payi/2-2.mp4
+
+#EXTINF:-1 tvg-name="S02E03" tvg-logo="https://ntcmedya.com/wp-content/uploads/2016/09/kardespayiposter-500x760.jpg" group-title="Kardeş Payı - Sezon 2", Kardeş Payı - Sezon 2 Bölüm 3
+volume(sda1)/Diziler/Kardeş Payi/2-3.mp4
+
+#EXTINF:-1 tvg-name="S02E04" tvg-logo="https://ntcmedya.com/wp-content/uploads/2016/09/kardespayiposter-500x760.jpg" group-title="Kardeş Payı - Sezon 2", Kardeş Payı - Sezon 2 Bölüm 4
+volume(sda1)/Diziler/Kardeş Payi/2-4.mp4
+
+#EXTINF:-1 tvg-name="S02E05" tvg-logo="https://ntcmedya.com/wp-content/uploads/2016/09/kardespayiposter-500x760.jpg" group-title="Kardeş Payı - Sezon 2", Kardeş Payı - Sezon 2 Bölüm 5
+volume(sda1)/Diziler/Kardeş Payi/2-5.mp4
+
+#EXTINF:-1 tvg-name="S02E06" tvg-logo="https://ntcmedya.com/wp-content/uploads/2016/09/kardespayiposter-500x760.jpg" group-title="Kardeş Payı - Sezon 2", Kardeş Payı - Sezon 2 Bölüm 6
+volume(sda1)/Diziler/Kardeş Payi/2-6.mp4
+
+#EXTINF:-1 tvg-name="S02E07" tvg-logo="https://ntcmedya.com/wp-content/uploads/2016/09/kardespayiposter-500x760.jpg" group-title="Kardeş Payı - Sezon 2", Kardeş Payı - Sezon 2 Bölüm 7
+volume(sda1)/Diziler/Kardeş Payi/2-7.mp4
+
+#EXTINF:-1 tvg-name="S02E08" tvg-logo="https://ntcmedya.com/wp-content/uploads/2016/09/kardespayiposter-500x760.jpg" group-title="Kardeş Payı - Sezon 2", Kardeş Payı - Sezon 2 Bölüm 8
+volume(sda1)/Diziler/Kardeş Payi/2-8.mp4
+
+#EXTINF:-1 tvg-name="S02E09" tvg-logo="https://ntcmedya.com/wp-content/uploads/2016/09/kardespayiposter-500x760.jpg" group-title="Kardeş Payı - Sezon 2", Kardeş Payı - Sezon 2 Bölüm 9
+volume(sda1)/Diziler/Kardeş Payi/2-9.mp4
+
+#EXTINF:-1 tvg-name="S02E10" tvg-logo="https://ntcmedya.com/wp-content/uploads/2016/09/kardespayiposter-500x760.jpg" group-title="Kardeş Payı - Sezon 2", Kardeş Payı - Sezon 2 Bölüm 10
+volume(sda1)/Diziler/Kardeş Payi/2-10.mp4
+
+#EXTINF:-1 tvg-name="S02E11" tvg-logo="https://ntcmedya.com/wp-content/uploads/2016/09/kardespayiposter-500x760.jpg" group-title="Kardeş Payı - Sezon 2", Kardeş Payı - Sezon 2 Bölüm 11
+volume(sda1)/Diziler/Kardeş Payi/2-11.mp4
+
+#EXTINF:-1 tvg-name="S02E12" tvg-logo="https://ntcmedya.com/wp-content/uploads/2016/09/kardespayiposter-500x760.jpg" group-title="Kardeş Payı - Sezon 2", Kardeş Payı - Sezon 2 Bölüm 12
+volume(sda1)/Diziler/Kardeş Payi/2-12.mp4
+
+#EXTINF:-1 tvg-name="S02E13" tvg-logo="https://ntcmedya.com/wp-content/uploads/2016/09/kardespayiposter-500x760.jpg" group-title="Kardeş Payı - Sezon 2", Kardeş Payı - Sezon 2 Bölüm 13
+volume(sda1)/Diziler/Kardeş Payi/2-13.mp4
+
+# ================= SUSKUNLAR SEZON 1 =================
+#EXTINF:-1 tvg-name="S01E01" tvg-logo="https://image.tmdb.org/t/p/original/fn2EX9PpOoxiBfB5wypKs7vk1JH.jpg" group-title="Suskunlar - Sezon 1", Suskunlar - Sezon 1 Bölüm 1
+volume(sda1)/Diziler/Suskunlar/1-1.mkv
+
+#EXTINF:-1 tvg-name="S01E02" tvg-logo="https://image.tmdb.org/t/p/original/fn2EX9PpOoxiBfB5wypKs7vk1JH.jpg" group-title="Suskunlar - Sezon 1", Suskunlar - Sezon 1 Bölüm 2
+volume(sda1)/Diziler/Suskunlar/1-2.mkv
+
+#EXTINF:-1 tvg-name="S01E03" tvg-logo="https://image.tmdb.org/t/p/original/fn2EX9PpOoxiBfB5wypKs7vk1JH.jpg" group-title="Suskunlar - Sezon 1", Suskunlar - Sezon 1 Bölüm 3
+volume(sda1)/Diziler/Suskunlar/1-3.mkv
+
+#EXTINF:-1 tvg-name="S01E04" tvg-logo="https://image.tmdb.org/t/p/original/fn2EX9PpOoxiBfB5wypKs7vk1JH.jpg" group-title="Suskunlar - Sezon 1", Suskunlar - Sezon 1 Bölüm 4
+volume(sda1)/Diziler/Suskunlar/1-4.mkv
+
+#EXTINF:-1 tvg-name="S01E05" tvg-logo="https://image.tmdb.org/t/p/original/fn2EX9PpOoxiBfB5wypKs7vk1JH.jpg" group-title="Suskunlar - Sezon 1", Suskunlar - Sezon 1 Bölüm 5
+volume(sda1)/Diziler/Suskunlar/1-5.mkv
+
+#EXTINF:-1 tvg-name="S01E06" tvg-logo="https://image.tmdb.org/t/p/original/fn2EX9PpOoxiBfB5wypKs7vk1JH.jpg" group-title="Suskunlar - Sezon 1", Suskunlar - Sezon 1 Bölüm 6
+volume(sda1)/Diziler/Suskunlar/1-6.mkv
+
+#EXTINF:-1 tvg-name="S01E07" tvg-logo="https://image.tmdb.org/t/p/original/fn2EX9PpOoxiBfB5wypKs7vk1JH.jpg" group-title="Suskunlar - Sezon 1", Suskunlar - Sezon 1 Bölüm 7
+volume(sda1)/Diziler/Suskunlar/1-7.mkv
+
+#EXTINF:-1 tvg-name="S01E08" tvg-logo="https://image.tmdb.org/t/p/original/fn2EX9PpOoxiBfB5wypKs7vk1JH.jpg" group-title="Suskunlar - Sezon 1", Suskunlar - Sezon 1 Bölüm 8
+volume(sda1)/Diziler/Suskunlar/1-8.mkv
+
+#EXTINF:-1 tvg-name="S01E09" tvg-logo="https://image.tmdb.org/t/p/original/fn2EX9PpOoxiBfB5wypKs7vk1JH.jpg" group-title="Suskunlar - Sezon 1", Suskunlar - Sezon 1 Bölüm 9
+volume(sda1)/Diziler/Suskunlar/1-9.mkv
+
+#EXTINF:-1 tvg-name="S01E10" tvg-logo="https://image.tmdb.org/t/p/original/fn2EX9PpOoxiBfB5wypKs7vk1JH.jpg" group-title="Suskunlar - Sezon 1", Suskunlar - Sezon 1 Bölüm 10
+volume(sda1)/Diziler/Suskunlar/1-10.mkv
+
+#EXTINF:-1 tvg-name="S01E11" tvg-logo="https://image.tmdb.org/t/p/original/fn2EX9PpOoxiBfB5wypKs7vk1JH.jpg" group-title="Suskunlar - Sezon 1", Suskunlar - Sezon 1 Bölüm 11
+volume(sda1)/Diziler/Suskunlar/1-11.mkv
+
+#EXTINF:-1 tvg-name="S01E12" tvg-logo="https://image.tmdb.org/t/p/original/fn2EX9PpOoxiBfB5wypKs7vk1JH.jpg" group-title="Suskunlar - Sezon 1", Suskunlar - Sezon 1 Bölüm 12
+volume(sda1)/Diziler/Suskunlar/1-12.mkv
+
+#EXTINF:-1 tvg-name="S01E13" tvg-logo="https://image.tmdb.org/t/p/original/fn2EX9PpOoxiBfB5wypKs7vk1JH.jpg" group-title="Suskunlar - Sezon 1", Suskunlar - Sezon 1 Bölüm 13
+volume(sda1)/Diziler/Suskunlar/1-13.mkv
+
+#EXTINF:-1 tvg-name="S01E14" tvg-logo="https://image.tmdb.org/t/p/original/fn2EX9PpOoxiBfB5wypKs7vk1JH.jpg" group-title="Suskunlar - Sezon 1", Suskunlar - Sezon 1 Bölüm 14
+volume(sda1)/Diziler/Suskunlar/1-14.mkv
+
+#EXTINF:-1 tvg-name="S01E15" tvg-logo="https://image.tmdb.org/t/p/original/fn2EX9PpOoxiBfB5wypKs7vk1JH.jpg" group-title="Suskunlar - Sezon 1", Suskunlar - Sezon 1 Bölüm 15
+volume(sda1)/Diziler/Suskunlar/1-15.mkv
+
+#EXTINF:-1 tvg-name="S01E16" tvg-logo="https://image.tmdb.org/t/p/original/fn2EX9PpOoxiBfB5wypKs7vk1JH.jpg" group-title="Suskunlar - Sezon 1", Suskunlar - Sezon 1 Bölüm 16
+volume(sda1)/Diziler/Suskunlar/1-16.mkv
+
+# ================= SUSKUNLAR SEZON 2 =================
+#EXTINF:-1 tvg-name="S02E01" tvg-logo="https://image.tmdb.org/t/p/original/fn2EX9PpOoxiBfB5wypKs7vk1JH.jpg" group-title="Suskunlar - Sezon 2", Suskunlar - Sezon 2 Bölüm 1
+volume(sda1)/Diziler/Suskunlar/2-1.mkv
+
+#EXTINF:-1 tvg-name="S02E02" tvg-logo="https://image.tmdb.org/t/p/original/fn2EX9PpOoxiBfB5wypKs7vk1JH.jpg" group-title="Suskunlar - Sezon 2", Suskunlar - Sezon 2 Bölüm 2
+volume(sda1)/Diziler/Suskunlar/2-2.mkv
+
+#EXTINF:-1 tvg-name="S02E03" tvg-logo="https://image.tmdb.org/t/p/original/fn2EX9PpOoxiBfB5wypKs7vk1JH.jpg" group-title="Suskunlar - Sezon 2", Suskunlar - Sezon 2 Bölüm 3
+volume(sda1)/Diziler/Suskunlar/2-3.mkv
+
+#EXTINF:-1 tvg-name="S02E04" tvg-logo="https://image.tmdb.org/t/p/original/fn2EX9PpOoxiBfB5wypKs7vk1JH.jpg" group-title="Suskunlar - Sezon 2", Suskunlar - Sezon 2 Bölüm 4
+volume(sda1)/Diziler/Suskunlar/2-4.mkv
+
+#EXTINF:-1 tvg-name="S02E05" tvg-logo="https://image.tmdb.org/t/p/original/fn2EX9PpOoxiBfB5wypKs7vk1JH.jpg" group-title="Suskunlar - Sezon 2", Suskunlar - Sezon 2 Bölüm 5
+volume(sda1)/Diziler/Suskunlar/2-5.mkv
+
+#EXTINF:-1 tvg-name="S02E06" tvg-logo="https://image.tmdb.org/t/p/original/fn2EX9PpOoxiBfB5wypKs7vk1JH.jpg" group-title="Suskunlar - Sezon 2", Suskunlar - Sezon 2 Bölüm 6
+volume(sda1)/Diziler/Suskunlar/2-6.mkv
+
+#EXTINF:-1 tvg-name="S02E07" tvg-logo="https://image.tmdb.org/t/p/original/fn2EX9PpOoxiBfB5wypKs7vk1JH.jpg" group-title="Suskunlar - Sezon 2", Suskunlar - Sezon 2 Bölüm 7
+volume(sda1)/Diziler/Suskunlar/2-7.mkv
+
+#EXTINF:-1 tvg-name="S02E08" tvg-logo="https://image.tmdb.org/t/p/original/fn2EX9PpOoxiBfB5wypKs7vk1JH.jpg" group-title="Suskunlar - Sezon 2", Suskunlar - Sezon 2 Bölüm 8
+volume(sda1)/Diziler/Suskunlar/2-8.mkv
+
+#EXTINF:-1 tvg-name="S02E09" tvg-logo="https://image.tmdb.org/t/p/original/fn2EX9PpOoxiBfB5wypKs7vk1JH.jpg" group-title="Suskunlar - Sezon 2", Suskunlar - Sezon 2 Bölüm 9
+volume(sda1)/Diziler/Suskunlar/2-9.mkv
+
+#EXTINF:-1 tvg-name="S02E10" tvg-logo="https://image.tmdb.org/t/p/original/fn2EX9PpOoxiBfB5wypKs7vk1JH.jpg" group-title="Suskunlar - Sezon 2", Suskunlar - Sezon 2 Bölüm 10
+volume(sda1)/Diziler/Suskunlar/2-10.mkv
+
+#EXTINF:-1 tvg-name="S02E11" tvg-logo="https://image.tmdb.org/t/p/original/fn2EX9PpOoxiBfB5wypKs7vk1JH.jpg" group-title="Suskunlar - Sezon 2", Suskunlar - Sezon 2 Bölüm 11
+volume(sda1)/Diziler/Suskunlar/2-11.mkv
+
+#EXTINF:-1 tvg-name="S02E12" tvg-logo="https://image.tmdb.org/t/p/original/fn2EX9PpOoxiBfB5wypKs7vk1JH.jpg" group-title="Suskunlar - Sezon 2", Suskunlar - Sezon 2 Bölüm 12
+volume(sda1)/Diziler/Suskunlar/2-12.mkv
