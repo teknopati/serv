@@ -1,6 +1,7 @@
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
+const axios = require('axios'); // Drive akışı için eklendi
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -359,8 +360,8 @@ app.get('/player_api.php', (req, res) => {
     res.json([]);
 });
 
-// 🎬 OYNATMA İSTEKLERİ VE YEREL AĞ YÖNLENDİRİCİSİ
-app.get('/:type/:user/:pass/:id', (req, res) => {
+// 🎬 OYNATMA İSTEKLERİ VE KESİNTİSİZ AKIŞ YÖNLENDİRİCİSİ
+app.get('/:type/:user/:pass/:id', async (req, res) => {
     const { user, pass, id } = req.params;
 
     if (user !== USERNAME || pass !== PASSWORD) {
@@ -423,13 +424,41 @@ app.get('/:type/:user/:pass/:id', (req, res) => {
         return res.status(404).send("Yayın bulunamadı");
     }
 
+    // 🟢 GOOGLE DRIVE KESİNTİSİZ AKIŞ PROXY (10. SANİYE ENGELİNİ ÇÖZER)
+    if (targetPath.includes('drive.google.com') || targetPath.includes('googleusercontent.com')) {
+        let driveId = "";
+        const match = targetPath.match(/\/d\/([a-zA-Z0-9_-]+)/) || targetPath.match(/id=([a-zA-Z0-9_-]+)/);
+        if (match) {
+            driveId = match[1];
+        }
+
+        if (driveId) {
+            const streamUrl = `https://drive.google.com/uc?export=download&confirm=no_antivirus&id=${driveId}`;
+            try {
+                const response = await axios({
+                    method: 'get',
+                    url: streamUrl,
+                    responseType: 'stream',
+                    headers: {
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
+                    }
+                });
+
+                res.setHeader('Content-Type', 'video/mp4');
+                return response.data.pipe(res);
+            } catch (error) {
+                console.error("Drive Stream Hatası:", error.message);
+                return res.status(500).send("Drive yayını başlatılamadı.");
+            }
+        }
+    }
+
     // 🟢 EĞER HARİCİ İNTERNET ADRESİ İSE DİREKT YÖNLENDİR (HTTP/HTTPS)
     if (targetPath.startsWith('http://') || targetPath.startsWith('https://')) {
         return res.redirect(302, targetPath);
     }
 
     // 🟢 YEREL MODEM DOSYA YOLU YÖNLENDİRMESİ
-    // Temizlenen dosya yolunu evdeki modem IP'sine bağlar ve televizyona iletir.
     let cleanPath = targetPath.replace(/^(ftp:\/\/|http:\/\/|smb:\/\/)?([^\/]+@)?[^\/]+\//, '');
     if (!cleanPath.startsWith('/')) {
         cleanPath = '/' + cleanPath;
