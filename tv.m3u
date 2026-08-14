@@ -1,8 +1,8 @@
 #EXTM3U
 #EXTINF:-1 tvg-logo="https://r.resimlink.com/-Rox1.webp" group-title="ULUSAL KANALLAR",TRT1
-http://88.99.165.164:6878/ace/getstream?id=d4384fd1b8d17bb4e31e60c9edce0c4a8f3fe1fb&pid=3275
+http://176.65.153.26:6001/play/a01j
 #EXTINF:-1 tvg-logo="https://r.resimlink.com/jRTmq.webp" group-title="ULUSAL KANALLAR",ATV
-https://rnttwmjcin.turknet.ercdn.net/lcpmvefbyo/atv/atv_1080p.m3u8
+http://176.65.153.66:6001/play/a01r/index.m3u8
 #EXTINF:-1 tvg-logo="https://r.resimlink.com/-rlQxcgY.png" group-title="AVRUPA KANALLARI",ATV AVRUPA
 http://umperisn.mywire.org/index.php?id=1875&token=DeaTHLesS
 #EXTINF:-1 tvg-logo="https://r.resimlink.com/Uoupy2m.png" group-title="ULUSAL KANALLAR",A2
@@ -22,13 +22,13 @@ https://dogus.daioncdn.net/startv/startv_720p.m3u8?&sid=88jhb6leqiih&app=a20ac41
 #EXTINF:-1 tvg-logo="https://r.resimlink.com/FbfPASZVn4M.png" group-title="AVRUPA KANALLARI",EURO STAR
 https://stream-extractor.koprulu2.workers.dev/?url=https://www.parsatv.com/m/name=Euro-Star&ext=m3u8
 #EXTINF:-1 tvg-logo="https://r.resimlink.com/qnhp5mjzdDfF.webp" group-title="ULUSAL KANALLAR",NOW
-https://uycyyuuzyh.turknet.ercdn.net/nphindgytw/nowtv/nowtv.m3u8
+http://176.65.153.7:6002/play/a025/index.m3u8
 #EXTINF:-1 tvg-logo="https://r.resimlink.com/Z0ebKCs.png" group-title="ULUSAL KANALLAR",TV8
 https://tv8.daioncdn.net/tv8/tv8.m3u8?app=7ddc255a-ef47-4e81-ab14-c0e5f2949788&ce=3
 #EXTINF:-1 tvg-logo="https://r.resimlink.com/hbkLxdDOMS.webp" group-title="ULUSAL KANALLAR",TV8,5
 https://tv8.daioncdn.net/tv8bucuk/tv8bucuk_1080p.m3u8?&sid=7p0y8eyjbgtu&app=bf58ab52-4865-4c81-b223-26b41009801e&ce=3
 #EXTINF:-1 tvg-logo="https://r.resimlink.com/nvRzWeUjO.png" group-title="AVRUPA KANALLARI",TV8 İNT
-https://vavoo.biz-az.workers.dev/play/35464326823c1c6267b29a.m3u8
+http://176.65.153.26:6001/play/a01v
 #EXTINF:-1 tvg-logo="https://r.resimlink.com/6db9fXQI.png" group-title="ULUSAL KANALLAR",KANAL 7
 https://kanal7-live.daioncdn.net/kanal7/kanal7_1080p.m3u8
 #EXTINF:-1 tvg-logo="https://r.resimlink.com/S4_0AeXLZwo.png" group-title="AVRUPA KANALLARI",KANAL 7 AVRUPA
@@ -46,7 +46,7 @@ http://umperisn.mywire.org/index.php?id=620421&token=DeaTHLesS
 #EXTINF:-1 tvg-logo="https://i.postimg.cc/xCrVRXnZ/logo.png" group-title="SPOR KANALLARI",A SPOR
 https://rnttwmjcin.turknet.ercdn.net/lcpmvefbyo/aspor/aspor.m3u8
 #EXTINF:-1 tvg-logo="https://i.postimg.cc/zGJwcNq4/Tivibu-spor-logosu-removebg-preview.png" group-title="SPOR KANALLARI",TİVİBU SPOR
-https://biraz.6781237.xyz/checklist/androstreamlivets.m3u8
+http://176.65.153.69:6004/play/a01c/index.m3u8
 #EXTINF:-1 tvg-logo="https://i.postimg.cc/W3p6xnNm/unnamed-removebg-preview-(1).png" group-title="SPOR KANALLARI",HT SPOR
 https://ciner.daioncdn.net/ht-spor/ht-spor.m3u8?app=web&dfp_paln=AQzzBGQEBm1BO0E2iVe9tLfcsqJ3gAOMJ63P8Ch&ppid=675956db19f9bb686edda21d15d911e8
 #EXTINF:-1 tvg-logo="https://i.postimg.cc/K8rq1QYT/logo-sportstv-large.png" group-title="SPOR KANALLARI",SPORTS TV
@@ -56,13 +56,13 @@ https://corestream.siteyaptim.live/s-sport/index.m3u8
 #EXTINF:-1 tvg-logo="https://i.postimg.cc/XYwhw4Qh/20250815850937.png" group-title="SPOR KANALLARI",EKOL SPORTS
 https://ekoltv-live.ercdn.net/ekolsport/ekolsport.m3u8
 #EXTINF:-1 tvg-logo="https://admin.aztv.az/userfiles/files/4AA0BSfjB7Kev11a29qo.png" group-title="SPOR KANALLARI",İDMAN TV
-http://109.205.166.68/server124/idman_az/index3.m3u8?st=AzGSZjk1DpXY1SLc1m4OvA&e=1676581573
+https://az.cehennem.workers.dev/index.m3u8?ID=18
 #EXTINF:-1 tvg-logo="https://i.postimg.cc/rw5Lc6X8/CBC-Sport-Logo.png" group-title="SPOR KANALLARI",CBC SPORT
 http://ott.teleport.az/server33/hls/cbc_sport.m3u8?st=AzGSZjk1DpXY1SLc1m4OvA&e=1676581573
 #EXTINF:-1 tvg-logo="https://i.postimg.cc/jdCtQwfR/sifir-tv-logo.png" group-title="SPOR KANALLARI",SIFIR TV
 http://umperisn.mywire.org/index.php?id=611874&token=DeaTHLesS
 #EXTINF:-1 tvg-logo="https://cdn-s.pr.trt.com.tr/trtspor/public/svg/logo-trtspor.svg" group-title="SPOR KANALLARI",TRT SPOR
-http://umperisn.mywire.org/index.php?id=2016&token=DeaTHLesS
+http://176.65.153.26:6001/play/a01k
 #EXTINF:-1 tvg-logo="https://i.postimg.cc/g2SMyj3t/TRT-3-Spor-logo-(2022)-svg.webp" group-title="SPOR KANALLARI",TRT3 SPOR
 http://umperisn.mywire.org/index.php?id=2020&token=DeaTHLesS
 #EXTINF:-1 tvg-logo="https://i.postimg.cc/ZRkxjdns/ebqgat1642602905.png" group-title="SPOR KANALLARI",TRT SPOR YILDIZ
@@ -76,7 +76,7 @@ https://tv-trtturk.medya.trt.com.tr/master.m3u8
 #EXTINF:-1 tvg-logo="https://i.postimg.cc/kXBrk0ww/TRT-Kurdi-logosu.png" group-title="KÜRTÇE KANALLAR",TRT KURDİ
 https://tv-trtkurdi.medya.trt.com.tr/master.m3u8
 #EXTINF:-1 tvg-logo="https://www.trtbelgesel.com.tr/images/logo.svg" group-title="BELGELSEL KANALLARI",TRT BELGESEL
-http://c3921155.edmonst.net/iptv/AVNFCNQBEC9VQU/6852/index.m3u8
+http://176.65.153.26:6001/play/a01l
 #EXTINF:-1 tvg-logo="https://r.resimlink.com/3RPAUOgSTD.png" group-title="AVRUPA KANALLARI",TRT AVAZ
 https://tv-trtavaz.medya.trt.com.tr/master_1440.m3u8
 #EXTINF:-1 tvg-logo="https://r.resimlink.com/WEiRbsx.webp" group-title="HABER KANALLARI",CNBC-E
@@ -86,7 +86,7 @@ https://turkmedya-live.ercdn.net/tv360/tv360_1080p.m3u8
 #EXTINF:-1 tvg-logo="https://r.resimlink.com/7ZdlXg.webp" group-title="ULUSAL KANALLAR",BEYAZ TV
 https://beyaztv-live.daioncdn.net/beyaztv/beyaztv_1080p.m3u8
 #EXTINF:-1 tvg-logo="https://img-tlctv.mncdn.com/logo.png?v=1.1" group-title="SİNEMA/DİZİ KANALLARI",TLC
-http://c3921155.edmonst.net/iptv/AVNFCNQBEC9VQU/6915/index.m3u8
+http://176.65.153.66:6001/play/a01v/index.m3u8
 #EXTINF:-1 tvg-logo="https://trthaberstatic.cdn.wp.trt.com.tr/static/images/logo.svg" group-title="HABER KANALLARI",TRT HABER
 https://tv-trthaber.medya.trt.com.tr/master.m3u8
 #EXTINF:-1 tvg-logo="https://r.resimlink.com/NIiH3PYrdJz.png" group-title="HABER KANALLARI",A HABER
@@ -104,7 +104,7 @@ http://izlego.minikirppis-com.workers.dev/ID=427315396743dfe9212c50
 #EXTINF:-1 tvg-logo="https://www.bloomberght.com/images/common/logo/bht-logo-white.svg" group-title="HABER KANALLARI",BLOOMBERG HT
 https://ciner.daioncdn.net/bloomberght/bloomberght.m3u8
 #EXTINF:-1 tvg-logo="https://www.szctv.com.tr/lib/img/logo.png" group-title="HABER KANALLARI",SZC
-https://sweet-truth-729d.han686314.workers.dev/?url=https://helga.iptv2022.com/szc_tv/index.m3u8
+http://176.65.153.66:6004/play/a019/index.m3u8
 #EXTINF:-1 tvg-logo="https://s.tgrthaber.com/s/i/i-logo-black.svg" group-title="HABER KANALLARI",TGRT HABER
 https://canli.tgrthaber.com/tgrt.m3u8
 #EXTINF:-1 tvg-logo="https://i.postimg.cc/RFJpWzq0/1708069491985.jpg" group-title="HABER KANALLARI",KRT
@@ -132,7 +132,7 @@ https://vavoo.biz-az.workers.dev/play/2753787815dd010dd9300c
 #EXTINF:-1 tvg-logo="https://s.haberglobal.com/assets/web/images/hg_logo.svg" group-title="HABER KANALLARI",HABER GLOBAL
 https://tv.ensonhaber.com/haberglobal/haberglobal.m3u8
 #EXTINF:-1 tvg-logo="https://tele1comtr.teimg.com/tele1-com-tr/uploads/2024/12/tele1-logo-1.svg" group-title="HABER KANALLARI",TELE1
-https://tele1-live.ercdn.net/tele1/tele1.m3u8
+http://176.65.153.26:6001/play/a01w
 #EXTINF:-1 tvg-logo="https://i.postimg.cc/rwc1BR4S/Ulke-TV-logo-svg.webp" group-title="HABER KANALLARI",ÜLKE TV
 https://livetv.radyotvonline.net/kanal7live/ulketv/chunklist.m3u8
 #EXTINF:-1 tvg-logo="https://www.tvnet.com.tr/img/logo.png" group-title="HABER KANALLARI",TVNET
