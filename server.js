@@ -2,6 +2,7 @@ const express = require('express');
 const fs = require('fs');
 const path = require('path');
 const axios = require('axios');
+const { spawn } = require('child_process');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -368,7 +369,7 @@ app.get('/player_api.php', (req, res) => {
     res.json([]);
 });
 
-// 🎬 OYNATMA İSTEKLERİ VE DONMASIZ YÖNLENDİRME MOTORU
+// 🎬 OYNATMA İSTEKLERİ VE DONMASIZ, ÇUBUĞU KALDIRAN AKIŞ MOTORU (STREAM COPY)
 app.get('/:type/:user/:pass/:id', async (req, res) => {
     const { type, user, pass, id } = req.params;
 
@@ -434,15 +435,35 @@ app.get('/:type/:user/:pass/:id', async (req, res) => {
         return res.status(404).send("Yayın bulunamadı");
     }
 
-    console.log(`[STREAM REDIRECT] ID: ${cleanId} -> Hedef: ${targetPath} | Saniye: ${seekOffset}`);
+    console.log(`[STREAM COPY] ID: ${cleanId} -> Hedef: ${targetPath} | Saniye: ${seekOffset}`);
 
-    // 🟢 SUNUCUYU HİÇ YORMADAN DOĞRUDAN ARCHIVE.ORG HIZINA YÖNLENDİR
-    let finalUrl = targetPath;
-    if (seekOffset > 0 && !targetPath.includes('#t=')) {
-        finalUrl = `${targetPath}#t=${seekOffset}`;
+    if (targetPath.endsWith('.m3u8')) {
+        return res.redirect(302, targetPath);
     }
 
-    return res.redirect(302, finalUrl);
+    // 🟢 FFMPEG STREAM COPY (İŞLEMCİYİ YORMAZ, DONMA YAPMAZ, ÇUBUĞU GİZLER)
+    let ffmpegArgs = [
+        '-ss', seekOffset.toString(),
+        '-i', targetPath,
+        '-c', 'copy',
+        '-f', 'mpegts',
+        'pipe:1'
+    ];
+
+    const ffmpegProcess = spawn('ffmpeg', ffmpegArgs);
+
+    res.setHeader('Content-Type', 'video/mp2t');
+    res.setHeader('Cache-Control', 'no-cache');
+
+    ffmpegProcess.stdout.pipe(res);
+
+    ffmpegProcess.on('error', (err) => {
+        console.error('Akış hatası:', err);
+    });
+
+    req.on('close', () => {
+        ffmpegProcess.kill('SIGKILL');
+    });
 });
 
 app.listen(PORT, () => console.log(`Sunucu ${PORT} portunda çalışıyor.`));
