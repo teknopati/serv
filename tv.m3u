@@ -10,6 +10,8 @@ https://cnli.onrender.com/yayin/dizm3.m3u8
 #EXTINF:-1 tvg-logo="https://img.halktv.com.tr/2/776/436/storage/old/d/other/2026/02/14/whatsapp-image-2026-02-14-at-14-51-27.jpeg" group-title="7/24 DİZİLER",MAÇ YAYINI
 https://prod-fastly-eu-central-1.video.pscp.tv/Transcoding/v1/hls/R-t0eqr5sWdG70GSricLJ3EmFTUkE2AhxovSv5R8OsI9SOD1bug-VqYfRdB8PQNDjxtfJ_OichlB-yHK7arkJQ/transcode/eu-central-1/periscope-replay-direct-prod-eu-central-1-public/eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsInZlcnNpb24iOiIyIn0.eyJFbmNvZGVyU2V0dGluZyI6ImVuY29kZXJfc2V0dGluZ183MjBwMzBfMTAiLCJIZWlnaHQiOjcyMCwiS2JwcyI6Mjc1MCwiV2lkdGgiOjEyODB9.ldktM4fCFRfkP4ZEBfZPKtlAUNAcTPkoz994YJAzWpE/dynamic_delta.m3u8?type=live#EXTINF:-1 tvg-logo="https://r.resimlink.com/jRTmq.webp" group-title="ULUSAL KANALLAR",ATV
 http://176.65.153.66:6001/play/a01r/index.m3u8
+#EXTINF:-1 tvg-logo="https://img.halktv.com.tr/2/776/436/storage/old/d/other/2026/02/14/whatsapp-image-2026-02-14-at-14-51-27.jpeg" group-title="7/24 DİZİLER",MAÇ YAYINI 2
+https://prod-fastly-eu-central-1.video.pscp.tv/Transcoding/v1/hls/R-t0eqr5sWdG70GSricLJ3EmFTUkE2AhxovSv5R8OsI9SOD1bug-VqYfRdB8PQNDjxtfJ_OichlB-yHK7arkJQ/transcode/eu-central-1/periscope-replay-direct-prod-eu-central-1-public/eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsInZlcnNpb24iOiIyIn0.eyJFbmNvZGVyU2V0dGluZyI6ImVuY29kZXJfc2V0dGluZ180ODBwMzBfMTAiLCJIZWlnaHQiOjQ4MCwiS2JwcyI6MTIwMCwiV2lkdGgiOjg0OH0.0LJi1usWbiPqp0QIcpq7Md5g1WxvJcPqVWNqsKw5nhA/dynamic_delta.m3u8?type=live&_HLS_skip=YES
 #EXTINF:-1 tvg-logo="https://r.resimlink.com/-rlQxcgY.png" group-title="AVRUPA KANALLARI",ATV AVRUPA
 http://umperisn.mywire.org/index.php?id=1875&token=DeaTHLesS
 #EXTINF:-1 tvg-logo="https://r.resimlink.com/Uoupy2m.png" group-title="ULUSAL KANALLAR",A2
