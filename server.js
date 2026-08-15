@@ -2,6 +2,7 @@ const express = require('express');
 const fs = require('fs');
 const path = require('path');
 const axios = require('axios');
+const { spawn } = require('child_process');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -105,7 +106,7 @@ function getAlphabetCategoryId(channelName) {
     return "alpha_10";
 }
 
-// 🕒 OTOMATİK 7/24 YAYIN MOTORU (ANLIK SANİYE HESAPLAMALI)
+// 🕒 OTOMATİK 7/24 YAYIN MOTORU (ANLIK SANİYE HESAPLAMALI)[cite: 7]
 function getSeriesLiveState(seriesNameTarget) {
     const allSeries = readM3UFile('series.m3u');
     const seriesEpisodes = allSeries.filter(item => 
@@ -128,7 +129,6 @@ function getSeriesLiveState(seriesNameTarget) {
         if (currentLoopPos < accumulatedTime + epDuration) {
             currentEpisode = seriesEpisodes[i];
             currentIndex = i;
-            // O anki bölümün tam kaçıncı saniyesinde olduğumuzu buluyoruz
             offsetInSeconds = Math.floor(currentLoopPos - accumulatedTime);
             break;
         }
@@ -369,7 +369,7 @@ app.get('/player_api.php', (req, res) => {
     res.json([]);
 });
 
-// 🎬 OYNATMA İSTEKLERİ VE KESİNTİSİZ AKIŞ YÖNLENDİRİCİSİ
+// 🎬 OYNATMA İSTEKLERİ VE GERÇEK CANLI YAYIN AKIŞ MOTORU (FFMPEG İLE)
 app.get('/:type/:user/:pass/:id', async (req, res) => {
     const { type, user, pass, id } = req.params;
 
@@ -400,7 +400,7 @@ app.get('/:type/:user/:pass/:id', async (req, res) => {
             const liveState = getSeriesLiveState(targetSeries.name);
             if (liveState && liveState.episode && liveState.episode.url) {
                 targetPath = liveState.episode.url;
-                seekOffset = liveState.offsetInSeconds; // Bölümün tam o anki saniyesi
+                seekOffset = liveState.offsetInSeconds; // Bölümün o anki saniyesi
             }
         }
     }
@@ -431,65 +431,44 @@ app.get('/:type/:user/:pass/:id', async (req, res) => {
         }
     }
 
-    // Eğer ID bazlı bulunamadıysa tek tek listeleri tara
-    if (!targetPath) {
-        if (type === 'movie' && movieItems[0]) targetPath = movieItems[0].url;
-        if (type === 'series' && seriesItems[0]) targetPath = seriesItems[0].url;
-        if (type === 'live' && tvItems[0]) targetPath = tvItems[0].url;
-    }
-
     if (!targetPath) {
         return res.status(404).send("Yayın bulunamadı");
     }
 
-    console.log(`[STREAMING] İstenen ID: ${cleanId} -> Hedef URL: ${targetPath} (Saniye: ${seekOffset})`);
+    console.log(`[LIVE STREAM] ID: ${cleanId} -> Hedef: ${targetPath} | Saniye: ${seekOffset}`);
 
-    // 🟢 GOOGLE DRIVE KESİNTİSİZ AKIŞ PROXY
-    if (targetPath.includes('drive.google.com') || targetPath.includes('googleusercontent.com')) {
-        let driveId = "";
-        const match = targetPath.match(/\/d\/([a-zA-Z0-9_-]+)/) || targetPath.match(/id=([a-zA-Z0-9_-]+)/);
-        if (match) {
-            driveId = match[1];
-        }
-
-        if (driveId) {
-            const streamUrl = `https://drive.google.com/uc?export=download&confirm=no_antivirus&id=${driveId}`;
-            try {
-                const response = await axios({
-                    method: 'get',
-                    url: streamUrl,
-                    responseType: 'stream',
-                    headers: {
-                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
-                    }
-                });
-
-                res.setHeader('Content-Type', 'video/mp4');
-                return response.data.pipe(res);
-            } catch (error) {
-                console.error("Drive Stream Hatası:", error.message);
-                return res.status(500).send("Drive yayını başlatılamadı.");
-            }
-        }
+    // Eğer .m3u8 uzantılı canlı yayınsa direkt yönlendir
+    if (targetPath.endsWith('.m3u8')) {
+        return res.redirect(302, targetPath);
     }
 
-    // 🟢 EĞER HARİCİ İNTERNET ADRESİ İSE DİREKT YÖNLENDİR (7/24 İÇİN SANİYESİYLE BİRLİKTE)
-    if (targetPath.startsWith('http://') || targetPath.startsWith('https://')) {
-        let finalRedirectUrl = targetPath;
-        if (seekOffset > 0) {
-            finalRedirectUrl = `${targetPath}#t=${seekOffset}`;
-        }
-        return res.redirect(302, finalRedirectUrl);
-    }
+    // 🟢 FFMPEG İLE GERÇEK CANLI YAYIN ÇEVİRİCİ (İlerleme çubuğunu yok eder)
+    let ffmpegArgs = [
+        '-re',
+        '-ss', seekOffset.toString(), // Anlık hesaplanan saniyeden başlatır
+        '-i', targetPath,
+        '-c:v', 'libx264',
+        '-preset', 'ultrafast',
+        '-tune', 'zerolatency',
+        '-c:a', 'aac',
+        '-f', 'mpegts',
+        'pipe:1'
+    ];
 
-    // 🟢 YEREL MODEM DOSYA YOLU YÖNLENDİRMESİ
-    let cleanPath = targetPath.replace(/^(ftp:\/\/|http:\/\/|smb:\/\/)?([^\/]+@)?[^\/]+\//, '');
-    if (!cleanPath.startsWith('/')) {
-        cleanPath = '/' + cleanPath;
-    }
+    const ffmpegProcess = spawn('ffmpeg', ffmpegArgs);
 
-    const localUrl = `http://192.168.1.1${cleanPath}`;
-    return res.redirect(302, localUrl);
+    res.setHeader('Content-Type', 'video/mp2t'); // Oynatıcıya bunun bir TV yayını olduğunu söyler
+    res.setHeader('Cache-Control', 'no-cache');
+
+    ffmpegProcess.stdout.pipe(res);
+
+    ffmpegProcess.on('error', (err) => {
+        console.error('FFmpeg akış hatası:', err);
+    });
+
+    req.on('close', () => {
+        ffmpegProcess.kill('SIGKILL');
+    });
 });
 
 app.listen(PORT, () => console.log(`Sunucu ${PORT} portunda çalışıyor.`));
