@@ -105,7 +105,7 @@ function getAlphabetCategoryId(channelName) {
     return "alpha_10";
 }
 
-// 🕒 OTOMATİK 7/24 YAYIN MOTORU
+// 🕒 OTOMATİK 7/24 YAYIN MOTORU (ANLIK SANİYE HESAPLAMALI)
 function getSeriesLiveState(seriesNameTarget) {
     const allSeries = readM3UFile('series.m3u');
     const seriesEpisodes = allSeries.filter(item => 
@@ -121,17 +121,26 @@ function getSeriesLiveState(seriesNameTarget) {
     let accumulatedTime = 0;
     let currentEpisode = seriesEpisodes[0];
     let currentIndex = 0;
+    let offsetInSeconds = 0;
 
     for (let i = 0; i < seriesEpisodes.length; i++) {
-        accumulatedTime += seriesEpisodes[i].durationInSeconds;
-        if (currentLoopPos < accumulatedTime) {
+        const epDuration = seriesEpisodes[i].durationInSeconds;
+        if (currentLoopPos < accumulatedTime + epDuration) {
             currentEpisode = seriesEpisodes[i];
             currentIndex = i;
+            // O anki bölümün tam kaçıncı saniyesinde olduğumuzu buluyoruz
+            offsetInSeconds = Math.floor(currentLoopPos - accumulatedTime);
             break;
         }
+        accumulatedTime += epDuration;
     }
 
-    return { episode: currentEpisode, currentIndex, totalEpisodes: seriesEpisodes.length };
+    return { 
+        episode: currentEpisode, 
+        currentIndex, 
+        totalEpisodes: seriesEpisodes.length,
+        offsetInSeconds: offsetInSeconds 
+    };
 }
 
 function getAllUniqueSeries() {
@@ -375,12 +384,13 @@ app.get('/:type/:user/:pass/:id', async (req, res) => {
 
     const cleanId = parseInt(cleanIdMatch[1]);
     let targetPath = null;
+    let seekOffset = 0;
 
     const tvItems = readM3UFile('tv.m3u');
     const movieItems = readM3UFile('movie.m3u');
     const seriesItems = readM3UFile('series.m3u');
 
-    // 1. 7/24 CANLI YAYIN DİZİ KANALLARI (9000+)
+    // 1. 7/24 CANLI YAYIN DİZİ KANALLARI (9000+) -> Saniyeli Canlı Akış
     if (cleanId >= 9000 && cleanId < 10000) {
         const seriesIndex = cleanId - 9000;
         const uniqueSeries = getAllUniqueSeries();
@@ -390,6 +400,7 @@ app.get('/:type/:user/:pass/:id', async (req, res) => {
             const liveState = getSeriesLiveState(targetSeries.name);
             if (liveState && liveState.episode && liveState.episode.url) {
                 targetPath = liveState.episode.url;
+                seekOffset = liveState.offsetInSeconds; // Bölümün tam o anki saniyesi
             }
         }
     }
@@ -431,7 +442,7 @@ app.get('/:type/:user/:pass/:id', async (req, res) => {
         return res.status(404).send("Yayın bulunamadı");
     }
 
-    console.log(`[STREAMING] İstenen ID: ${cleanId} -> Hedef URL: ${targetPath}`);
+    console.log(`[STREAMING] İstenen ID: ${cleanId} -> Hedef URL: ${targetPath} (Saniye: ${seekOffset})`);
 
     // 🟢 GOOGLE DRIVE KESİNTİSİZ AKIŞ PROXY
     if (targetPath.includes('drive.google.com') || targetPath.includes('googleusercontent.com')) {
@@ -462,9 +473,13 @@ app.get('/:type/:user/:pass/:id', async (req, res) => {
         }
     }
 
-    // 🟢 EĞER HARİCİ İNTERNET ADRESİ İSE DİREKT YÖNLENDİR (HTTP/HTTPS)
+    // 🟢 EĞER HARİCİ İNTERNET ADRESİ İSE DİREKT YÖNLENDİR (7/24 İÇİN SANİYESİYLE BİRLİKTE)
     if (targetPath.startsWith('http://') || targetPath.startsWith('https://')) {
-        return res.redirect(302, targetPath);
+        let finalRedirectUrl = targetPath;
+        if (seekOffset > 0) {
+            finalRedirectUrl = `${targetPath}#t=${seekOffset}`;
+        }
+        return res.redirect(302, finalRedirectUrl);
     }
 
     // 🟢 YEREL MODEM DOSYA YOLU YÖNLENDİRMESİ
