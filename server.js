@@ -2,7 +2,6 @@ const express = require('express');
 const fs = require('fs');
 const path = require('path');
 const axios = require('axios');
-const { spawn } = require('child_process');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -369,7 +368,7 @@ app.get('/player_api.php', (req, res) => {
     res.json([]);
 });
 
-// 🎬 OYNATMA İSTEKLERİ VE GERÇEK CANLI YAYIN AKIŞ MOTORU (FFMPEG İLE)
+// 🎬 OYNATMA İSTEKLERİ VE DONMASIZ YÖNLENDİRME MOTORU
 app.get('/:type/:user/:pass/:id', async (req, res) => {
     const { type, user, pass, id } = req.params;
 
@@ -435,40 +434,15 @@ app.get('/:type/:user/:pass/:id', async (req, res) => {
         return res.status(404).send("Yayın bulunamadı");
     }
 
-    console.log(`[LIVE STREAM] ID: ${cleanId} -> Hedef: ${targetPath} | Saniye: ${seekOffset}`);
+    console.log(`[STREAM REDIRECT] ID: ${cleanId} -> Hedef: ${targetPath} | Saniye: ${seekOffset}`);
 
-    // Eğer .m3u8 uzantılı canlı yayınsa direkt yönlendir
-    if (targetPath.endsWith('.m3u8')) {
-        return res.redirect(302, targetPath);
+    // 🟢 SUNUCUYU HİÇ YORMADAN DOĞRUDAN ARCHIVE.ORG HIZINA YÖNLENDİR
+    let finalUrl = targetPath;
+    if (seekOffset > 0 && !targetPath.includes('#t=')) {
+        finalUrl = `${targetPath}#t=${seekOffset}`;
     }
 
-    // 🟢 FFMPEG İLE GERÇEK CANLI YAYIN ÇEVİRİCİ (İlerleme çubuğunu yok eder)
-    let ffmpegArgs = [
-        '-re',
-        '-ss', seekOffset.toString(), // Anlık hesaplanan saniyeden başlatır
-        '-i', targetPath,
-        '-c:v', 'libx264',
-        '-preset', 'ultrafast',
-        '-tune', 'zerolatency',
-        '-c:a', 'aac',
-        '-f', 'mpegts',
-        'pipe:1'
-    ];
-
-    const ffmpegProcess = spawn('ffmpeg', ffmpegArgs);
-
-    res.setHeader('Content-Type', 'video/mp2t'); // Oynatıcıya bunun bir TV yayını olduğunu söyler
-    res.setHeader('Cache-Control', 'no-cache');
-
-    ffmpegProcess.stdout.pipe(res);
-
-    ffmpegProcess.on('error', (err) => {
-        console.error('FFmpeg akış hatası:', err);
-    });
-
-    req.on('close', () => {
-        ffmpegProcess.kill('SIGKILL');
-    });
+    return res.redirect(302, finalUrl);
 });
 
 app.listen(PORT, () => console.log(`Sunucu ${PORT} portunda çalışıyor.`));
