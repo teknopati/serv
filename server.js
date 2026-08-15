@@ -106,43 +106,6 @@ function getAlphabetCategoryId(channelName) {
     return "alpha_10";
 }
 
-// 🕒 OTOMATİK 7/24 YAYIN MOTORU (ANLIK SANİYE HESAPLAMALI)[cite: 7]
-function getSeriesLiveState(seriesNameTarget) {
-    const allSeries = readM3UFile('series.m3u');
-    const seriesEpisodes = allSeries.filter(item => 
-        item.seriesName.toLowerCase() === seriesNameTarget.toLowerCase()
-    );
-
-    if (seriesEpisodes.length === 0) return null;
-
-    const totalDuration = seriesEpisodes.reduce((acc, ep) => acc + ep.durationInSeconds, 0);
-    const nowInSeconds = Math.floor(Date.now() / 1000);
-    let currentLoopPos = nowInSeconds % totalDuration;
-
-    let accumulatedTime = 0;
-    let currentEpisode = seriesEpisodes[0];
-    let currentIndex = 0;
-    let offsetInSeconds = 0;
-
-    for (let i = 0; i < seriesEpisodes.length; i++) {
-        const epDuration = seriesEpisodes[i].durationInSeconds;
-        if (currentLoopPos < accumulatedTime + epDuration) {
-            currentEpisode = seriesEpisodes[i];
-            currentIndex = i;
-            offsetInSeconds = Math.floor(currentLoopPos - accumulatedTime);
-            break;
-        }
-        accumulatedTime += epDuration;
-    }
-
-    return { 
-        episode: currentEpisode, 
-        currentIndex, 
-        totalEpisodes: seriesEpisodes.length,
-        offsetInSeconds: offsetInSeconds 
-    };
-}
-
 function getAllUniqueSeries() {
     const seriesItems = readM3UFile('series.m3u');
     let seriesMap = new Map();
@@ -176,7 +139,7 @@ app.get('/player_api.php', (req, res) => {
     // --- 1. CANLI TV MENÜSÜ ---
     if (action === 'get_live_categories') {
         const liveItems = readM3UFile('tv.m3u');
-        let categories = [{ category_id: "724", category_name: "7/24 Canlı Diziler", parent_id: 0 }];
+        let categories = [];
         
         if (liveItems.length > 0) {
             const cats = Array.from(new Set(liveItems.map(i => i.group)));
@@ -193,31 +156,7 @@ app.get('/player_api.php', (req, res) => {
     if (action === 'get_live_streams') {
         const liveItems = readM3UFile('tv.m3u');
         const cats = Array.from(new Set(liveItems.map(i => i.group)));
-        const uniqueSeries = getAllUniqueSeries();
-        
         let streams = [];
-
-        uniqueSeries.forEach((series, index) => {
-            const liveState = getSeriesLiveState(series.name);
-            const streamId = 9000 + index;
-            const channelName = (liveState && liveState.episode) ? `${series.name} 7/24 TV (${liveState.episode.name})` : `${series.name} (7/24 TV)`;
-            const alphaCat = getAlphabetCategoryId(series.name);
-
-            let targetCatId = "724";
-            if (category_id && category_id.toString().startsWith("alpha_")) {
-                targetCatId = alphaCat;
-            }
-
-            streams.push({
-                num: streams.length + 1,
-                name: channelName,
-                stream_id: streamId,
-                stream_type: "live",
-                stream_icon: series.logo || "https://image.tmdb.org/t/p/w1280/7MnzSQ7YV29EeqXFuGXpClfcRCc.jpg",
-                category_id: targetCatId,
-                direct_source: ""
-            });
-        });
 
         liveItems.forEach((item, index) => {
             const origCatId = (cats.indexOf(item.group) + 1).toString();
@@ -390,32 +329,17 @@ app.get('/:type/:user/:pass/:id', async (req, res) => {
     const movieItems = readM3UFile('movie.m3u');
     const seriesItems = readM3UFile('series.m3u');
 
-    // 1. 7/24 CANLI YAYIN DİZİ KANALLARI (9000+) -> Saniyeli Canlı Akış
-    if (cleanId >= 9000 && cleanId < 10000) {
-        const seriesIndex = cleanId - 9000;
-        const uniqueSeries = getAllUniqueSeries();
-        const targetSeries = uniqueSeries[seriesIndex];
-
-        if (targetSeries) {
-            const liveState = getSeriesLiveState(targetSeries.name);
-            if (liveState && liveState.episode && liveState.episode.url) {
-                targetPath = liveState.episode.url;
-                seekOffset = liveState.offsetInSeconds; // Bölümün o anki saniyesi
-            }
-        }
-    }
-
-    // 2. NORMAL CANLI TV KANALLARI (1 - 900)
+    // 1. NORMAL CANLI TV KANALLARI (1 - 900)
     if (!targetPath && cleanId <= 900 && tvItems[cleanId - 1]) {
         targetPath = tvItems[cleanId - 1].url;
     }
     
-    // 3. FİLMLER / VOD (1001 - 1999)
+    // 2. FİLMLER / VOD (1001 - 1999)
     if (!targetPath && cleanId > 1000 && cleanId < 2000 && movieItems[cleanId - 1001]) {
         targetPath = movieItems[cleanId - 1001].url;
     }
     
-    // 4. DİZİ BÖLÜMLERİ (Series VOD) (10001+)
+    // 3. DİZİ BÖLÜMLERİ (Series VOD) (10001+)
     if (!targetPath && cleanId >= 10001) {
         const seriesIndex = Math.floor(cleanId / 10000) - 1;
         const episodeIndex = (cleanId % 10000) - 1;
@@ -435,7 +359,7 @@ app.get('/:type/:user/:pass/:id', async (req, res) => {
         return res.status(404).send("Yayın bulunamadı");
     }
 
-    console.log(`[STREAM COPY] ID: ${cleanId} -> Hedef: ${targetPath} | Saniye: ${seekOffset}`);
+    console.log(`[STREAM COPY] ID: ${cleanId} -> Hedef: ${targetPath}`);
 
     if (targetPath.endsWith('.m3u8')) {
         return res.redirect(302, targetPath);
@@ -443,7 +367,6 @@ app.get('/:type/:user/:pass/:id', async (req, res) => {
 
     // 🟢 FFMPEG STREAM COPY (İŞLEMCİYİ YORMAZ, DONMA YAPMAZ, ÇUBUĞU GİZLER)
     let ffmpegArgs = [
-        '-ss', seekOffset.toString(),
         '-i', targetPath,
         '-c', 'copy',
         '-f', 'mpegts',
