@@ -8,7 +8,7 @@ https://cnli.onrender.com/yayin/dizm2.m3u8
 #EXTINF:-1 tvg-logo="https://mo.ciner.com.tr/video/2013/10/02/00E3EE53930646E7BF836F461AC2F059.jpg" group-title="7/24 DİZİLER",SUSKUNLAR
 https://cnli.onrender.com/yayin/dizm3.m3u8
 #EXTINF:-1 tvg-logo="https://r.resimlink.com/-Rox1.webp" group-title="ULUSAL KANALLAR",TRT1
-http://176.65.153.26:6001/play/a01j
+https://trt.daioncdn.net/trt-1/master_1440p.m3u8?&sid=8o2rapuf4hb8&app=ed3904e8-737b-4a5e-856a-1b0d7a0a94e2&ce=2
 #EXTINF:-1 tvg-logo="https://r.resimlink.com/jRTmq.webp" group-title="ULUSAL KANALLAR",ATV
 http://176.65.153.66:6001/play/a01r/index.m3u8
 #EXTINF:-1 tvg-logo="https://r.resimlink.com/-rlQxcgY.png" group-title="AVRUPA KANALLARI",ATV AVRUPA
