@@ -1,4 +1,6 @@
 #EXTM3U
+#EXTINF:-1 tvg-logo="https://r.resimlink.com/-Rox1.webp" group-title="ULUSAL KANALLAR",SÜREKLİ D
+https://cnli.onrender.com/yayin.m3u8
 #EXTINF:-1 tvg-logo="https://r.resimlink.com/-Rox1.webp" group-title="ULUSAL KANALLAR",TRT1
 http://176.65.153.26:6001/play/a01j
 #EXTINF:-1 tvg-logo="https://r.resimlink.com/jRTmq.webp" group-title="ULUSAL KANALLAR",ATV
