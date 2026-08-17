@@ -26,7 +26,7 @@ https://dogus.daioncdn.net/startv/startv_720p.m3u8?&sid=88jhb6leqiih&app=a20ac41
 #EXTINF:-1 tvg-logo="https://r.resimlink.com/FbfPASZVn4M.png" group-title="AVRUPA KANALLARI",EURO STAR
 https://stream-extractor.koprulu2.workers.dev/?url=https://www.parsatv.com/m/name=Euro-Star&ext=m3u8
 #EXTINF:-1 tvg-logo="https://r.resimlink.com/qnhp5mjzdDfF.webp" group-title="ULUSAL KANALLAR",NOW
-http://176.65.153.7:6002/play/a025/index.m3u8
+https://uycyyuuzyh.turknet.ercdn.net/nphindgytw/nowtv/nowtv.m3u8
 #EXTINF:-1 tvg-logo="https://r.resimlink.com/Z0ebKCs.png" group-title="ULUSAL KANALLAR",TV8
 https://tv8.daioncdn.net/tv8/tv8.m3u8?app=7ddc255a-ef47-4e81-ab14-c0e5f2949788&ce=3
 #EXTINF:-1 tvg-logo="https://r.resimlink.com/hbkLxdDOMS.webp" group-title="ULUSAL KANALLAR",TV8,5
@@ -86,7 +86,7 @@ https://tv-trtavaz.medya.trt.com.tr/master_1440.m3u8
 #EXTINF:-1 tvg-logo="https://r.resimlink.com/WEiRbsx.webp" group-title="HABER KANALLARI",CNBC-E
 https://hnpsechtsc.turknet.ercdn.net/xpnvudnlsv/cnbc-e/cnbc-e.m3u8?tv=1
 #EXTINF:-1 tvg-logo="https://r.resimlink.com/djaT7S.webp" group-title="ULUSAL KANALLAR",360
-http://176.65.153.7:6002/play/a023/index.m3u8
+https://turkmedya-live.ercdn.net/tv360/tv360_1080p.m3u8
 #EXTINF:-1 tvg-logo="https://r.resimlink.com/7ZdlXg.webp" group-title="ULUSAL KANALLAR",BEYAZ TV
 https://beyaztv-live.daioncdn.net/beyaztv/beyaztv_1080p.m3u8
 #EXTINF:-1 tvg-logo="https://img-tlctv.mncdn.com/logo.png?v=1.1" group-title="SİNEMA/DİZİ KANALLARI",TLC
@@ -128,7 +128,7 @@ http://88.99.165.164:6878/ace/getstream?id=ab3c1dd7235dae249588d6b7b7a408b3d7d38
 #EXTINF:-1 tvg-logo="https://flashhabertv.com.tr/assets/img/logo-v4.png" group-title="HABER KANALLARI",FLASH HABER
 https://b01c02nl.mediatriple.net/videoonlylive/mtyycglqauzjhlive/broadcast_67c053c48829f.smil/mt_0.m3u8
 #EXTINF:-1 tvg-logo="https://izmottvsc20.tvplus.com.tr:33207/CPS/images/universal/film/logo/202506/20250602/45/2121305491855eb9542c_op_0_XL.webp" group-title="HABER KANALLARI",KANAL 23
-https://live.artidijitalmedya.com/artidijital_kanal23/kanal23/chunks.m3u8
+https://cdn-kanal23.yayin.com.tr/kanal23/tracks-v1a1/mono.m3u8
 #EXTINF:-1 tvg-logo="https://asset.artidijitalmedya.com/image/400x400/channels/v1/logo_103.png?v=15" group-title="HABER KANALLARI",MK TV
 https://live.artidijitalmedya.com/artidijital_mavikaradeniz/mavikaradeniz/chunks.m3u8
 #EXTINF:-1 tvg-logo="https://r.resimlink.com/KT-GhEyP.png" group-title="BELGELSEL KANALLARI",TGRT BELGESEL
