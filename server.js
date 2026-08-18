@@ -1,15 +1,15 @@
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
-const https = require('https');
-const http = require('http');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 const USERNAME = "admin";
 const PASSWORD = "123";
-const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+
+// 7/24 Bölüm döngü süresi (Varsayılan: 20 dakika = 1200 sn)
+const DEFAULT_EP_DURATION = 1200;
 
 function readM3UFile(fileName) {
     try {
@@ -53,7 +53,7 @@ function readM3UFile(fileName) {
                 const titleParts = line.split(',');
                 const name = titleParts.length > 1 ? titleParts[titleParts.length - 1].trim() : `${episode}. Bölüm`;
 
-                let durationInSeconds = 11 * 60;
+                let durationInSeconds = DEFAULT_EP_DURATION;
                 if (parsedDuration > 0) {
                     durationInSeconds = parsedDuration;
                 }
@@ -112,6 +112,28 @@ function getAllUniqueSeries() {
     return Array.from(seriesMap.values());
 }
 
+// 7/24 Canlı Dizi Hesaplama Fonksiyonu
+function getCurrentEpisodeUrl(seriesName) {
+    const seriesItems = readM3UFile('series.m3u');
+    const episodes = seriesItems.filter(item => item.seriesName.toLowerCase() === seriesName.toLowerCase());
+    
+    if (episodes.length === 0) return null;
+
+    const totalDuration = episodes.reduce((acc, ep) => acc + (ep.durationInSeconds || DEFAULT_EP_DURATION), 0);
+    const currentEpoch = Math.floor(Date.now() / 1000);
+    let position = currentEpoch % totalDuration;
+
+    let accumulated = 0;
+    for (let ep of episodes) {
+        const dur = ep.durationInSeconds || DEFAULT_EP_DURATION;
+        if (position >= accumulated && position < accumulated + dur) {
+            return ep.url;
+        }
+        accumulated += dur;
+    }
+    return episodes[0].url;
+}
+
 // 📺 XTREAM API
 app.get('/player_api.php', (req, res) => {
     const { username, password, action, series_id, category_id } = req.query;
@@ -131,10 +153,11 @@ app.get('/player_api.php', (req, res) => {
         return res.json({ epg_listings: [] });
     }
 
-    // CANLI TV
+    // CANLI TV KATEGORİLERİ
     if (action === 'get_live_categories') {
         const liveItems = readM3UFile('tv.m3u');
-        let categories = [];
+        let categories = [{ category_id: "724_diziler", category_name: "📺 7/24 DİZİLER", parent_id: 0 }];
+        
         if (liveItems.length > 0) {
             const cats = Array.from(new Set(liveItems.map(i => i.group)));
             cats.forEach((c, i) => categories.push({ category_id: (i + 1).toString(), category_name: c, parent_id: 0 }));
@@ -145,11 +168,27 @@ app.get('/player_api.php', (req, res) => {
         return res.json(categories);
     }
 
+    // CANLI TV YAYINLARI
     if (action === 'get_live_streams') {
         const liveItems = readM3UFile('tv.m3u');
+        const uniqueSeries = getAllUniqueSeries();
         const cats = Array.from(new Set(liveItems.map(i => i.group)));
         let streams = [];
 
+        // 1. Otomatik 7/24 Dizi Kanalları (Stream ID: 501 - 599)
+        uniqueSeries.forEach((s, idx) => {
+            streams.push({
+                num: streams.length + 1,
+                name: `7/24 ${s.name.toUpperCase()}`,
+                stream_id: 501 + idx,
+                stream_type: "live",
+                stream_icon: s.logo,
+                category_id: "724_diziler",
+                direct_source: ""
+            });
+        });
+
+        // 2. tv.m3u içindeki Normal TV Kanalları (Stream ID: 1 - 500)
         liveItems.forEach((item, index) => {
             const origCatId = (cats.indexOf(item.group) + 1).toString();
             const alphaCatId = getAlphabetCategoryId(item.name);
@@ -177,7 +216,7 @@ app.get('/player_api.php', (req, res) => {
         return res.json(streams);
     }
 
-    // FILMLER
+    // VOD KATEGORİLERİ & FİLMLER
     if (action === 'get_vod_categories') {
         const movieItems = readM3UFile('movie.m3u');
         if (movieItems.length === 0) return res.json([{ category_id: "1", category_name: "Film Yok", parent_id: 0 }]);
@@ -205,7 +244,7 @@ app.get('/player_api.php', (req, res) => {
         return res.json(vodList);
     }
 
-    // DIZILER
+    // DİZİLER
     if (action === 'get_series_categories') {
         return res.json([{ category_id: "1", category_name: "Tüm Diziler", parent_id: 0 }]);
     }
@@ -286,24 +325,34 @@ app.get('/:type/:user/:pass/:id', async (req, res) => {
     const tvItems = readM3UFile('tv.m3u');
     const movieItems = readM3UFile('movie.m3u');
     const seriesItems = readM3UFile('series.m3u');
+    const uniqueSeries = getAllUniqueSeries();
 
-    // 1. CANLI TV (1 - 900) -> 302 Yönlendirme (HLS uyumlu)
-    if (cleanId <= 900 && tvItems[cleanId - 1]) {
+    // 1. 7/24 DİZİ KANALLARI (501 - 599) -> Canlı zaman hesaplayıp o anki bölüme yönlendir
+    if (cleanId >= 501 && cleanId <= 599) {
+        const seriesIdx = cleanId - 501;
+        const targetSeries = uniqueSeries[seriesIdx];
+        if (targetSeries) {
+            targetPath = getCurrentEpisodeUrl(targetSeries.name);
+            if (targetPath) return res.redirect(302, targetPath);
+        }
+    }
+
+    // 2. NORMAL CANLI TV (1 - 500) -> 302 Yönlendirme
+    if (cleanId <= 500 && tvItems[cleanId - 1]) {
         targetPath = tvItems[cleanId - 1].url;
         return res.redirect(302, targetPath);
     }
     
-    // 2. FILMLER (1001 - 1999) -> 302 Yönlendirme
+    // 3. FILMLER (1001 - 1999) -> 302 Yönlendirme
     if (cleanId > 1000 && cleanId < 2000 && movieItems[cleanId - 1001]) {
         targetPath = movieItems[cleanId - 1001].url;
         return res.redirect(302, targetPath);
     }
     
-    // 3. DIZILER (10001+) -> 302 Yönlendirme
+    // 4. DIZILER (10001+) -> 302 Yönlendirme
     if (cleanId >= 10001) {
         const seriesIndex = Math.floor(cleanId / 10000) - 1;
         const episodeIndex = (cleanId % 10000) - 1;
-        const uniqueSeries = getAllUniqueSeries();
         const targetSeries = uniqueSeries[seriesIndex];
 
         if (targetSeries) {
