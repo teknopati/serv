@@ -9,6 +9,7 @@ const PORT = process.env.PORT || 3000;
 // 🔐 IPTV Giriş Bilgileri
 const USERNAME = "admin";
 const PASSWORD = "123";
+const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
 
 // 📝 M3U Okuyucu
 function readM3UFile(fileName) {
@@ -61,11 +62,10 @@ function readM3UFile(fileName) {
                 currentItem = { name, group: rawGroup, seriesName, logo, season, episode, durationInSeconds };
             } else if (line && !line.startsWith('#')) {
                 if (currentItem.name) {
-                    // Google Drive indirme linki standardizasyonu
                     let cleanUrl = line;
                     const idMatch = line.match(/id=([a-zA-Z0-9_-]+)/);
                     if (idMatch) {
-                        cleanUrl = `https://drive.google.com/uc?export=download&id=${idMatch[1]}`;
+                        cleanUrl = `https://drive.google.com/uc?export=download&confirm=t&id=${idMatch[1]}`;
                     }
                     currentItem.url = cleanUrl;
                     items.push(currentItem);
@@ -271,7 +271,7 @@ app.get('/player_api.php', (req, res) => {
     res.json([]);
 });
 
-// 🎬 DOĞRUDAN VE KASMASIZ OYNATMA (VOD İÇİN 302 DIRECT, LIVE İÇİN FFMPEG)
+// 🎬 DOĞRUDAN VE KASMASIZ OYNATMA
 app.get('/:type/:user/:pass/:id', async (req, res) => {
     const { type, user, pass, id } = req.params;
 
@@ -297,7 +297,6 @@ app.get('/:type/:user/:pass/:id', async (req, res) => {
     // 2. FILMLER (1001 - 1999)
     if (cleanId > 1000 && cleanId < 2000 && movieItems[cleanId - 1001]) {
         targetPath = movieItems[cleanId - 1001].url;
-        // 🟢 FİLM İSE RENDER'I YORMA, DİREKT MP4 OLARAK YÖNLENDİR (SÜRE VE İLERLETME AÇILIR)
         return res.redirect(302, targetPath);
     }
     
@@ -312,7 +311,6 @@ app.get('/:type/:user/:pass/:id', async (req, res) => {
             const targetEpisodes = seriesItems.filter(item => item.seriesName.toLowerCase() === targetSeries.name.toLowerCase());
             if (targetEpisodes[episodeIndex] && targetEpisodes[episodeIndex].url) {
                 targetPath = targetEpisodes[episodeIndex].url;
-                // 🟢 DİZİ İSE RENDER'I YORMA, DİREKT MP4 OLARAK YÖNLENDİR (SÜRE VE İLERLETME AÇILIR)
                 return res.redirect(302, targetPath);
             }
         }
@@ -320,21 +318,30 @@ app.get('/:type/:user/:pass/:id', async (req, res) => {
 
     if (!targetPath) return res.status(404).send("Yayın bulunamadı");
 
-    // SADECE CANLI TV KANALLARI İÇİN FFMPEG KOPMA KORUMALI MOTOR
-    let ffmpegArgs = [
+    // 🟢 7/24 YAYINLARI KOPMADAN VE ANINDA AÇAN FFMPEG KÖPRÜSÜ
+    const ffmpegArgs = [
+        '-headers', `User-Agent: ${USER_AGENT}\r\n`,
         '-reconnect', '1',
+        '-reconnect_at_eof', '1',
         '-reconnect_streamed', '1',
-        '-reconnect_delay_max', '5',
+        '-reconnect_delay_max', '10',
         '-i', targetPath,
         '-c', 'copy',
+        '-copyts',
+        '-avoid_negative_ts', 'disabled',
+        '-fflags', '+genpts+nobuffer',
         '-f', 'mpegts',
         'pipe:1'
     ];
 
     const ffmpegProcess = spawn('ffmpeg', ffmpegArgs);
     res.setHeader('Content-Type', 'video/mp2t');
-    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
     ffmpegProcess.stdout.pipe(res);
+
+    ffmpegProcess.on('error', (err) => {
+        console.error('Ana Sunucu Canlı Yayın Hatası:', err);
+    });
 
     req.on('close', () => ffmpegProcess.kill('SIGKILL'));
 });
