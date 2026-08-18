@@ -86,7 +86,7 @@ https://tv-trtavaz.medya.trt.com.tr/master_1440.m3u8
 #EXTINF:-1 tvg-logo="https://r.resimlink.com/WEiRbsx.webp" group-title="HABER KANALLARI",CNBC-E
 https://hnpsechtsc.turknet.ercdn.net/xpnvudnlsv/cnbc-e/cnbc-e.m3u8?tv=1
 #EXTINF:-1 tvg-logo="https://r.resimlink.com/djaT7S.webp" group-title="ULUSAL KANALLAR",360
-https://turkmedya-live.ercdn.net/tv360/tv360_1080p.m3u8
+https://i.postimg.cc/gcD1N5mX/360-tr.webp
 #EXTINF:-1 tvg-logo="https://r.resimlink.com/7ZdlXg.webp" group-title="ULUSAL KANALLAR",BEYAZ TV
 https://beyaztv-live.daioncdn.net/beyaztv/beyaztv_1080p.m3u8
 #EXTINF:-1 tvg-logo="https://img-tlctv.mncdn.com/logo.png?v=1.1" group-title="SİNEMA/DİZİ KANALLARI",TLC
@@ -228,11 +228,11 @@ http://162.212.179.32/akamaissh101/ssh101/cine_7/chunks.m3u8
 #EXTINF:-1 tvg-logo="https://ia800906.us.archive.org/17/items/cine-7-tezene/CINE7_PLUS.gif.gif" group-title="SİNEMA/DİZİ KANALLARI",CİNE7 +PLUS
 http://162.212.179.32/akamaissh101/ssh101/cine5+/chunks.m3u8
 #EXTINF:-1 tvg-logo="https://ia800906.us.archive.org/17/items/cine-7-tezene/CINE7_T%C3%9CRK.gif" group-title="SİNEMA/DİZİ KANALLARI",CİNE7 TÜRK
-http://162.212.179.32/akamaissh101/ssh101/cine5_turk/chunks.m3u8
+http://162.212.179.32/akamaissh101/ssh101/cine7__türk/chunks.m3u8
 #EXTINF:-1 tvg-logo="https://ia800906.us.archive.org/17/items/cine-7-tezene/CINE7_STAR.gif" group-title="SİNEMA/DİZİ KANALLARI",CİNE7 STAR
 http://162.212.179.32/akamaissh101/ssh101/star1/chunks.m3u8
 #EXTINF:-1 tvg-logo="https://ia800906.us.archive.org/17/items/cine-7-tezene/CINE7_D%C4%B0Z%C4%B0.gif" group-title="SİNEMA/DİZİ KANALLARI",CİNE7 DİZİ
-http://162.212.179.32/akamaissh101/ssh101/teber_tv3/chunks.m3u8
+http://162.212.179.32/akamaissh101/ssh101/cine7__dizi/chunks.m3u8
 #EXTINF:-1 tvg-logo="https://i.postimg.cc/d0YrbxXS/12029-removebg-preview.png" group-title="SİNEMA/DİZİ KANALLARI",TELEZEN
 https://raw.githubusercontent.com/ibrahim9071/kick/refs/heads/main/streams/telezentvchannel.m3u8
 #EXTINF:-1 tvg-logo="https://i.postimg.cc/jS1HX7WF/37615020-ico.png" group-title="SİNEMA/DİZİ KANALLARI",PATİ TV
@@ -288,7 +288,7 @@ http://139.162.182.79/live/test/index.m3u8
 #EXTINF:-1 tvg-logo="https://www.edirnetv.com/wp-content/uploads/2022/02/etv-logo.gif" group-title="YEREL KANALLAR",EDİRNE TV
 https://yayin.edirnetv.com:8088/hls/etvcanliyayin.m3u8
 #EXTINF:-1 tvg-logo="https://ia600906.us.archive.org/17/items/cine-7-tezene/CINE7_TEZENE.gif" group-title="MÜZİK KANALLARI",CİNE7 TEZENE
-http://162.212.179.32/akamaissh101/ssh101/teber_tv7/chunks.m3u8
+http://162.212.179.32/akamaissh101/ssh101/cine7__tezene/chunks.m3u8
 #EXTINF:-1 tvg-logo="https://i.postimg.cc/vHdRX0gJ/logo-removebg-preview.png" group-title="MÜZİK KANALLARI",EKİNTÜRK
 https://ekintv.net/hls/ekintv.m3u8
 #EXTINF:-1 tvg-logo="https://i.postimg.cc/027G2SSB/channels4-profile-removebg-preview-(3).png" group-title="MÜZİK KANALLARI",CAN TEMPO TV
@@ -324,7 +324,7 @@ http://188.245.211.255:1935/canlitv/yabantv.stream/playlist.m3u8?hash=56b6d08590
 #EXTINF:-1 tvg-logo="https://www.ciftcitv.com/assets/images/logo_dark.svg" group-title="BELGELSEL KANALLARI",ÇİFTÇİ TV
 https://live.artidijitalmedya.com/artidijital_ciftcitv/ciftcitv/chunks.m3u8
 #EXTINF:-1 tvg-logo="https://ia800906.us.archive.org/17/items/cine-7-tezene/CINE7_SAFAR%C4%B0.gif.gif" group-title="BELGELSEL KANALLARI",CİNE7 SAFARİ
-http://162.212.179.32/akamaissh101/ssh101/teber_tv6/chunks.m3u8
+http://162.212.179.32/akamaissh101/ssh101/cine7__safari/chunks.m3u8
 #EXTINF:-1 tvg-logo="https://agrotvcomtr.teimg.com/agrotv-com-tr/uploads/2024/09/100x400-1.png" group-title="BELGELSEL KANALLARI",AGRO TV
 https://agro.fatihdemirsoy.com:8181/memfs/efe70a0b-aea8-48f3-bfda-72fff7f48a7b_output_0.m3u8?session=WiBL6q6PzoRV7DTJZaMvmo
 #EXTINF:-1 tvg-logo="https://i.postimg.cc/Wb61NL6k/tarihtv-beyaz.png" group-title="BELGELSEL KANALLARI",TARİH TV
