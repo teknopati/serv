@@ -11,7 +11,6 @@ const USERNAME = "admin";
 const PASSWORD = "123";
 const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
 
-// 📝 M3U Okuyucu
 function readM3UFile(fileName) {
     try {
         const filePath = path.join(__dirname, fileName);
@@ -80,7 +79,6 @@ function readM3UFile(fileName) {
     }
 }
 
-// 🔤 ALFABE GRUPLARI
 const ALPHABET_GROUPS = [
     { id: "alpha_1", name: "🔤 [ A - B - C ]", chars: ['a', 'b', 'c'] },
     { id: "alpha_2", name: "🔤 [ Ç - D - E ]", chars: ['ç', 'd', 'e'] },
@@ -114,7 +112,7 @@ function getAllUniqueSeries() {
     return Array.from(seriesMap.values());
 }
 
-// 📺 XTREAM PLAYER API
+// 📺 XTREAM API (Kategori ve Bilgi Endpointleri)
 app.get('/player_api.php', (req, res) => {
     const { username, password, action, series_id, category_id } = req.query;
 
@@ -271,7 +269,7 @@ app.get('/player_api.php', (req, res) => {
     res.json([]);
 });
 
-// 🎬 DOĞRUDAN VE KASMASIZ OYNATMA
+// 🎬 XTREAM OYNATICI KÖPRÜSÜ
 app.get('/:type/:user/:pass/:id', async (req, res) => {
     const { type, user, pass, id } = req.params;
 
@@ -294,13 +292,13 @@ app.get('/:type/:user/:pass/:id', async (req, res) => {
         targetPath = tvItems[cleanId - 1].url;
     }
     
-    // 2. FILMLER (1001 - 1999)
+    // 2. FILMLER (1001 - 1999) -> Hafif 302 Yönlendirmesi
     if (cleanId > 1000 && cleanId < 2000 && movieItems[cleanId - 1001]) {
         targetPath = movieItems[cleanId - 1001].url;
         return res.redirect(302, targetPath);
     }
     
-    // 3. DIZILER (10001+)
+    // 3. DIZILER (10001+) -> Hafif 302 Yönlendirmesi
     if (cleanId >= 10001) {
         const seriesIndex = Math.floor(cleanId / 10000) - 1;
         const episodeIndex = (cleanId % 10000) - 1;
@@ -318,7 +316,7 @@ app.get('/:type/:user/:pass/:id', async (req, res) => {
 
     if (!targetPath) return res.status(404).send("Yayın bulunamadı");
 
-    // 🟢 7/24 YAYINLARI KOPMADAN VE ANINDA AÇAN FFMPEG KÖPRÜSÜ
+    // 🟢 CANLI YAYINLARI TİVİMATE VE DİĞER IPTV UYGULAMALARINA KESİNTİSİZ AKITAN MOTOR
     const ffmpegArgs = [
         '-headers', `User-Agent: ${USER_AGENT}\r\n`,
         '-reconnect', '1',
@@ -340,10 +338,10 @@ app.get('/:type/:user/:pass/:id', async (req, res) => {
     ffmpegProcess.stdout.pipe(res);
 
     ffmpegProcess.on('error', (err) => {
-        console.error('Ana Sunucu Canlı Yayın Hatası:', err);
+        console.error('Yayın akış hatası:', err);
     });
 
     req.on('close', () => ffmpegProcess.kill('SIGKILL'));
 });
 
-app.listen(PORT, () => console.log(`Xtream Sunucusu ${PORT} portunda devrede.`));
+app.listen(PORT, () => console.log(`Xtream IPTV Sunucusu ${PORT} portunda devrede.`));
