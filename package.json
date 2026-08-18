@@ -8,6 +8,7 @@
   "dependencies": {
     "express": "^4.18.2",
     "basic-ftp": "^5.0.0",
-    "axios": "^1.6.0"
+    "axios": "^1.6.0",
+    "fluent-ffmpeg": "^2.1.3"
   }
 }
