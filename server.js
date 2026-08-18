@@ -1,12 +1,12 @@
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
-const { spawn } = require('child_process');
+const https = require('https');
+const http = require('http');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// 🔐 IPTV Giriş Bilgileri
 const USERNAME = "admin";
 const PASSWORD = "123";
 const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
@@ -112,7 +112,7 @@ function getAllUniqueSeries() {
     return Array.from(seriesMap.values());
 }
 
-// 📺 XTREAM API (Kategori ve Bilgi Endpointleri)
+// 📺 XTREAM API
 app.get('/player_api.php', (req, res) => {
     const { username, password, action, series_id, category_id } = req.query;
 
@@ -271,7 +271,7 @@ app.get('/player_api.php', (req, res) => {
 
 // 🎬 XTREAM OYNATICI KÖPRÜSÜ
 app.get('/:type/:user/:pass/:id', async (req, res) => {
-    const { type, user, pass, id } = req.params;
+    const { user, pass, id } = req.params;
 
     if (user !== USERNAME || pass !== PASSWORD) {
         return res.status(403).send("Yetkisiz Erişim");
@@ -287,18 +287,36 @@ app.get('/:type/:user/:pass/:id', async (req, res) => {
     const movieItems = readM3UFile('movie.m3u');
     const seriesItems = readM3UFile('series.m3u');
 
-    // 1. CANLI TV (1 - 900)
+    // 1. CANLI TV (1 - 900) -> 7/24 Sunucusunun çıktısını doğrudan pipe et
     if (cleanId <= 900 && tvItems[cleanId - 1]) {
         targetPath = tvItems[cleanId - 1].url;
+
+        res.setHeader('Content-Type', 'video/mp2t');
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+
+        const client = targetPath.startsWith('https') ? https : http;
+        const proxyReq = client.get(targetPath, { headers: { 'User-Agent': USER_AGENT } }, (streamRes) => {
+            streamRes.pipe(res);
+        });
+
+        proxyReq.on('error', (err) => {
+            console.error('Proxy Bağlantı Hatası:', err.message);
+            if (!res.headersSent) res.status(502).send("Yayın Sunucusuna Erişilemedi");
+        });
+
+        req.on('close', () => {
+            proxyReq.destroy();
+        });
+        return;
     }
     
-    // 2. FILMLER (1001 - 1999) -> Hafif 302 Yönlendirmesi
+    // 2. FILMLER (1001 - 1999) -> 302 Yönlendirme
     if (cleanId > 1000 && cleanId < 2000 && movieItems[cleanId - 1001]) {
         targetPath = movieItems[cleanId - 1001].url;
         return res.redirect(302, targetPath);
     }
     
-    // 3. DIZILER (10001+) -> Hafif 302 Yönlendirmesi
+    // 3. DIZILER (10001+) -> 302 Yönlendirme
     if (cleanId >= 10001) {
         const seriesIndex = Math.floor(cleanId / 10000) - 1;
         const episodeIndex = (cleanId % 10000) - 1;
@@ -314,34 +332,7 @@ app.get('/:type/:user/:pass/:id', async (req, res) => {
         }
     }
 
-    if (!targetPath) return res.status(404).send("Yayın bulunamadı");
-
-    // 🟢 CANLI YAYINLARI TİVİMATE VE DİĞER IPTV UYGULAMALARINA KESİNTİSİZ AKITAN MOTOR
-    const ffmpegArgs = [
-        '-headers', `User-Agent: ${USER_AGENT}\r\n`,
-        '-reconnect', '1',
-        '-reconnect_at_eof', '1',
-        '-reconnect_streamed', '1',
-        '-reconnect_delay_max', '10',
-        '-i', targetPath,
-        '-c', 'copy',
-        '-copyts',
-        '-avoid_negative_ts', 'disabled',
-        '-fflags', '+genpts+nobuffer',
-        '-f', 'mpegts',
-        'pipe:1'
-    ];
-
-    const ffmpegProcess = spawn('ffmpeg', ffmpegArgs);
-    res.setHeader('Content-Type', 'video/mp2t');
-    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-    ffmpegProcess.stdout.pipe(res);
-
-    ffmpegProcess.on('error', (err) => {
-        console.error('Yayın akış hatası:', err);
-    });
-
-    req.on('close', () => ffmpegProcess.kill('SIGKILL'));
+    return res.status(404).send("Yayın bulunamadı");
 });
 
 app.listen(PORT, () => console.log(`Xtream IPTV Sunucusu ${PORT} portunda devrede.`));
