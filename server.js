@@ -287,27 +287,10 @@ app.get('/:type/:user/:pass/:id', async (req, res) => {
     const movieItems = readM3UFile('movie.m3u');
     const seriesItems = readM3UFile('series.m3u');
 
-    // 1. CANLI TV (1 - 900) -> 7/24 Sunucusunun çıktısını doğrudan pipe et
+    // 1. CANLI TV (1 - 900) -> 302 Yönlendirme (HLS uyumlu)
     if (cleanId <= 900 && tvItems[cleanId - 1]) {
         targetPath = tvItems[cleanId - 1].url;
-
-        res.setHeader('Content-Type', 'video/mp2t');
-        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-
-        const client = targetPath.startsWith('https') ? https : http;
-        const proxyReq = client.get(targetPath, { headers: { 'User-Agent': USER_AGENT } }, (streamRes) => {
-            streamRes.pipe(res);
-        });
-
-        proxyReq.on('error', (err) => {
-            console.error('Proxy Bağlantı Hatası:', err.message);
-            if (!res.headersSent) res.status(502).send("Yayın Sunucusuna Erişilemedi");
-        });
-
-        req.on('close', () => {
-            proxyReq.destroy();
-        });
-        return;
+        return res.redirect(302, targetPath);
     }
     
     // 2. FILMLER (1001 - 1999) -> 302 Yönlendirme
