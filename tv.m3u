@@ -78,7 +78,7 @@ https://tv-trtavaz.medya.trt.com.tr/master_1440.m3u8
 #EXTINF:-1 tvg-logo="https://r.resimlink.com/WEiRbsx.webp" group-title="HABER KANALLARI",CNBC-E
 https://hnpsechtsc.turknet.ercdn.net/xpnvudnlsv/cnbc-e/cnbc-e.m3u8?tv=1
 #EXTINF:-1 tvg-logo="https://r.resimlink.com/djaT7S.webp" group-title="ULUSAL KANALLAR",360
-https://i.postimg.cc/gcD1N5mX/360-tr.webp
+https://turkmedya-live.ercdn.net/tv360/tv360_1080p.m3u8
 #EXTINF:-1 tvg-logo="https://r.resimlink.com/7ZdlXg.webp" group-title="ULUSAL KANALLAR",BEYAZ TV
 https://beyaztv-live.daioncdn.net/beyaztv/beyaztv_1080p.m3u8
 #EXTINF:-1 tvg-logo="https://img-tlctv.mncdn.com/logo.png?v=1.1" group-title="SİNEMA/DİZİ KANALLARI",TLC
@@ -96,7 +96,7 @@ https://halktv-live.daioncdn.net/halktv/halktv.m3u8
 #EXTINF:-1 tvg-logo="https://s.tv100.com/assets/web/images/logo.svg" group-title="HABER KANALLARI",TV100
 http://europe77.xyz:2095/live/sevgul49/nFSNas21UA/120666.m3u8
 #EXTINF:-1 tvg-logo="https://i.postimg.cc/6qkkWfXk/CNN-Turk-logo-svg.webp" group-title="HABER KANALLARI",CNN TÜRK
-http://176.65.153.7:6002/play/a012/index.m3u8
+http://umperisn.mywire.org/index.php?id=594252&token=DeaTHLesS
 #EXTINF:-1 tvg-logo="https://www.bloomberght.com/images/common/logo/bht-logo-white.svg" group-title="HABER KANALLARI",BLOOMBERG HT
 https://ciner.daioncdn.net/bloomberght/bloomberght.m3u8
 #EXTINF:-1 tvg-logo="https://www.szctv.com.tr/lib/img/logo.png" group-title="HABER KANALLARI",SZC
