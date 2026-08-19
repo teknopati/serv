@@ -7,7 +7,7 @@ const PORT = process.env.PORT || 3000;
 
 const USERNAME = "admin";
 const PASSWORD = "123";
-const DEFAULT_EP_DURATION = 1200; // 20 dakika
+const DEFAULT_EP_DURATION = 1200;
 
 function readM3UFile(fileName) {
     try {
@@ -41,7 +41,6 @@ function readM3UFile(fileName) {
                 const titleParts = line.split(',');
                 const rawTitle = titleParts.length > 1 ? titleParts[titleParts.length - 1].trim() : "Bölüm";
 
-                // Bölüm numarası ayrıştırma
                 let episode = 1;
                 const dashMatch = rawTitle.match(/(\d+)-(\d+)/);
                 const epMatch = rawTitle.match(/(?:Bölüm|E)\s*(\d+)/i);
@@ -114,6 +113,7 @@ function getAlphabetCategoryId(channelName) {
     return "alpha_10";
 }
 
+// Parçaları Bölümlere Göre Gruplama
 function getGroupedSeriesList() {
     const rawItems = readM3UFile('series.m3u');
     const seriesMap = new Map();
@@ -165,6 +165,7 @@ function getAllUniqueSeries() {
     return Array.from(seriesMap.values());
 }
 
+// 7/24 Canlı Dizi Akış Hesabı
 function getChannelCurrentSchedule(seriesName) {
     const rawItems = readM3UFile('series.m3u').filter(i => i.seriesName.toLowerCase() === seriesName.toLowerCase());
     if (rawItems.length === 0) return null;
@@ -292,7 +293,7 @@ app.get('/player_api.php', (req, res) => {
         return res.json(vodList);
     }
 
-    // DİZİLER (Series Menüsü)
+    // DİZİLER
     if (action === 'get_series_categories') {
         return res.json([{ category_id: "1", category_name: "Tüm Diziler", parent_id: 0 }]);
     }
@@ -365,7 +366,7 @@ app.get('/player_api.php', (req, res) => {
     res.json([]);
 });
 
-// 🎬 XTREAM OYNATICI KÖPRÜSÜ
+// 🎬 XTREAM OYNATICI VE HLS MANİFEST KÖPRÜSÜ
 app.get('/:type/:user/:pass/:id', async (req, res) => {
     const { user, pass, id } = req.params;
 
@@ -381,7 +382,7 @@ app.get('/:type/:user/:pass/:id', async (req, res) => {
     const movieItems = readM3UFile('movie.m3u');
     const uniqueSeries = getAllUniqueSeries();
 
-    // 1. 7/24 CANLI DİZİ KANALLARI (501 - 599)
+    // 1. 7/24 CANLI DİZİ KANALLARI (501 - 599) -> O anki saniyede oynayan bölüme 302 yönlendir
     if (cleanId >= 501 && cleanId <= 599) {
         const seriesIdx = cleanId - 501;
         const targetSeries = uniqueSeries[seriesIdx];
@@ -403,7 +404,7 @@ app.get('/:type/:user/:pass/:id', async (req, res) => {
         return res.redirect(302, movieItems[cleanId - 1001].url);
     }
     
-    // 4. DİZİ BÖLÜMÜ (VOD HLS MANİFESTİ: SÜRE ÇUBUĞU AKTİF, PARÇA GEÇİŞLERİNDE ASLA ATMAZ)
+    // 4. DİZİ BÖLÜMÜ (TÜM PARTLARI TEK BÖLÜMDE TOPLAYAN HLS VOD MANİFESTİ)
     if (cleanId >= 100000) {
         const seriesIdx = Math.floor(cleanId / 100000) - 1;
         const remainder = cleanId % 100000;
@@ -415,12 +416,11 @@ app.get('/:type/:user/:pass/:id', async (req, res) => {
             const epData = targetSeries.seasons[seasonNum][epNum];
             const parts = epData.parts;
 
-            // Tek parça varsa doğrudan dosyaya yönlendir
             if (parts.length === 1) {
                 return res.redirect(302, parts[0].url);
             }
 
-            // Çok parçalı bölüm: TV için VOD HLS Playlist oluştur
+            // Parçaları aralarında sıçrama ve çökme olmadan birleştiren standart VOD M3U8
             res.setHeader('Content-Type', 'application/vnd.apple.mpegurl');
 
             let vodM3u8 = `#EXTM3U\n`;
