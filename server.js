@@ -1,14 +1,13 @@
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
-const ffmpeg = require('fluent-ffmpeg');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 const USERNAME = "admin";
 const PASSWORD = "123";
-const DEFAULT_EP_DURATION = 1200;
+const DEFAULT_EP_DURATION = 1200; // 20 dakika
 
 function readM3UFile(fileName) {
     try {
@@ -42,7 +41,7 @@ function readM3UFile(fileName) {
                 const titleParts = line.split(',');
                 const rawTitle = titleParts.length > 1 ? titleParts[titleParts.length - 1].trim() : "Bölüm";
 
-                // Bölüm numarası yakalama (3-10, S03E10, Bölüm 10 vb.)
+                // Bölüm numarası ayrıştırma
                 let episode = 1;
                 const dashMatch = rawTitle.match(/(\d+)-(\d+)/);
                 const epMatch = rawTitle.match(/(?:Bölüm|E)\s*(\d+)/i);
@@ -115,7 +114,6 @@ function getAlphabetCategoryId(channelName) {
     return "alpha_10";
 }
 
-// Bütün parça dosyalarını dizi/sezon/bölüm şeklinde birleştirme havuzu
 function getGroupedSeriesList() {
     const rawItems = readM3UFile('series.m3u');
     const seriesMap = new Map();
@@ -151,7 +149,6 @@ function getGroupedSeriesList() {
         seriesObj.seasons[seasonNum][episodeNum].parts.push(item);
     });
 
-    // Parçaları part sırasına göre diz (P1, P2, P3...)
     seriesMap.forEach(s => {
         Object.keys(s.seasons).forEach(sn => {
             Object.keys(s.seasons[sn]).forEach(en => {
@@ -168,7 +165,6 @@ function getAllUniqueSeries() {
     return Array.from(seriesMap.values());
 }
 
-// 7/24 Canlı Dizi Akışı Hesabı
 function getChannelCurrentSchedule(seriesName) {
     const rawItems = readM3UFile('series.m3u').filter(i => i.seriesName.toLowerCase() === seriesName.toLowerCase());
     if (rawItems.length === 0) return null;
@@ -211,7 +207,6 @@ app.get('/player_api.php', (req, res) => {
         return res.json({ epg_listings: [] });
     }
 
-    // CANLI KATEGORİLER
     if (action === 'get_live_categories') {
         const liveItems = readM3UFile('tv.m3u');
         let categories = [{ category_id: "724_diziler", category_name: "📺 7/24 DİZİLER", parent_id: 0 }];
@@ -225,7 +220,6 @@ app.get('/player_api.php', (req, res) => {
         return res.json(categories);
     }
 
-    // CANLI KANALLAR
     if (action === 'get_live_streams') {
         const liveItems = readM3UFile('tv.m3u');
         const uniqueSeries = getAllUniqueSeries();
@@ -271,7 +265,6 @@ app.get('/player_api.php', (req, res) => {
         return res.json(streams);
     }
 
-    // VOD FİLMLER
     if (action === 'get_vod_categories') {
         const movieItems = readM3UFile('movie.m3u');
         if (movieItems.length === 0) return res.json([{ category_id: "1", category_name: "Film Yok", parent_id: 0 }]);
@@ -299,7 +292,7 @@ app.get('/player_api.php', (req, res) => {
         return res.json(vodList);
     }
 
-    // DİZİLER VE BİRLEŞİK BÖLÜMLER
+    // DİZİLER (Series Menüsü)
     if (action === 'get_series_categories') {
         return res.json([{ category_id: "1", category_name: "Tüm Diziler", parent_id: 0 }]);
     }
@@ -343,16 +336,17 @@ app.get('/player_api.php', (req, res) => {
             epKeys.forEach(epNum => {
                 const epData = targetSeries.seasons[seasonNum][epNum];
                 const globalEpId = (targetId * 100000) + (sInt * 1000) + parseInt(epNum);
-                
+                const totalSeconds = epData.parts.length * DEFAULT_EP_DURATION;
+
                 episodesObj[seasonNum].push({
                     id: globalEpId.toString(),
                     episode_num: parseInt(epNum),
                     title: `${targetSeries.name} - ${sInt}. Sezon ${epNum}. Bölüm`,
-                    container_extension: "mp4", // TV'nin varsayılan mp4 oynatıcısıyla açar
+                    container_extension: "m3u8",
                     info: { 
-                        duration_secs: epData.parts.length * DEFAULT_EP_DURATION,
-                        duration: `${Math.round((epData.parts.length * DEFAULT_EP_DURATION) / 60)} min`, 
-                        plot: `${targetSeries.name} ${sInt}. Sezon ${epNum}. Bölüm (Tüm parçalar birleşik)`, 
+                        duration_secs: totalSeconds,
+                        duration: `${Math.round(totalSeconds / 60)} min`, 
+                        plot: `${targetSeries.name} ${sInt}. Sezon ${epNum}. Bölüm (Tam Bölüm)`, 
                         movie_image: epData.logo || targetSeries.logo 
                     }
                 });
@@ -371,7 +365,7 @@ app.get('/player_api.php', (req, res) => {
     res.json([]);
 });
 
-// 🎬 XTREAM OYNATICI KÖPRÜSÜ VE BİRLEŞTİRME MOTORU
+// 🎬 XTREAM OYNATICI KÖPRÜSÜ
 app.get('/:type/:user/:pass/:id', async (req, res) => {
     const { user, pass, id } = req.params;
 
@@ -409,7 +403,7 @@ app.get('/:type/:user/:pass/:id', async (req, res) => {
         return res.redirect(302, movieItems[cleanId - 1001].url);
     }
     
-    // 4. DİZİ BÖLÜMÜ: TÜM PARTLARI ARKA PLANDA BİRLEŞTİRİP TEK MP4 AKIŞI YAPMA
+    // 4. DİZİ BÖLÜMÜ (VOD HLS MANİFESTİ: SÜRE ÇUBUĞU AKTİF, PARÇA GEÇİŞLERİNDE ASLA ATMAZ)
     if (cleanId >= 100000) {
         const seriesIdx = Math.floor(cleanId / 100000) - 1;
         const remainder = cleanId % 100000;
@@ -421,40 +415,28 @@ app.get('/:type/:user/:pass/:id', async (req, res) => {
             const epData = targetSeries.seasons[seasonNum][epNum];
             const parts = epData.parts;
 
-            // Bölüm tek parçaysa direkt yönlendir
+            // Tek parça varsa doğrudan dosyaya yönlendir
             if (parts.length === 1) {
                 return res.redirect(302, parts[0].url);
             }
 
-            // Bölüm birden fazla parçaysa: Geçici Concat Listesi oluşturup akıt
-            const tmpFile = path.join(__dirname, `concat_${Date.now()}_${Math.random().toString(36).substr(2, 5)}.txt`);
-            const concatContent = parts.map(p => `file '${p.url}'`).join('\n');
-            fs.writeFileSync(tmpFile, concatContent);
+            // Çok parçalı bölüm: TV için VOD HLS Playlist oluştur
+            res.setHeader('Content-Type', 'application/vnd.apple.mpegurl');
 
-            res.setHeader('Content-Type', 'video/mp4');
+            let vodM3u8 = `#EXTM3U\n`;
+            vodM3u8 += `#EXT-X-VERSION:3\n`;
+            vodM3u8 += `#EXT-X-TARGETDURATION:${DEFAULT_EP_DURATION + 10}\n`;
+            vodM3u8 += `#EXT-X-PLAYLIST-TYPE:VOD\n`;
+            vodM3u8 += `#EXT-X-MEDIA-SEQUENCE:0\n`;
 
-            const ffmpegProcess = ffmpeg()
-                .input(tmpFile)
-                .inputOptions(['-f', 'concat', '-safe', '0', '-protocol_whitelist', 'file,http,https,tcp,tls'])
-                .outputOptions([
-                    '-c', 'copy',
-                    '-movflags', 'frag_keyframe+empty_moov+default_base_moof',
-                    '-f', 'mp4'
-                ])
-                .on('error', () => {
-                    try { if (fs.existsSync(tmpFile)) fs.unlinkSync(tmpFile); } catch (e) {}
-                })
-                .on('end', () => {
-                    try { if (fs.existsSync(tmpFile)) fs.unlinkSync(tmpFile); } catch (e) {}
-                });
-
-            ffmpegProcess.pipe(res, { end: true });
-
-            req.on('close', () => {
-                ffmpegProcess.kill('SIGKILL');
-                try { if (fs.existsSync(tmpFile)) fs.unlinkSync(tmpFile); } catch (e) {}
+            parts.forEach((part, i) => {
+                if (i > 0) vodM3u8 += `#EXT-X-DISCONTINUITY\n`;
+                vodM3u8 += `#EXTINF:${part.durationInSeconds || DEFAULT_EP_DURATION}.0,\n`;
+                vodM3u8 += `${part.url}\n`;
             });
-            return;
+
+            vodM3u8 += `#EXT-X-ENDLIST\n`;
+            return res.send(vodM3u8);
         }
     }
 
