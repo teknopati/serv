@@ -41,6 +41,7 @@ function readM3UFile(fileName) {
                 const titleParts = line.split(',');
                 const rawTitle = titleParts.length > 1 ? titleParts[titleParts.length - 1].trim() : "Bölüm";
 
+                // Bölüm & Parça Ayrıştırma
                 let episode = 1;
                 const dashMatch = rawTitle.match(/(\d+)-(\d+)/);
                 const epMatch = rawTitle.match(/(?:Bölüm|E)\s*(\d+)/i);
@@ -53,7 +54,7 @@ function readM3UFile(fileName) {
                 }
 
                 let partNum = 1;
-                const partMatch = rawTitle.match(/(?:_P|\(Parça\s*)(\d+)/i);
+                const partMatch = rawTitle.match(/(?:_P|\(Parça\s*|Parça\s*)(\d+)/i);
                 if (partMatch) {
                     partNum = parseInt(partMatch[1]);
                 }
@@ -76,7 +77,7 @@ function readM3UFile(fileName) {
                     let cleanUrl = line;
                     const idMatch = line.match(/id=([a-zA-Z0-9_-]+)/);
                     if (idMatch) {
-                        cleanUrl = `https://drive.google.com/uc?export=download&confirm=t&id=${idMatch[1]}`;
+                        cleanUrl = `https://drive.usercontent.google.com/download?id=${idMatch[1]}&export=download&confirm=t`;
                     }
                     currentItem.url = cleanUrl;
                     items.push(currentItem);
@@ -117,43 +118,17 @@ function getGroupedSeriesList() {
     const rawItems = readM3UFile('series.m3u');
     const seriesMap = new Map();
 
-    rawItems.forEach(item => {
+    rawItems.forEach((item, index) => {
         const sKey = item.seriesName.toLowerCase();
         if (!seriesMap.has(sKey)) {
             seriesMap.set(sKey, {
                 name: item.seriesName,
                 logo: item.logo,
-                seasons: {}
+                items: []
             });
         }
-
-        const seriesObj = seriesMap.get(sKey);
-        const seasonNum = item.season || 1;
-        const episodeNum = item.episode || 1;
-
-        if (!seriesObj.seasons[seasonNum]) {
-            seriesObj.seasons[seasonNum] = {};
-        }
-
-        if (!seriesObj.seasons[seasonNum][episodeNum]) {
-            seriesObj.seasons[seasonNum][episodeNum] = {
-                season: seasonNum,
-                episode: episodeNum,
-                title: `${seasonNum}. Sezon ${episodeNum}. Bölüm`,
-                logo: item.logo,
-                parts: []
-            };
-        }
-
-        seriesObj.seasons[seasonNum][episodeNum].parts.push(item);
-    });
-
-    seriesMap.forEach(s => {
-        Object.keys(s.seasons).forEach(sn => {
-            Object.keys(s.seasons[sn]).forEach(en => {
-                s.seasons[sn][en].parts.sort((a, b) => a.partNum - b.partNum);
-            });
-        });
+        item.globalIndex = index;
+        seriesMap.get(sKey).items.push(item);
     });
 
     return seriesMap;
@@ -206,6 +181,7 @@ app.get('/player_api.php', (req, res) => {
         return res.json({ epg_listings: [] });
     }
 
+    // CANLI KATEGORİLER
     if (action === 'get_live_categories') {
         const liveItems = readM3UFile('tv.m3u');
         let categories = [{ category_id: "724_diziler", category_name: "📺 7/24 DİZİLER", parent_id: 0 }];
@@ -219,6 +195,7 @@ app.get('/player_api.php', (req, res) => {
         return res.json(categories);
     }
 
+    // CANLI KANALLAR
     if (action === 'get_live_streams') {
         const liveItems = readM3UFile('tv.m3u');
         const uniqueSeries = getAllUniqueSeries();
@@ -264,6 +241,7 @@ app.get('/player_api.php', (req, res) => {
         return res.json(streams);
     }
 
+    // VOD FİLMLER
     if (action === 'get_vod_categories') {
         const movieItems = readM3UFile('movie.m3u');
         if (movieItems.length === 0) return res.json([{ category_id: "1", category_name: "Film Yok", parent_id: 0 }]);
@@ -317,41 +295,44 @@ app.get('/player_api.php', (req, res) => {
 
         if (!targetSeries) return res.json({ seasons: [], episodes: {} });
 
-        let seasonsList = [];
+        let seasonsSet = new Set();
         let episodesObj = {};
 
-        Object.keys(targetSeries.seasons).forEach(seasonNum => {
-            const sInt = parseInt(seasonNum);
-            seasonsList.push({
-                id: sInt,
-                name: `${sInt}. Sezon`,
-                season_number: sInt,
-                cover: targetSeries.logo
-            });
+        targetSeries.items.forEach((item, idx) => {
+            const sNum = item.season || 1;
+            seasonsSet.add(sNum);
+            const seasonKey = sNum.toString();
 
-            episodesObj[seasonNum] = [];
-            const epKeys = Object.keys(targetSeries.seasons[seasonNum]).sort((a, b) => parseInt(a) - parseInt(b));
+            if (!episodesObj[seasonKey]) episodesObj[seasonKey] = [];
 
-            epKeys.forEach(epNum => {
-                const epData = targetSeries.seasons[seasonNum][epNum];
-                const globalEpId = (targetId * 100000) + (sInt * 1000) + parseInt(epNum);
+            const globalEpId = (targetId * 10000) + (idx + 1);
 
-                episodesObj[seasonNum].push({
-                    id: globalEpId.toString(),
-                    episode_num: parseInt(epNum),
-                    title: `${targetSeries.name} - ${sInt}. Sezon ${epNum}. Bölüm`,
-                    container_extension: "mp4", // Oynatıcının çökmesini engelleyen standart format
-                    info: { 
-                        duration_secs: epData.parts.length * DEFAULT_EP_DURATION,
-                        duration: `${Math.round((epData.parts.length * DEFAULT_EP_DURATION) / 60)} min`, 
-                        plot: `${targetSeries.name} ${sInt}. Sezon ${epNum}. Bölüm`, 
-                        movie_image: epData.logo || targetSeries.logo 
-                    }
-                });
+            let displayName = item.name;
+            if (!displayName.toLowerCase().includes("parça") && item.partNum > 0) {
+                displayName = `${sNum}. Sezon ${item.episode}. Bölüm (Parça ${item.partNum})`;
+            }
+
+            episodesObj[seasonKey].push({
+                id: globalEpId.toString(),
+                episode_num: idx + 1,
+                title: displayName,
+                container_extension: "mp4",
+                info: { 
+                    duration_secs: item.durationInSeconds,
+                    duration: `${Math.round(item.durationInSeconds / 60)} min`,
+                    plot: displayName, 
+                    movie_image: item.logo || targetSeries.logo 
+                }
             });
         });
 
-        seasonsList.sort((a, b) => a.season_number - b.season_number);
+        const sortedSeasons = Array.from(seasonsSet).sort((a, b) => a - b);
+        const seasonsList = sortedSeasons.map(s => ({
+            id: s,
+            name: `${s}. Sezon`,
+            season_number: s,
+            cover: targetSeries.logo
+        }));
 
         return res.json({
             seasons: seasonsList,
@@ -363,7 +344,7 @@ app.get('/player_api.php', (req, res) => {
     res.json([]);
 });
 
-// 🎬 XTREAM 302 YÖNLENDİRİCİSİ (Sıfır Hata & Sıfır Sunucu Kotası)
+// 🎬 XTREAM 302 YÖNLENDİRİCİSİ (Sıfır Kota Harcar & Donmadan Açar)
 app.get('/:type/:user/:pass/:id', async (req, res) => {
     const { user, pass, id } = req.params;
 
@@ -379,7 +360,7 @@ app.get('/:type/:user/:pass/:id', async (req, res) => {
     const movieItems = readM3UFile('movie.m3u');
     const uniqueSeries = getAllUniqueSeries();
 
-    // 1. 7/24 CANLI DİZİ KANALLARI (501 - 599)
+    // 1. 7/24 Canlı Dizi Kanalları (501 - 599)
     if (cleanId >= 501 && cleanId <= 599) {
         const seriesIdx = cleanId - 501;
         const targetSeries = uniqueSeries[seriesIdx];
@@ -391,29 +372,24 @@ app.get('/:type/:user/:pass/:id', async (req, res) => {
         }
     }
 
-    // 2. NORMAL CANLI TV (1 - 500)
+    // 2. Normal Canlı TV (1 - 500)
     if (cleanId <= 500 && tvItems[cleanId - 1]) {
         return res.redirect(302, tvItems[cleanId - 1].url);
     }
     
-    // 3. FILMLER (1001 - 1999)
+    // 3. Filmler (1001 - 1999)
     if (cleanId > 1000 && cleanId < 2000 && movieItems[cleanId - 1001]) {
         return res.redirect(302, movieItems[cleanId - 1001].url);
     }
     
-    // 4. DİZİ BÖLÜMÜ (100000+) -> Bölümün Parçasına 302 Yönlendir
-    if (cleanId >= 100000) {
-        const seriesIdx = Math.floor(cleanId / 100000) - 1;
-        const remainder = cleanId % 100000;
-        const seasonNum = Math.floor(remainder / 1000);
-        const epNum = remainder % 1000;
+    // 4. Diziler (10000+)
+    if (cleanId >= 10001) {
+        const seriesIndex = Math.floor(cleanId / 10000) - 1;
+        const itemIndex = (cleanId % 10000) - 1;
+        const targetSeries = uniqueSeries[seriesIndex];
 
-        const targetSeries = uniqueSeries[seriesIdx];
-        if (targetSeries && targetSeries.seasons[seasonNum] && targetSeries.seasons[seasonNum][epNum]) {
-            const epData = targetSeries.seasons[seasonNum][epNum];
-            if (epData.parts.length > 0) {
-                return res.redirect(302, epData.parts[0].url);
-            }
+        if (targetSeries && targetSeries.items[itemIndex]) {
+            return res.redirect(302, targetSeries.items[itemIndex].url);
         }
     }
 
