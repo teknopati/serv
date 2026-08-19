@@ -1,6 +1,7 @@
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
+const axios = require('axios');
 const ffmpeg = require('fluent-ffmpeg');
 
 const app = express();
@@ -49,7 +50,7 @@ function readM3UFile(fileName) {
                 const titleParts = line.split(',');
                 const rawTitle = titleParts.length > 1 ? titleParts[titleParts.length - 1].trim() : "Bölüm";
 
-                // Bölüm numarası çıkarma (1-1, Bölüm 1, S01E01 vb.)
+                // Bölüm numarası ayrıştırma (1-1, Bölüm 1, S01E01 vb.)
                 let episode = 1;
                 const dashMatch = rawTitle.match(/(\d+)-(\d+)/);
                 const epMatch = rawTitle.match(/(?:Bölüm|E)\s*(\d+)/i);
@@ -122,7 +123,7 @@ function getAlphabetCategoryId(channelName) {
     return "alpha_10";
 }
 
-// Dizileri Bölümlere Göre Grupla (Parçaları Birleştir)
+// Parçaları Bölüm Altında Birleştirip Gruplama
 function getGroupedSeriesList() {
     const rawItems = readM3UFile('series.m3u');
     const seriesMap = new Map();
@@ -158,7 +159,6 @@ function getGroupedSeriesList() {
         seriesObj.seasons[seasonNum][episodeNum].parts.push(item);
     });
 
-    // Parçaları sırala (P1, P2, P3...)
     seriesMap.forEach(s => {
         Object.keys(s.seasons).forEach(sn => {
             Object.keys(s.seasons[sn]).forEach(en => {
@@ -175,7 +175,7 @@ function getAllUniqueSeries() {
     return Array.from(seriesMap.values());
 }
 
-// 7/24 Canlı Dizi Akışı: Anlık Parça ve Saniyeyi Hesaplama
+// 7/24 Canlı Dizi Akışı Hesabı
 function getChannelCurrentSchedule(seriesName) {
     const rawItems = readM3UFile('series.m3u').filter(i => i.seriesName.toLowerCase() === seriesName.toLowerCase());
     if (rawItems.length === 0) return null;
@@ -232,14 +232,13 @@ app.get('/player_api.php', (req, res) => {
         return res.json(categories);
     }
 
-    // CANLI TV KANALLARI (7/24 Diziler Dahil)
+    // CANLI TV KANALLARI
     if (action === 'get_live_streams') {
         const liveItems = readM3UFile('tv.m3u');
         const uniqueSeries = getAllUniqueSeries();
         const cats = Array.from(new Set(liveItems.map(i => i.group)));
         let streams = [];
 
-        // Otomatik 7/24 Canlı Dizi Kanalları (Stream ID: 501 - 599)
         uniqueSeries.forEach((s, idx) => {
             streams.push({
                 num: streams.length + 1,
@@ -252,7 +251,6 @@ app.get('/player_api.php', (req, res) => {
             });
         });
 
-        // Standart Canlı Kanallar (tv.m3u)
         liveItems.forEach((item, index) => {
             const origCatId = (cats.indexOf(item.group) + 1).toString();
             const alphaCatId = getAlphabetCategoryId(item.name);
@@ -360,7 +358,7 @@ app.get('/player_api.php', (req, res) => {
                     container_extension: "mp4",
                     info: { 
                         duration: `${epData.parts.length * 20} min`, 
-                        plot: `${epData.parts.length} Parçadan Oluşan Tam Bölüm`, 
+                        plot: `${targetSeries.name} ${sInt}. Sezon ${epNum}. Bölüm (Tam Bölüm)`, 
                         movie_image: epData.logo || targetSeries.logo 
                     }
                 });
@@ -379,7 +377,7 @@ app.get('/player_api.php', (req, res) => {
     res.json([]);
 });
 
-// 🎬 XTREAM OYNATICI KÖPRÜSÜ
+// 🎬 XTREAM VE VİDEO AKIŞ KÖPRÜSÜ
 app.get('/:type/:user/:pass/:id', async (req, res) => {
     const { user, pass, id } = req.params;
 
@@ -395,7 +393,7 @@ app.get('/:type/:user/:pass/:id', async (req, res) => {
     const movieItems = readM3UFile('movie.m3u');
     const uniqueSeries = getAllUniqueSeries();
 
-    // 1. 7/24 CANLI DİZİ KANALLARI (501 - 599) -> Canlı TS Yayını (İlerleme çubuğu çıkmaz, anlık saatten akar)
+    // 1. 7/24 CANLI DİZİ KANALLARI (501 - 599)
     if (cleanId >= 501 && cleanId <= 599) {
         const seriesIdx = cleanId - 501;
         const targetSeries = uniqueSeries[seriesIdx];
@@ -418,31 +416,26 @@ app.get('/:type/:user/:pass/:id', async (req, res) => {
                         '-c:a copy',
                         '-f mpegts'
                     ])
-                    .on('error', (err) => {
-                        // Oynatıcı kapatıldığında hata vermeden çık
-                    });
+                    .on('error', () => {});
 
                 ffmpegProcess.pipe(res, { end: true });
-
-                req.on('close', () => {
-                    ffmpegProcess.kill('SIGKILL');
-                });
+                req.on('close', () => { ffmpegProcess.kill('SIGKILL'); });
                 return;
             }
         }
     }
 
-    // 2. NORMAL CANLI TV (1 - 500) -> 302 Yönlendirme
+    // 2. NORMAL CANLI TV (1 - 500)
     if (cleanId <= 500 && tvItems[cleanId - 1]) {
         return res.redirect(302, tvItems[cleanId - 1].url);
     }
     
-    // 3. FILMLER (1001 - 1999) -> 302 Yönlendirme
+    // 3. FILMLER (1001 - 1999)
     if (cleanId > 1000 && cleanId < 2000 && movieItems[cleanId - 1001]) {
         return res.redirect(302, movieItems[cleanId - 1001].url);
     }
     
-    // 4. DIZI BÖLÜMÜ (100000+) -> Bölümün İlk/Ana Parçasına Yönlendirme
+    // 4. DİZİ BÖLÜMÜ (TÜM PARÇALARI OTOMATİK ARDIŞIK PIPELAYAN MOTOR)
     if (cleanId >= 100000) {
         const seriesIdx = Math.floor(cleanId / 100000) - 1;
         const remainder = cleanId % 100000;
@@ -452,9 +445,47 @@ app.get('/:type/:user/:pass/:id', async (req, res) => {
         const targetSeries = uniqueSeries[seriesIdx];
         if (targetSeries && targetSeries.seasons[seasonNum] && targetSeries.seasons[seasonNum][epNum]) {
             const epData = targetSeries.seasons[seasonNum][epNum];
-            if (epData.parts.length > 0) {
-                return res.redirect(302, epData.parts[0].url);
+            const parts = epData.parts;
+
+            if (parts.length === 1) {
+                return res.redirect(302, parts[0].url);
             }
+
+            // Birden fazla parça varsa: Tek video gibi arkaya ekleyerek aktar
+            res.setHeader('Content-Type', 'video/mp4');
+
+            let isCancelled = false;
+            req.on('close', () => { isCancelled = true; });
+
+            const pipeSequentially = async (index) => {
+                if (index >= parts.length || isCancelled) {
+                    return res.end();
+                }
+
+                try {
+                    const response = await axios({
+                        method: 'get',
+                        url: parts[index].url,
+                        responseType: 'stream'
+                    });
+
+                    response.data.on('data', (chunk) => {
+                        if (!isCancelled) res.write(chunk);
+                    });
+
+                    response.data.on('end', () => {
+                        pipeSequentially(index + 1);
+                    });
+
+                    response.data.on('error', () => {
+                        pipeSequentially(index + 1);
+                    });
+                } catch (err) {
+                    pipeSequentially(index + 1);
+                }
+            };
+
+            return pipeSequentially(0);
         }
     }
 
