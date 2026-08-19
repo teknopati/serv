@@ -1,13 +1,14 @@
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
+const ffmpeg = require('fluent-ffmpeg');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 const USERNAME = "admin";
 const PASSWORD = "123";
-const DEFAULT_EP_DURATION = 1200;
+const DEFAULT_EP_DURATION = 1200; // Varsayılan parça süresi (20 dk)
 
 function readM3UFile(fileName) {
     try {
@@ -41,7 +42,6 @@ function readM3UFile(fileName) {
                 const titleParts = line.split(',');
                 const rawTitle = titleParts.length > 1 ? titleParts[titleParts.length - 1].trim() : "Bölüm";
 
-                // Bölüm & Parça Ayrıştırma
                 let episode = 1;
                 const dashMatch = rawTitle.match(/(\d+)-(\d+)/);
                 const epMatch = rawTitle.match(/(?:Bölüm|E)\s*(\d+)/i);
@@ -139,11 +139,15 @@ function getAllUniqueSeries() {
     return Array.from(seriesMap.values());
 }
 
+// 7/24 Canlı Akış Hesabı (Anlık saniyede hangi parça/ofset çalıyor)
 function getChannelCurrentSchedule(seriesName) {
     const rawItems = readM3UFile('series.m3u').filter(i => i.seriesName.toLowerCase() === seriesName.toLowerCase());
     if (rawItems.length === 0) return null;
 
-    const totalDuration = rawItems.length * DEFAULT_EP_DURATION;
+    let totalDuration = 0;
+    rawItems.forEach(i => { totalDuration += (i.durationInSeconds || DEFAULT_EP_DURATION); });
+    if (totalDuration === 0) totalDuration = rawItems.length * DEFAULT_EP_DURATION;
+
     const nowSec = Math.floor(Date.now() / 1000);
     let position = nowSec % totalDuration;
 
@@ -195,7 +199,7 @@ app.get('/player_api.php', (req, res) => {
         return res.json(categories);
     }
 
-    // CANLI KANALLAR
+    // CANLI KANALLAR (7/24 Diziler Burada Normal Kanal Olarak Çıkar)
     if (action === 'get_live_streams') {
         const liveItems = readM3UFile('tv.m3u');
         const uniqueSeries = getAllUniqueSeries();
@@ -269,7 +273,7 @@ app.get('/player_api.php', (req, res) => {
         return res.json(vodList);
     }
 
-    // DİZİLER
+    // DİZİLER (Series Menüsü - Parçalar Ayrı Ayrı Kalır)
     if (action === 'get_series_categories') {
         return res.json([{ category_id: "1", category_name: "Tüm Diziler", parent_id: 0 }]);
     }
@@ -344,7 +348,7 @@ app.get('/player_api.php', (req, res) => {
     res.json([]);
 });
 
-// 🎬 XTREAM 302 YÖNLENDİRİCİSİ (Sıfır Kota Harcar & Donmadan Açar)
+// 🎬 XTREAM YAYIN MOTORU
 app.get('/:type/:user/:pass/:id', async (req, res) => {
     const { user, pass, id } = req.params;
 
@@ -360,29 +364,49 @@ app.get('/:type/:user/:pass/:id', async (req, res) => {
     const movieItems = readM3UFile('movie.m3u');
     const uniqueSeries = getAllUniqueSeries();
 
-    // 1. 7/24 Canlı Dizi Kanalları (501 - 599)
+    // 1. 7/24 CANLI DİZİ KANALI (MPEG-TS Live Akış - Süre çubuğu yok, canlı TV)
     if (cleanId >= 501 && cleanId <= 599) {
         const seriesIdx = cleanId - 501;
         const targetSeries = uniqueSeries[seriesIdx];
         if (targetSeries) {
             const schedule = getChannelCurrentSchedule(targetSeries.name);
             if (schedule && schedule.url) {
-                return res.redirect(302, schedule.url);
+                res.setHeader('Content-Type', 'video/mp2t');
+
+                const ffmpegProcess = ffmpeg(schedule.url)
+                    .seekInput(schedule.offset)
+                    .inputOptions([
+                        '-re',
+                        '-reconnect 1',
+                        '-reconnect_at_eof 1',
+                        '-reconnect_streamed 1',
+                        '-reconnect_delay_max 5'
+                    ])
+                    .outputOptions([
+                        '-c:v copy',
+                        '-c:a copy',
+                        '-f mpegts'
+                    ])
+                    .on('error', () => {});
+
+                ffmpegProcess.pipe(res, { end: true });
+                req.on('close', () => { ffmpegProcess.kill('SIGKILL'); });
+                return;
             }
         }
     }
 
-    // 2. Normal Canlı TV (1 - 500)
+    // 2. NORMAL CANLI TV (1 - 500)
     if (cleanId <= 500 && tvItems[cleanId - 1]) {
         return res.redirect(302, tvItems[cleanId - 1].url);
     }
     
-    // 3. Filmler (1001 - 1999)
+    // 3. FİLMLER (1001 - 1999)
     if (cleanId > 1000 && cleanId < 2000 && movieItems[cleanId - 1001]) {
         return res.redirect(302, movieItems[cleanId - 1001].url);
     }
     
-    // 4. Diziler (10000+)
+    // 4. DİZİLER MENÜSÜ PARÇASI (10001+) -> Doğrudan Drive'a 302 Yönlendirme (0 Bayt Kota)
     if (cleanId >= 10001) {
         const seriesIndex = Math.floor(cleanId / 10000) - 1;
         const itemIndex = (cleanId % 10000) - 1;
