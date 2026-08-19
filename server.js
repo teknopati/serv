@@ -1,7 +1,6 @@
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
-const axios = require('axios');
 const ffmpeg = require('fluent-ffmpeg');
 
 const app = express();
@@ -10,13 +9,6 @@ const PORT = process.env.PORT || 3000;
 const USERNAME = "admin";
 const PASSWORD = "123";
 const DEFAULT_EP_DURATION = 1200;
-
-const CHANNEL_PROFILES = {
-    "kardeş payı": { videoCodec: "copy", audioCodec: "copy" },
-    "suskunlar": { videoCodec: "copy", audioCodec: "copy" },
-    "adventure time": { videoCodec: "copy", audioCodec: "copy" },
-    "default": { videoCodec: "copy", audioCodec: "copy" }
-};
 
 function readM3UFile(fileName) {
     try {
@@ -50,7 +42,6 @@ function readM3UFile(fileName) {
                 const titleParts = line.split(',');
                 const rawTitle = titleParts.length > 1 ? titleParts[titleParts.length - 1].trim() : "Bölüm";
 
-                // Bölüm numarası ayrıştırma (1-1, Bölüm 1, S01E01 vb.)
                 let episode = 1;
                 const dashMatch = rawTitle.match(/(\d+)-(\d+)/);
                 const epMatch = rawTitle.match(/(?:Bölüm|E)\s*(\d+)/i);
@@ -123,7 +114,6 @@ function getAlphabetCategoryId(channelName) {
     return "alpha_10";
 }
 
-// Parçaları Bölüm Altında Birleştirip Gruplama
 function getGroupedSeriesList() {
     const rawItems = readM3UFile('series.m3u');
     const seriesMap = new Map();
@@ -175,7 +165,6 @@ function getAllUniqueSeries() {
     return Array.from(seriesMap.values());
 }
 
-// 7/24 Canlı Dizi Akışı Hesabı
 function getChannelCurrentSchedule(seriesName) {
     const rawItems = readM3UFile('series.m3u').filter(i => i.seriesName.toLowerCase() === seriesName.toLowerCase());
     if (rawItems.length === 0) return null;
@@ -218,7 +207,6 @@ app.get('/player_api.php', (req, res) => {
         return res.json({ epg_listings: [] });
     }
 
-    // CANLI TV KATEGORİLERİ
     if (action === 'get_live_categories') {
         const liveItems = readM3UFile('tv.m3u');
         let categories = [{ category_id: "724_diziler", category_name: "📺 7/24 DİZİLER", parent_id: 0 }];
@@ -232,7 +220,6 @@ app.get('/player_api.php', (req, res) => {
         return res.json(categories);
     }
 
-    // CANLI TV KANALLARI
     if (action === 'get_live_streams') {
         const liveItems = readM3UFile('tv.m3u');
         const uniqueSeries = getAllUniqueSeries();
@@ -278,7 +265,6 @@ app.get('/player_api.php', (req, res) => {
         return res.json(streams);
     }
 
-    // VOD FİLMLER
     if (action === 'get_vod_categories') {
         const movieItems = readM3UFile('movie.m3u');
         if (movieItems.length === 0) return res.json([{ category_id: "1", category_name: "Film Yok", parent_id: 0 }]);
@@ -355,9 +341,10 @@ app.get('/player_api.php', (req, res) => {
                     id: globalEpId.toString(),
                     episode_num: parseInt(epNum),
                     title: `${targetSeries.name} - ${sInt}. Sezon ${epNum}. Bölüm`,
-                    container_extension: "mp4",
+                    container_extension: "ts", // TV'lerin parça geçişlerinde kilitlenmesini engelleyen evrensel video formatı
                     info: { 
-                        duration: `${epData.parts.length * 20} min`, 
+                        duration_secs: epData.parts.length * DEFAULT_EP_DURATION,
+                        duration: `${Math.round((epData.parts.length * DEFAULT_EP_DURATION) / 60)} min`, 
                         plot: `${targetSeries.name} ${sInt}. Sezon ${epNum}. Bölüm (Tam Bölüm)`, 
                         movie_image: epData.logo || targetSeries.logo 
                     }
@@ -377,7 +364,7 @@ app.get('/player_api.php', (req, res) => {
     res.json([]);
 });
 
-// 🎬 XTREAM VE VİDEO AKIŞ KÖPRÜSÜ
+// 🎬 XTREAM OYNATICI KÖPRÜSÜ
 app.get('/:type/:user/:pass/:id', async (req, res) => {
     const { user, pass, id } = req.params;
 
@@ -435,7 +422,7 @@ app.get('/:type/:user/:pass/:id', async (req, res) => {
         return res.redirect(302, movieItems[cleanId - 1001].url);
     }
     
-    // 4. DİZİ BÖLÜMÜ (TÜM PARÇALARI OTOMATİK ARDIŞIK PIPELAYAN MOTOR)
+    // 4. DİZİ BÖLÜMÜ (PARÇALARI ANLIK CONCAT EDEREK TEK BÖLÜM SUNAN MOTOR)
     if (cleanId >= 100000) {
         const seriesIdx = Math.floor(cleanId / 100000) - 1;
         const remainder = cleanId % 100000;
@@ -447,45 +434,38 @@ app.get('/:type/:user/:pass/:id', async (req, res) => {
             const epData = targetSeries.seasons[seasonNum][epNum];
             const parts = epData.parts;
 
+            // Tek parça varsa direkt yönlendir
             if (parts.length === 1) {
                 return res.redirect(302, parts[0].url);
             }
 
-            // Birden fazla parça varsa: Tek video gibi arkaya ekleyerek aktar
-            res.setHeader('Content-Type', 'video/mp4');
+            // Çok parçalı bölüm: FFmpeg concat ile parçaları başlık bozulması olmadan tek akışta sun
+            res.setHeader('Content-Type', 'video/mp2t');
 
-            let isCancelled = false;
-            req.on('close', () => { isCancelled = true; });
+            // Concat listesi oluştur
+            const concatInput = "concat:" + parts.map(p => p.url).join('|');
 
-            const pipeSequentially = async (index) => {
-                if (index >= parts.length || isCancelled) {
-                    return res.end();
-                }
+            const ffmpegProcess = ffmpeg(concatInput)
+                .inputOptions([
+                    '-reconnect 1',
+                    '-reconnect_at_eof 1',
+                    '-reconnect_streamed 1',
+                    '-reconnect_delay_max 5'
+                ])
+                .outputOptions([
+                    '-c:v copy',
+                    '-c:a copy',
+                    '-bsf:a aac_adtstoasc',
+                    '-f mpegts'
+                ])
+                .on('error', () => {});
 
-                try {
-                    const response = await axios({
-                        method: 'get',
-                        url: parts[index].url,
-                        responseType: 'stream'
-                    });
+            ffmpegProcess.pipe(res, { end: true });
 
-                    response.data.on('data', (chunk) => {
-                        if (!isCancelled) res.write(chunk);
-                    });
-
-                    response.data.on('end', () => {
-                        pipeSequentially(index + 1);
-                    });
-
-                    response.data.on('error', () => {
-                        pipeSequentially(index + 1);
-                    });
-                } catch (err) {
-                    pipeSequentially(index + 1);
-                }
-            };
-
-            return pipeSequentially(0);
+            req.on('close', () => {
+                ffmpegProcess.kill('SIGKILL');
+            });
+            return;
         }
     }
 
