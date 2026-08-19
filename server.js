@@ -152,7 +152,7 @@ app.get('/player_api.php', (req, res) => {
         return res.json({ epg_listings: [] });
     }
 
-    // 1. CANLI TV KATEGORİLERİ (tv.m3u dosyandaki kategoriler)
+    // CANLI KATEGORİLER
     if (action === 'get_live_categories') {
         const liveItems = readM3UFile('tv.m3u');
         let categories = [];
@@ -166,7 +166,7 @@ app.get('/player_api.php', (req, res) => {
         return res.json(categories);
     }
 
-    // 2. CANLI TV KANALLARI
+    // CANLI KANALLAR
     if (action === 'get_live_streams') {
         const liveItems = readM3UFile('tv.m3u');
         const cats = Array.from(new Set(liveItems.map(i => i.group)));
@@ -199,7 +199,7 @@ app.get('/player_api.php', (req, res) => {
         return res.json(streams);
     }
 
-    // 3. VOD FİLMLER
+    // VOD FİLMLER
     if (action === 'get_vod_categories') {
         const movieItems = readM3UFile('movie.m3u');
         if (movieItems.length === 0) return res.json([{ category_id: "1", category_name: "Film Yok", parent_id: 0 }]);
@@ -227,7 +227,7 @@ app.get('/player_api.php', (req, res) => {
         return res.json(vodList);
     }
 
-    // 4. DİZİLER (Series Menüsü)
+    // DİZİLER (Series)
     if (action === 'get_series_categories') {
         return res.json([{ category_id: "1", category_name: "Tüm Diziler", parent_id: 0 }]);
     }
@@ -318,17 +318,17 @@ app.get('/:type/:user/:pass/:id', async (req, res) => {
     const movieItems = readM3UFile('movie.m3u');
     const uniqueSeries = getAllUniqueSeries();
 
-    // 1. Normal Canlı TV (tv.m3u içindeki kanallar ve 7/24 HLS Linkleri)
+    // Canlı TV (tv.m3u)
     if (cleanId <= 500 && tvItems[cleanId - 1]) {
         return res.redirect(302, tvItems[cleanId - 1].url);
     }
     
-    // 2. Filmler (movie.m3u)
+    // Filmler (movie.m3u)
     if (cleanId > 1000 && cleanId < 2000 && movieItems[cleanId - 1001]) {
         return res.redirect(302, movieItems[cleanId - 1001].url);
     }
     
-    // 3. Diziler (series.m3u içindeki parçalar)
+    // Diziler (series.m3u)
     if (cleanId >= 10001) {
         const seriesIndex = Math.floor(cleanId / 10000) - 1;
         const itemIndex = (cleanId % 10000) - 1;
