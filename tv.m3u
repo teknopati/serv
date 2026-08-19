@@ -1,4 +1,12 @@
 #EXTM3U
+#EXTINF:-1 tvg-logo="https://images.justwatch.com/poster/346498963/s166/surekli-dizi.jpg" group-title="📺 7/24 DİZİLER",7/24 SÜREKLİ DİZİ
+https://teknopati.github.io/serv/live/sd.m3u8
+#EXTINF:-1 tvg-logo="https://m.media-amazon.com/images/M/MV5BMjkxMzIwNmQtMzM5Ni00YWJiLTg4YjQtNjBiN2IxMjZhMGQ2XkEyXkFqcGc@._V1_.jpg" group-title="📺 7/24 DİZİLER",7/24 ADVENTURE TIME
+https://teknopati.github.io/serv/live/at.m3u8
+#EXTINF:-1 tvg-logo="https://ntcmedya.com/wp-content/uploads/2016/09/kardespayiposter-500x760.jpg" group-title="📺 7/24 DİZİLER",7/24 KARDEŞ PAYI
+https://teknopati.github.io/serv/live/kp.m3u8
+#EXTINF:-1 tvg-logo="https://mo.ciner.com.tr/video/2013/10/02/00E3EE53930646E7BF836F461AC2F059.jpg" group-title="📺 7/24 DİZİLER",7/24 SUSKUNLAR
+https://teknopati.github.io/serv/live/su.m3u8
 #EXTINF:-1 tvg-logo="https://r.resimlink.com/-rlQxcgY.png" group-title="AVRUPA KANALLARI",ATV AVRUPA
 http://umperisn.mywire.org/index.php?id=1875&token=DeaTHLesS
 #EXTINF:-1 tvg-logo="https://r.resimlink.com/Uoupy2m.png" group-title="ULUSAL KANALLAR",A2
