@@ -1,7 +1,6 @@
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
-const ffmpeg = require('fluent-ffmpeg');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -31,7 +30,7 @@ function readM3UFile(fileName) {
                 const logo = logoMatch ? logoMatch[1] : "";
 
                 const groupMatch = line.match(/group-title="([^"]+)"/);
-                const rawGroup = groupMatch ? groupMatch[1] : "Filmler";
+                const rawGroup = groupMatch ? groupMatch[1] : "Diziler";
                 
                 let seriesName = rawGroup.split('-')[0].trim();
                 let season = 1;
@@ -42,6 +41,7 @@ function readM3UFile(fileName) {
                 const titleParts = line.split(',');
                 const rawTitle = titleParts.length > 1 ? titleParts[titleParts.length - 1].trim() : "Bölüm";
 
+                // Bölüm & Sezon Regex Ayrıştırma
                 let episode = 1;
                 const dashMatch = rawTitle.match(/(\d+)-(\d+)/);
                 const epMatch = rawTitle.match(/(?:Bölüm|E)\s*(\d+)/i);
@@ -114,6 +114,7 @@ function getAlphabetCategoryId(channelName) {
     return "alpha_10";
 }
 
+// Parçaları Bölüm Altında Birleştir
 function getGroupedSeriesList() {
     const rawItems = readM3UFile('series.m3u');
     const seriesMap = new Map();
@@ -165,6 +166,7 @@ function getAllUniqueSeries() {
     return Array.from(seriesMap.values());
 }
 
+// 7/24 Canlı Dizi Akışı Hesabı
 function getChannelCurrentSchedule(seriesName) {
     const rawItems = readM3UFile('series.m3u').filter(i => i.seriesName.toLowerCase() === seriesName.toLowerCase());
     if (rawItems.length === 0) return null;
@@ -341,7 +343,7 @@ app.get('/player_api.php', (req, res) => {
                     id: globalEpId.toString(),
                     episode_num: parseInt(epNum),
                     title: `${targetSeries.name} - ${sInt}. Sezon ${epNum}. Bölüm`,
-                    container_extension: "ts", // TV'lerin parça geçişlerinde kilitlenmesini engelleyen evrensel video formatı
+                    container_extension: "mp4",
                     info: { 
                         duration_secs: epData.parts.length * DEFAULT_EP_DURATION,
                         duration: `${Math.round((epData.parts.length * DEFAULT_EP_DURATION) / 60)} min`, 
@@ -387,27 +389,7 @@ app.get('/:type/:user/:pass/:id', async (req, res) => {
         if (targetSeries) {
             const schedule = getChannelCurrentSchedule(targetSeries.name);
             if (schedule && schedule.url) {
-                res.setHeader('Content-Type', 'video/mp2t');
-
-                const ffmpegProcess = ffmpeg(schedule.url)
-                    .seekInput(schedule.offset)
-                    .inputOptions([
-                        '-re',
-                        '-reconnect 1',
-                        '-reconnect_at_eof 1',
-                        '-reconnect_streamed 1',
-                        '-reconnect_delay_max 5'
-                    ])
-                    .outputOptions([
-                        '-c:v copy',
-                        '-c:a copy',
-                        '-f mpegts'
-                    ])
-                    .on('error', () => {});
-
-                ffmpegProcess.pipe(res, { end: true });
-                req.on('close', () => { ffmpegProcess.kill('SIGKILL'); });
-                return;
+                return res.redirect(302, schedule.url);
             }
         }
     }
@@ -422,7 +404,7 @@ app.get('/:type/:user/:pass/:id', async (req, res) => {
         return res.redirect(302, movieItems[cleanId - 1001].url);
     }
     
-    // 4. DİZİ BÖLÜMÜ (PARÇALARI ANLIK CONCAT EDEREK TEK BÖLÜM SUNAN MOTOR)
+    // 4. DİZİ BÖLÜMÜ (TÜM PARÇALARI KESİNTİSİZ BİRLEŞTİREN HLS MANİFESTİ)
     if (cleanId >= 100000) {
         const seriesIdx = Math.floor(cleanId / 100000) - 1;
         const remainder = cleanId % 100000;
@@ -434,38 +416,28 @@ app.get('/:type/:user/:pass/:id', async (req, res) => {
             const epData = targetSeries.seasons[seasonNum][epNum];
             const parts = epData.parts;
 
-            // Tek parça varsa direkt yönlendir
+            // Tek parça varsa direkt MP4 linkine yönlendir
             if (parts.length === 1) {
                 return res.redirect(302, parts[0].url);
             }
 
-            // Çok parçalı bölüm: FFmpeg concat ile parçaları başlık bozulması olmadan tek akışta sun
-            res.setHeader('Content-Type', 'video/mp2t');
+            // Çok parçalı bölümse: HLS VOD Manifesti oluştur (TV asla çökmez ve ardı ardına çalar)
+            res.setHeader('Content-Type', 'application/vnd.apple.mpegurl');
 
-            // Concat listesi oluştur
-            const concatInput = "concat:" + parts.map(p => p.url).join('|');
+            let vodM3u8 = `#EXTM3U\n`;
+            vodM3u8 += `#EXT-X-VERSION:3\n`;
+            vodM3u8 += `#EXT-X-TARGETDURATION:${DEFAULT_EP_DURATION + 10}\n`;
+            vodM3u8 += `#EXT-X-PLAYLIST-TYPE:VOD\n`;
+            vodM3u8 += `#EXT-X-MEDIA-SEQUENCE:0\n`;
 
-            const ffmpegProcess = ffmpeg(concatInput)
-                .inputOptions([
-                    '-reconnect 1',
-                    '-reconnect_at_eof 1',
-                    '-reconnect_streamed 1',
-                    '-reconnect_delay_max 5'
-                ])
-                .outputOptions([
-                    '-c:v copy',
-                    '-c:a copy',
-                    '-bsf:a aac_adtstoasc',
-                    '-f mpegts'
-                ])
-                .on('error', () => {});
-
-            ffmpegProcess.pipe(res, { end: true });
-
-            req.on('close', () => {
-                ffmpegProcess.kill('SIGKILL');
+            parts.forEach((part, i) => {
+                if (i > 0) vodM3u8 += `#EXT-X-DISCONTINUITY\n`;
+                vodM3u8 += `#EXTINF:${part.durationInSeconds || DEFAULT_EP_DURATION}.0, ${part.name}\n`;
+                vodM3u8 += `${part.url}\n`;
             });
-            return;
+
+            vodM3u8 += `#EXT-X-ENDLIST\n`;
+            return res.send(vodM3u8);
         }
     }
 
