@@ -3,6 +3,58 @@ const path = require('path');
 
 const DEFAULT_PART_DURATION = 1200;
 
+function turkishToEnglish(str) {
+    return str
+        .toLowerCase()
+        .replace(/ğ/g, 'g')
+        .replace(/ü/g, 'u')
+        .replace(/ş/g, 's')
+        .replace(/ı/g, 'i')
+        .replace(/ö/g, 'o')
+        .replace(/ç/g, 'c')
+        .replace(/[^a-z0-9\s]/g, ' ')
+        .trim();
+}
+
+function generateSmartAbbreviation(name, usedSlugs) {
+    const clean = turkishToEnglish(name);
+    const words = clean.split(/\s+/).filter(Boolean);
+
+    if (words.length === 0) return "dizi";
+
+    // 1. Durum: Çok kelimeliyse (Örn: "Adventure Time" -> "at", "Kardeş Payı" -> "kp")
+    if (words.length > 1) {
+        let slug = words.map(w => w[0]).join('');
+        if (!usedSlugs.has(slug)) return slug;
+
+        // Çakışma varsa harf uzunluğunu 2'şer, 3'er artır (Örn: "kosü")
+        for (let len = 2; len <= 5; len++) {
+            slug = words.map(w => w.substring(0, len)).join('');
+            if (!usedSlugs.has(slug)) return slug;
+        }
+    } 
+    // 2. Durum: Tek kelimeliyse (Örn: "Suskunlar" -> "su")
+    else {
+        const word = words[0];
+        let slug = word.substring(0, 2);
+        if (!usedSlugs.has(slug)) return slug;
+
+        // Çakışma varsa 3. ve 4. harfi ekle (Örn: "sus", "suc")
+        for (let len = 3; len <= word.length; len++) {
+            slug = word.substring(0, len);
+            if (!usedSlugs.has(slug)) return slug;
+        }
+    }
+
+    // Ekstra güvence (tüm denemeler çakışırsa sonuna sayı ekler)
+    let fallback = words.join('');
+    let counter = 1;
+    while (usedSlugs.has(fallback + (counter > 1 ? counter : ''))) {
+        counter++;
+    }
+    return fallback + (counter > 1 ? counter : '');
+}
+
 function generateLivePlaylists() {
     const seriesFilePath = path.join(__dirname, 'series.m3u');
     if (!fs.existsSync(seriesFilePath)) {
@@ -42,14 +94,14 @@ function generateLivePlaylists() {
                 }
                 currentItem.url = cleanUrl;
 
-                const sKey = currentItem.seriesName.toLowerCase().replace(/[^a-z0-9]/g, '_');
-                if (!seriesMap.has(sKey)) {
-                    seriesMap.set(sKey, {
-                        name: currentItem.seriesName,
+                const nameKey = currentItem.seriesName.trim();
+                if (!seriesMap.has(nameKey)) {
+                    seriesMap.set(nameKey, {
+                        name: nameKey,
                         parts: []
                     });
                 }
-                seriesMap.get(sKey).parts.push({ ...currentItem });
+                seriesMap.get(nameKey).parts.push({ ...currentItem });
                 currentItem = {};
             }
         }
@@ -60,7 +112,12 @@ function generateLivePlaylists() {
         fs.mkdirSync(outputDir, { recursive: true });
     }
 
-    seriesMap.forEach((data, key) => {
+    const usedSlugs = new Set();
+
+    seriesMap.forEach((data) => {
+        const slug = generateSmartAbbreviation(data.name, usedSlugs);
+        usedSlugs.add(slug);
+
         let m3u8Content = `#EXTM3U\n`;
         m3u8Content += `#EXT-X-VERSION:3\n`;
         m3u8Content += `#EXT-X-TARGETDURATION:7200\n`;
@@ -75,9 +132,9 @@ function generateLivePlaylists() {
 
         m3u8Content += `#EXT-X-ENDLIST\n`;
 
-        const outFilePath = path.join(outputDir, `${key}.m3u8`);
+        const outFilePath = path.join(outputDir, `${slug}.m3u8`);
         fs.writeFileSync(outFilePath, m3u8Content);
-        console.log(`✅ [${data.name}] için canlı yayın dosyası hazır: live/${key}.m3u8`);
+        console.log(`✅ [${data.name}] -> live/${slug}.m3u8`);
     });
 }
 
