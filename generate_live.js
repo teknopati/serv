@@ -22,31 +22,28 @@ function generateSmartAbbreviation(name, usedSlugs) {
 
     if (words.length === 0) return "dizi";
 
-    // 1. Durum: Çok kelimeliyse (Örn: "Adventure Time" -> "at", "Kardeş Payı" -> "kp")
+    // Çok kelimeliyse (Örn: "Adventure Time" -> "at", "Kardeş Payı" -> "kp")
     if (words.length > 1) {
         let slug = words.map(w => w[0]).join('');
         if (!usedSlugs.has(slug)) return slug;
 
-        // Çakışma varsa harf uzunluğunu 2'şer, 3'er artır (Örn: "kosü")
         for (let len = 2; len <= 5; len++) {
             slug = words.map(w => w.substring(0, len)).join('');
             if (!usedSlugs.has(slug)) return slug;
         }
     } 
-    // 2. Durum: Tek kelimeliyse (Örn: "Suskunlar" -> "su")
+    // Tek kelimeliyse (Örn: "Suskunlar" -> "su")
     else {
         const word = words[0];
         let slug = word.substring(0, 2);
         if (!usedSlugs.has(slug)) return slug;
 
-        // Çakışma varsa 3. ve 4. harfi ekle (Örn: "sus", "suc")
         for (let len = 3; len <= word.length; len++) {
             slug = word.substring(0, len);
             if (!usedSlugs.has(slug)) return slug;
         }
     }
 
-    // Ekstra güvence (tüm denemeler çakışırsa sonuna sayı ekler)
     let fallback = words.join('');
     let counter = 1;
     while (usedSlugs.has(fallback + (counter > 1 ? counter : ''))) {
@@ -108,9 +105,12 @@ function generateLivePlaylists() {
     });
 
     const outputDir = path.join(__dirname, 'live');
-    if (!fs.existsSync(outputDir)) {
-        fs.mkdirSync(outputDir, { recursive: true });
+    
+    // Eski dosyaları tamamen temizle
+    if (fs.existsSync(outputDir)) {
+        fs.rmSync(outputDir, { recursive: true, force: true });
     }
+    fs.mkdirSync(outputDir, { recursive: true });
 
     const usedSlugs = new Set();
 
