@@ -114,7 +114,7 @@ function getAlphabetCategoryId(channelName) {
     return "alpha_10";
 }
 
-// DİZİLERİ SEZON VE BÖLÜMLERE GÖRE GRUplayan Gelişmiş Mantık (Parçaları Birleştirir)
+// DİZİLERİ SEZON, BÖLÜM VE KATEGORİLERİNE GÖRE GRUPLAYAN MOTOR
 function getStructuredSeries() {
     const rawItems = readM3UFile('series.m3u');
     const seriesMap = new Map();
@@ -125,7 +125,7 @@ function getStructuredSeries() {
             seriesMap.set(sKey, {
                 name: item.seriesName,
                 logo: item.logo,
-                episodesMap: new Map() // Bölümleri tutacak
+                episodesMap: new Map()
             });
         }
 
@@ -140,15 +140,12 @@ function getStructuredSeries() {
                 episode: episodeNum,
                 title: `${seasonNum}. Sezon ${episodeNum}. Bölüm`,
                 logo: item.logo,
-                parts: [] // Bu bölüme ait parçalar (örn: Parça 1, Parça 2)
+                parts: []
             });
         }
-
-        // Parçaları sırasına göre ekle
         seriesObj.episodesMap.get(epKey).parts.push(item);
     });
 
-    // Map yapısını diziye çevir
     let formattedSeries = [];
     let seriesIndex = 0;
 
@@ -157,7 +154,6 @@ function getStructuredSeries() {
         let episodesList = [];
         let globalEpisodeCounter = 1;
 
-        // Bölümleri diziye dök ve sırala
         let sortedEpisodes = Array.from(seriesData.episodesMap.values()).sort((a, b) => {
             if (a.season !== b.season) return a.season - b.season;
             return a.episode - b.episode;
@@ -167,10 +163,7 @@ function getStructuredSeries() {
             const seasonKey = ep.season.toString();
             if (!seasonsObj[seasonKey]) seasonsObj[seasonKey] = [];
 
-            // Bu bölümün toplam süresi (tüm parçaların süreleri toplamı)
             let totalDurationSecs = ep.parts.reduce((acc, p) => acc + p.durationInSeconds, 0);
-
-            // Her bölüm için benzersiz bir ID oluşturuyoruz (Dizi ID * 10000 + Bölüm ID)
             const uniqueEpId = ((seriesIndex + 1) * 10000) + globalEpisodeCounter;
 
             episodesList.push({
@@ -180,7 +173,7 @@ function getStructuredSeries() {
                 title: `${ep.season}. Sezon ${ep.episode}. Bölüm`,
                 logo: ep.logo || seriesData.logo,
                 duration: totalDurationSecs,
-                parts: ep.parts // Parçaların link listesi
+                parts: ep.parts
             });
 
             seasonsObj[seasonKey].push({
@@ -203,6 +196,7 @@ function getStructuredSeries() {
             id: seriesIndex + 1,
             name: seriesData.name,
             logo: seriesData.logo,
+            categoryId: (seriesIndex + 1).toString(),
             seasons: Object.keys(seasonsObj).map(s => ({ id: parseInt(s), name: `${s}. Sezon`, season_number: parseInt(s), cover: seriesData.logo })),
             episodesObj: seasonsObj,
             rawEpisodesList: episodesList
@@ -214,7 +208,7 @@ function getStructuredSeries() {
     return formattedSeries;
 }
 
-// 📺 XTRAY API
+// 📺 XTREAM API
 app.get('/player_api.php', (req, res) => {
     const { username, password, action, series_id, category_id } = req.query;
 
@@ -308,11 +302,17 @@ app.get('/player_api.php', (req, res) => {
         return res.json(vodList);
     }
 
-    // DİZİLER (Series - Sezon ve Bölüm Listesi)
+    // DİZİ KATEGORİLERİ (Her dizi kendi adıyla kategori olur)
     if (action === 'get_series_categories') {
-        return res.json([{ category_id: "1", category_name: "Tüm Diziler", parent_id: 0 }]);
+        const structuredSeries = getStructuredSeries();
+        return res.json(structuredSeries.map(s => ({
+            category_id: s.categoryId,
+            category_name: s.name,
+            parent_id: 0
+        })));
     }
 
+    // DİZİLER
     if (action === 'get_series') {
         const structuredSeries = getStructuredSeries();
         let seriesList = structuredSeries.map((data) => ({
@@ -322,8 +322,12 @@ app.get('/player_api.php', (req, res) => {
             cover: data.logo,
             plot: `${data.name} Dizisi`,
             genre: "Dizi / Çizgi Dizi",
-            category_id: "1"
+            category_id: data.categoryId
         }));
+
+        if (category_id) {
+            seriesList = seriesList.filter(s => s.category_id === category_id.toString());
+        }
         return res.json(seriesList);
     }
 
@@ -344,7 +348,7 @@ app.get('/player_api.php', (req, res) => {
     res.json([]);
 });
 
-// 🎬 BÖLÜM PARÇALARINI BİRLEŞTİREREK OYNATAN MOTOR (İleri/Geri sarma destekli)
+// 🎬 AKIŞ YÖNLENDİRİCİSİ (Canlı Kanallar, Filmler ve Parçaları Birleşen Dizi Bölümleri)
 app.get('/:type/:user/:pass/:id', async (req, res) => {
     const { user, pass, id } = req.params;
 
@@ -363,15 +367,15 @@ app.get('/:type/:user/:pass/:id', async (req, res) => {
     let targetUrl = null;
     let targetEpisodeParts = null;
 
-    // 1. Canlı TV
+    // Canlı TV
     if (cleanId <= 500 && tvItems[cleanId - 1]) {
         targetUrl = tvItems[cleanId - 1].url;
     }
-    // 2. Filmler
+    // Filmler
     else if (cleanId > 1000 && cleanId < 2000 && movieItems[cleanId - 1001]) {
         targetUrl = movieItems[cleanId - 1001].url;
     }
-    // 3. Diziler (Bölüm ID'sine göre parçaları bul)
+    // Diziler (Bölüme tıklandığında parçalarını bulur)
     else if (cleanId >= 10000) {
         for (let series of structuredSeries) {
             const foundEp = series.rawEpisodesList.find(ep => ep.globalEpId === cleanId);
@@ -382,7 +386,7 @@ app.get('/:type/:user/:pass/:id', async (req, res) => {
         }
     }
 
-    // Eğer normal bir kanal/film ise tekil linki aç
+    // Canlı kanal veya film ise
     if (targetUrl) {
         try {
             const response = await axios({
@@ -399,7 +403,7 @@ app.get('/:type/:user/:pass/:id', async (req, res) => {
         }
     }
 
-    // Eğer dizi bölümü ise parçaları sırayla arkaya arkaya (zincirleme) akıt
+    // Dizi bölümü ise parçaları sırayla arkaya arkaya birleştirerek akıt
     if (targetEpisodeParts && targetEpisodeParts.length > 0) {
         res.setHeader('Content-Type', 'video/mp4');
         res.setHeader('Connection', 'keep-alive');
@@ -408,7 +412,7 @@ app.get('/:type/:user/:pass/:id', async (req, res) => {
 
         async function streamPart() {
             if (partIndex >= targetEpisodeParts.length) {
-                return res.end(); // Tüm parçalar bittiğinde akışı sonlandır
+                return res.end();
             }
 
             const currentPartUrl = targetEpisodeParts[partIndex];
@@ -423,7 +427,7 @@ app.get('/:type/:user/:pass/:id', async (req, res) => {
                 });
 
                 response.data.on('end', () => {
-                    streamPart(); // Birinci parça bittiği an ikinci parçaya geç
+                    streamPart();
                 });
 
                 response.data.on('error', () => {
