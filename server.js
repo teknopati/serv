@@ -10,7 +10,6 @@ const USERNAME = "admin";
 const PASSWORD = "123";
 const DEFAULT_EP_DURATION = 1200;
 
-// M3U Dosyalarını Hafızada Tutan Önbellek (Performans için şart)
 let cacheTV = [];
 let cacheMovies = [];
 let cacheSeries = [];
@@ -99,11 +98,12 @@ function readM3UFile(fileName) {
     }
 }
 
-// Sunucu başlarken dosyaları bir kez yükle
 loadAllPlaylists();
 
-function getAllUniqueSeries() {
+// Dizileri adlarına ve sezon/bölüm/parçalarına göre yapılandıran motor
+function getStructuredSeries() {
     const seriesMap = new Map();
+
     cacheSeries.forEach((item, index) => {
         const sKey = item.seriesName.toLowerCase();
         if (!seriesMap.has(sKey)) {
@@ -116,6 +116,7 @@ function getAllUniqueSeries() {
         item.globalIndex = index;
         seriesMap.get(sKey).items.push(item);
     });
+
     return Array.from(seriesMap.values());
 }
 
@@ -148,7 +149,7 @@ app.get('/player_api.php', (req, res) => {
         return res.json(categories);
     }
 
-    // 2. CANLI KANALLAR (Standart ve hafif yapı)
+    // 2. CANLI KANALLAR
     if (action === 'get_live_streams') {
         const cats = Array.from(new Set(cacheTV.map(i => i.group)));
         let streams = [];
@@ -200,13 +201,19 @@ app.get('/player_api.php', (req, res) => {
         return res.json(vodList);
     }
 
-    // 4. DİZİLER (SERIES)
+    // 4. DİZİ KATEGORİLERİ (Her dizi kendi adına bir kategori/klasör olur)
     if (action === 'get_series_categories') {
-        return res.json([{ category_id: "1", category_name: "Tüm Diziler", parent_id: 0 }]);
+        const uniqueSeries = getStructuredSeries();
+        return res.json(uniqueSeries.map((data, index) => ({
+            category_id: (index + 1).toString(),
+            category_name: data.name,
+            parent_id: 0
+        })));
     }
 
+    // DİZİLER LİSTESİ (Kategorilere göre filtrelenir)
     if (action === 'get_series') {
-        const uniqueSeries = getAllUniqueSeries();
+        const uniqueSeries = getStructuredSeries();
         let seriesList = uniqueSeries.map((data, index) => ({
             num: index + 1,
             name: data.name,
@@ -214,14 +221,19 @@ app.get('/player_api.php', (req, res) => {
             cover: "",
             plot: `${data.name} Dizisi`,
             genre: "Dizi / Çizgi Dizi",
-            category_id: "1"
+            category_id: (index + 1).toString()
         }));
+
+        if (category_id) {
+            seriesList = seriesList.filter(s => s.category_id === category_id.toString());
+        }
         return res.json(seriesList);
     }
 
+    // BÖLÜMLER VE SEZONLAR (Parçalar ayrı ayrı bölümler/öğeler olarak listelenir)
     if (action === 'get_series_info') {
         const targetId = parseInt(series_id) || 1;
-        const uniqueSeries = getAllUniqueSeries();
+        const uniqueSeries = getStructuredSeries();
         const targetSeries = uniqueSeries[targetId - 1];
 
         if (!targetSeries) return res.json({ seasons: [], episodes: {} });
@@ -287,7 +299,7 @@ app.get('/:type/:user/:pass/:id', async (req, res) => {
     if (!cleanIdMatch) return res.status(400).send("Geçersiz Yayın ID");
 
     const cleanId = parseInt(cleanIdMatch[1]);
-    const uniqueSeries = getAllUniqueSeries();
+    const uniqueSeries = getStructuredSeries();
 
     let targetUrl = null;
 
