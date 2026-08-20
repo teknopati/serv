@@ -8,8 +8,9 @@ const PORT = process.env.PORT || 3000;
 
 const USERNAME = "admin";
 const PASSWORD = "123";
-const DEFAULT_EP_DURATION = 1200; // Her parça varsayılan 20 dakika (1200 saniye)
+const DEFAULT_EP_DURATION = 1200;
 
+// Performans ve hız için listeleri bellekte tutuyoruz
 let cacheTV = [];
 let cacheMovies = [];
 let cacheSeries = [];
@@ -102,10 +103,34 @@ function readM3UFile(fileName) {
     }
 }
 
+// Sunucu başlarken dosyaları belleğe yükle
 loadPlaylists();
+
+const ALPHABET_GROUPS = [
+    { id: "alpha_1", name: "🔤 [ A - B - C ]", chars: ['a', 'b', 'c'] },
+    { id: "alpha_2", name: "🔤 [ Ç - D - E ]", chars: ['ç', 'd', 'e'] },
+    { id: "alpha_3", name: "🔤 [ F - G - Ğ ]", chars: ['f', 'g', 'ğ'] },
+    { id: "alpha_4", name: "🔤 [ H - I - İ ]", chars: ['h', 'ı', 'i'] },
+    { id: "alpha_5", name: "🔤 [ J - K - L ]", chars: ['j', 'k', 'l'] },
+    { id: "alpha_6", name: "🔤 [ M - N - O ]", chars: ['m', 'n', 'o'] },
+    { id: "alpha_7", name: "🔤 [ Ö - P - R ]", chars: ['ö', 'p', 'r'] },
+    { id: "alpha_8", name: "🔤 [ S - Ş - T ]", chars: ['s', 'ş', 't'] },
+    { id: "alpha_9", name: "🔤 [ U - Ü - V ]", chars: ['u', 'ü', 'v'] },
+    { id: "alpha_10", name: "🔤 [ Y - Z - # ]", chars: ['y', 'z'] }
+];
+
+function getAlphabetCategoryId(channelName) {
+    if (!channelName) return "alpha_10";
+    const firstChar = channelName.trim().charAt(0).toLowerCase();
+    for (let group of ALPHABET_GROUPS) {
+        if (group.chars.includes(firstChar)) return group.id;
+    }
+    return "alpha_10";
+}
 
 function getAllUniqueSeries() {
     const seriesMap = new Map();
+
     cacheSeries.forEach((item, index) => {
         const sKey = item.seriesName.toLowerCase();
         if (!seriesMap.has(sKey)) {
@@ -118,25 +143,8 @@ function getAllUniqueSeries() {
         item.globalIndex = index;
         seriesMap.get(sKey).items.push(item);
     });
+
     return Array.from(seriesMap.values());
-}
-
-// Her dizi için TV'de bir "Dizi Kanalı" oluşturan motor
-function getSeriesAsVirtualTvChannels() {
-    const uniqueSeries = getAllUniqueSeries();
-    let channels = [];
-    
-    uniqueSeries.forEach((series, index) => {
-        const streamId = 80000 + index; // Çakışmayı önlemek için özel ID
-        channels.push({
-            stream_id: streamId,
-            name: `📺 ${series.name} (7/24 Dizi TV)`,
-            stream_icon: series.logo,
-            items: series.items // O dizinin tüm parçaları sırayla
-        });
-    });
-
-    return channels;
 }
 
 // 📺 XTRAY API
@@ -158,63 +166,59 @@ app.get('/player_api.php', (req, res) => {
         return res.json({ epg_listings: [] });
     }
 
-    // 1. CANLI KATEGORİLER (Normal TV Grupları + "7/24 Dizi Kanalları" Kategorisi)
+    // CANLI KATEGORİLER
     if (action === 'get_live_categories') {
         let categories = [];
         if (cacheTV.length > 0) {
             const cats = Array.from(new Set(cacheTV.map(i => i.group)));
             cats.forEach((c, i) => categories.push({ category_id: (i + 1).toString(), category_name: c, parent_id: 0 }));
         }
-        // Özel Dizi Kanalları Kategorisi
-        categories.push({ category_id: "9999", category_name: "📺 7/24 Dizi Kanalları", parent_id: 0 });
+        ALPHABET_GROUPS.forEach(group => {
+            categories.push({ category_id: group.id, category_name: group.name, parent_id: 0 });
+        });
         return res.json(categories);
     }
 
-    // 2. CANLI KANALLAR (Normal Kanallar + 7/24 Dizi Kanalları)
+    // CANLI KANALLAR
     if (action === 'get_live_streams') {
         const cats = Array.from(new Set(cacheTV.map(i => i.group)));
         let streams = [];
 
         cacheTV.forEach((item, index) => {
+            const origCatId = (cats.indexOf(item.group) + 1).toString();
+            const alphaCatId = getAlphabetCategoryId(item.name);
+            const streamId = index + 1;
+
+            let targetCatId = origCatId;
+            if (category_id && category_id.toString().startsWith("alpha_")) {
+                targetCatId = alphaCatId;
+            }
+
             streams.push({
                 num: streams.length + 1,
                 name: item.name,
-                stream_id: index + 1,
+                stream_id: streamId,
                 stream_type: "live",
                 stream_icon: item.logo,
-                category_id: (cats.indexOf(item.group) + 1).toString(),
+                category_id: targetCatId,
                 direct_source: item.url
-            });
-        });
-
-        // 7/24 Dizi Kanallarını ekle
-        const virtualChannels = getSeriesAsVirtualTvChannels();
-        virtualChannels.forEach(vc => {
-            streams.push({
-                num: streams.length + 1,
-                name: vc.name,
-                stream_id: vc.stream_id,
-                stream_type: "live",
-                stream_icon: vc.stream_icon,
-                category_id: "9999",
-                // Oynatıcıyı bizim akış saatine göre yönlendiriyoruz
-                direct_source: `http://${req.headers.host}/virtual_stream/${vc.stream_id}`
             });
         });
 
         if (category_id) {
             streams = streams.filter(s => s.category_id === category_id.toString());
         } else {
-            streams = streams.slice(0, 100); // İlk açılışta donmayı önler
+            streams = streams.slice(0, 100); // İlk açılışta kilitlenmeyi önler
         }
         return res.json(streams);
     }
 
-    // 3. VOD FİLMLER
+    // VOD FİLMLER
     if (action === 'get_vod_categories') {
         if (cacheMovies.length === 0) return res.json([{ category_id: "1", category_name: "Film Yok", parent_id: 0 }]);
         const cats = Array.from(new Set(cacheMovies.map(i => i.group)));
-        return res.json(cats.map((c, i) => ({ category_id: (i + 1).toString(), category_name: c || "Filmler", parent_id: 0 })));
+        let categories = cats.map((c, i) => ({ category_id: (i + 1).toString(), category_name: c || "Filmler", parent_id: 0 }));
+        return res.json(categories);
     }
 
     if (action === 'get_vod_streams') {
@@ -235,14 +239,14 @@ app.get('/player_api.php', (req, res) => {
         return res.json(vodList);
     }
 
-    // 4. DİZİLER (SERIES - Orijinal kusursuz yapısı)
+    // DİZİLER (Series)
     if (action === 'get_series_categories') {
         return res.json([{ category_id: "1", category_name: "Tüm Diziler", parent_id: 0 }]);
     }
 
     if (action === 'get_series') {
         const uniqueSeries = getAllUniqueSeries();
-        return res.json(uniqueSeries.map((data, index) => ({
+        let seriesList = uniqueSeries.map((data, index) => ({
             num: index + 1,
             name: data.name,
             series_id: index + 1,
@@ -250,7 +254,8 @@ app.get('/player_api.php', (req, res) => {
             plot: `${data.name} Dizisi`,
             genre: "Dizi / Çizgi Dizi",
             category_id: "1"
-        })));
+        }));
+        return res.json(seriesList);
     }
 
     if (action === 'get_series_info') {
@@ -271,6 +276,7 @@ app.get('/player_api.php', (req, res) => {
             if (!episodesObj[seasonKey]) episodesObj[seasonKey] = [];
 
             const globalEpId = (targetId * 10000) + (idx + 1);
+
             let displayName = item.name;
             if (!displayName.toLowerCase().includes("parça") && item.partNum > 0) {
                 displayName = `${sNum}. Sezon ${item.episode}. Bölüm (Parça ${item.partNum})`;
@@ -308,49 +314,7 @@ app.get('/player_api.php', (req, res) => {
     res.json([]);
 });
 
-// 🕒 TV SAATİNE GÖRE AKIŞ YÖNETİCİSİ (Virtual TV Stream)
-app.get('/virtual_stream/:streamId', (req, res) => {
-    const streamId = parseInt(req.params.streamId);
-    const virtualChannels = getSeriesAsVirtualTvChannels();
-    const channel = virtualChannels.find(vc => vc.stream_id === streamId);
-
-    if (!channel || channel.items.length === 0) {
-        return res.status(404).send("Kanal bulunamadı");
-    }
-
-    // Günün başlangıcından (00:00:00) bu yana geçen toplam saniye
-    const now = new Date();
-    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const totalSecondsToday = Math.floor((now - startOfDay) / 1000);
-
-    // Her parçanın süresi kadar döngü kuruyoruz (Tüm dizinin toplam süresi)
-    let totalPlaylistDuration = channel.items.reduce((acc, item) => acc + (item.durationInSeconds || DEFAULT_EP_DURATION), 0);
-    
-    // Günün hangi saniyesindeysek, döngüsel olarak hangi parçaya denk geldiğimizi buluyoruz
-    let currentSecondInLoop = totalSecondsToday % totalPlaylistDuration;
-
-    let accumulatedTime = 0;
-    let activeItem = channel.items[0];
-
-    for (let item of channel.items) {
-        let itemDuration = item.durationInSeconds || DEFAULT_EP_DURATION;
-        if (currentSecondInLoop >= accumulatedTime && currentSecondInLoop < (accumulatedTime + itemDuration)) {
-            activeItem = item;
-            break;
-        }
-        accumulatedTime += itemDuration;
-    }
-
-    let targetUrl = activeItem.url;
-    if (targetUrl.includes("drive.usercontent")) {
-        return res.redirect(302, targetUrl);
-    }
-    const finalUrl = targetUrl.replace(/id=([a-zA-Z0-9_-]+)/, "https://drive.usercontent.google.com/download?id=$1&export=download&confirm=t");
-    
-    return res.redirect(302, finalUrl);
-});
-
-// 🎬 NORMAL YAYIN YÖNLENDİRİCİ
+// 🎬 GÜVENLİ 302 YÖNLENDİRİCİ
 app.get('/:type/:user/:pass/:id', async (req, res) => {
     const { user, pass, id } = req.params;
 
@@ -368,7 +332,7 @@ app.get('/:type/:user/:pass/:id', async (req, res) => {
 
     if (cleanId <= 500 && cacheTV[cleanId - 1]) {
         targetUrl = cacheTV[cleanId - 1].url;
-    } else if (cleanId > 1000 && cleanId < 2000 && movieItems[cleanId - 1001]) {
+    } else if (cleanId > 1000 && cleanId < 2000 && cacheMovies[cleanId - 1001]) {
         targetUrl = cacheMovies[cleanId - 1001].url;
     } else if (cleanId >= 10001) {
         const seriesIndex = Math.floor(cleanId / 10000) - 1;
@@ -387,4 +351,4 @@ app.get('/:type/:user/:pass/:id', async (req, res) => {
     return res.redirect(302, targetUrl);
 });
 
-app.listen(PORT, () => console.log(`7/24 Dizi TV Akış Sunucusu ${PORT} portunda devrede.`));
+app.listen(PORT, () => console.log(`Xtream IPTV Sunucusu ${PORT} portunda devrede.`));
