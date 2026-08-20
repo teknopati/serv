@@ -7,15 +7,44 @@ const PORT = process.env.PORT || 3000;
 
 const USERNAME = "admin";
 const PASSWORD = "123";
-const DEFAULT_EP_DURATION = 1200;
+
+// Sabit Evrensel Zaman Çizelgesi Referansı
+const TIMELINE_BASE_TIME = 1700000000;
 
 let cacheTV = [];
 let cacheMovies = [];
 let cacheSeries = [];
 let seriesChannelMap = new Map();
 
-// Her 7/24 kanalın anlık oynatma sırasını ve son istek zamanını tutan hafıza
-let channelPlaybackState = {};
+// ⏱️ DİZİ FORMATINA GÖRE AKILLI SÜRE TAYİNİ
+function calculateItemDuration(seriesName, rawTitle, explicitDuration) {
+    if (explicitDuration && explicitDuration > 0) return explicitDuration;
+
+    const sName = seriesName.toLowerCase();
+    
+    // 1. Çizgi Diziler (11 Dakikalık Bölümler - Regular Show & Adventure Time)
+    if (sName.includes('sürekli dizi') || sName.includes('adventure time')) {
+        if (rawTitle.includes('_P3') || rawTitle.includes('Parça 3')) return 220; // 3 parçalıysa ~3.5 dk
+        if (rawTitle.includes('_P') || rawTitle.includes('Parça')) return 330;   // 2 parçalıysa ~5.5 dk
+        return 660; // Tek parça tam bölüm (11 dk)
+    }
+
+    // 2. Kardeş Payı (60 - 75 Dakikalık Komedi)
+    if (sName.includes('kardeş payı')) {
+        if (rawTitle.includes('Parça 6') || rawTitle.includes('Parça 7') || rawTitle.includes('Parça 8') || rawTitle.includes('Parça 9')) return 500;
+        if (rawTitle.includes('Parça 5')) return 780;
+        return 950; // Standart 4 parçalı (~15-16 dk parça başı)
+    }
+
+    // 3. Kurtlar Vadisi & Suskunlar (75 - 90 Dakikalık Yerli Dizi)
+    if (sName.includes('kurtlar vadisi') || sName.includes('suskunlar')) {
+        if (rawTitle.includes('_P5') || rawTitle.includes('_P6') || rawTitle.includes('_P7') || rawTitle.includes('_P8') || rawTitle.includes('_P9') || rawTitle.includes('_P10')) return 650;
+        if (rawTitle.includes('_P4')) return 1100;
+        return 1350; // Standart 3-4 parçalı (~20-22 dk parça başı)
+    }
+
+    return 1200; // Varsayılan 20 dakika
+}
 
 function parseM3U(content) {
     const lines = content.split(/\r?\n/);
@@ -58,7 +87,7 @@ function parseM3U(content) {
             const partMatch = rawTitle.match(/(?:_P|\(Parça\s*|Parça\s*)(\d+)/i);
             if (partMatch) partNum = parseInt(partMatch[1]);
 
-            let durationInSeconds = parsedDuration > 0 ? parsedDuration : DEFAULT_EP_DURATION;
+            let durationInSeconds = calculateItemDuration(seriesName, rawTitle, parsedDuration);
 
             currentItem = { 
                 name: rawTitle, 
@@ -96,19 +125,22 @@ function initSeriesChannels() {
             seriesChannelMap.set(sKey, {
                 name: item.seriesName,
                 logo: item.logo,
-                items: []
+                items: [],
+                totalDuration: 0
             });
         }
         seriesChannelMap.get(sKey).items.push(item);
     });
 
-    // Parçaları sıraya diz: Sezon 1 Bölüm 1 Part 1 -> Part 2 -> Bölüm 2 ...
+    // Parçaları sırala ve toplam dizi süresini hesapla
     seriesChannelMap.forEach(dizi => {
         dizi.items.sort((a, b) => {
             if (a.season !== b.season) return a.season - b.season;
             if (a.episode !== b.episode) return a.episode - b.episode;
             return a.partNum - b.partNum;
         });
+
+        dizi.totalDuration = dizi.items.reduce((acc, curr) => acc + curr.durationInSeconds, 0);
     });
 }
 
@@ -167,7 +199,6 @@ app.get('/player_api.php', (req, res) => {
         const seriesList = Array.from(seriesChannelMap.values());
         const cats = Array.from(new Set(cacheTV.map(i => i.group)));
 
-        // 7/24 Dizi Kanalları
         seriesList.forEach((s, idx) => {
             streams.push({
                 num: streams.length + 1,
@@ -180,7 +211,6 @@ app.get('/player_api.php', (req, res) => {
             });
         });
 
-        // Canlı TV
         cacheTV.forEach((item, index) => {
             streams.push({
                 num: streams.length + 1,
@@ -245,7 +275,7 @@ app.get('/player_api.php', (req, res) => {
     res.json([]);
 });
 
-// 🎬 AKILLI YÖNLENDİRİCİ: HER BİTTİĞİNDE SIRADAKİ PARÇAYA GEÇER
+// 🎬 7/24 ZAMAN ÇİZELGESİ VE YÖNLENDİRİCİ MOTORU
 app.get('/:type/:user/:pass/:id', async (req, res) => {
     const { user, pass, id } = req.params;
 
@@ -259,35 +289,29 @@ app.get('/:type/:user/:pass/:id', async (req, res) => {
     const cleanId = parseInt(cleanIdMatch[1]);
     const seriesList = Array.from(seriesChannelMap.values());
 
-    // 1. 7/24 DİZİ KANALI (Part bittikçe sıradakine atlar)
+    // 1. 7/24 DİZİ KANALI (Evrensel Saate Göre Kesintisiz Akış)
     if (cleanId >= 501 && cleanId <= 599) {
         const seriesIdx = cleanId - 501;
         const targetSeries = seriesList[seriesIdx];
         
-        if (targetSeries && targetSeries.items.length > 0) {
-            const items = targetSeries.items;
-            const now = Date.now();
+        if (targetSeries && targetSeries.items.length > 0 && targetSeries.totalDuration > 0) {
+            const nowSec = Math.floor(Date.now() / 1000);
+            const elapsedSinceBase = Math.max(0, nowSec - TIMELINE_BASE_TIME);
+            let currentLoopSecond = elapsedSinceBase % targetSeries.totalDuration;
 
-            if (!channelPlaybackState[cleanId]) {
-                channelPlaybackState[cleanId] = {
-                    currentIndex: 0,
-                    lastRequestTime: now
-                };
-            } else {
-                const elapsed = now - channelPlaybackState[cleanId].lastRequestTime;
-                // Eğer önceki video başlayalı en az 30 saniye geçtiyse ve yeni istek geldiyse:
-                // Demek ki video bitti ve oynatıcı sıradakini istiyor -> Bir sonraki parta geç!
-                if (elapsed > 30000) {
-                    channelPlaybackState[cleanId].currentIndex = 
-                        (channelPlaybackState[cleanId].currentIndex + 1) % items.length;
-                    channelPlaybackState[cleanId].lastRequestTime = now;
+            let activeVideo = targetSeries.items[0];
+            let accumulatedTime = 0;
+
+            for (let i = 0; i < targetSeries.items.length; i++) {
+                const item = targetSeries.items[i];
+                if (currentLoopSecond >= accumulatedTime && currentLoopSecond < accumulatedTime + item.durationInSeconds) {
+                    activeVideo = item;
+                    break;
                 }
+                accumulatedTime += item.durationInSeconds;
             }
 
-            const currentIdx = channelPlaybackState[cleanId].currentIndex;
-            const activeVideo = items[currentIdx];
-            
-            console.log(`[7/24 Kanal ${cleanId}] Oynatılıyor: ${activeVideo.name} (Index: ${currentIdx + 1}/${items.length})`);
+            console.log(`[7/24 ${targetSeries.name}] Aktif Parça: ${activeVideo.name}`);
             return res.redirect(302, activeVideo.url);
         }
     }
@@ -305,4 +329,4 @@ app.get('/:type/:user/:pass/:id', async (req, res) => {
     return res.status(404).send("Yayın bulunamadı");
 });
 
-app.listen(PORT, () => console.log(`Otomatik Sıralı Akış Sunucusu ${PORT} portunda devrede.`));
+app.listen(PORT, () => console.log(`7/24 Akıllı Zaman Tüneli Sunucusu ${PORT} portunda devrede.`));
