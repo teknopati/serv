@@ -303,7 +303,7 @@ app.get('/player_api.php', (req, res) => {
     res.json([]);
 });
 
-// 🎬 GÜVENLİ 302 YÖNLENDİRİCİ (Google Drive videolarını sorunsuz ve en hızlı açan yöntem)
+// 🎬 GÜVENLİ YÖNLENDİRİCİ (Canlı yayınlar için akıllı proxy, sorun olursa doğrudan 302 redirect)
 app.get('/:type/:user/:pass/:id', async (req, res) => {
     const { user, pass, id } = req.params;
 
@@ -339,9 +339,22 @@ app.get('/:type/:user/:pass/:id', async (req, res) => {
         return res.status(404).send("Yayın bulunamadı");
     }
 
-    // Doğrudan 302 yönlendirmesi, Google Drive videolarının TV oynatıcılarında 
-    // en kararlı, siyah ekransız ve hatasız açılmasını sağlayan kesin yöntemdir.
-    return res.redirect(302, targetUrl);
+    // Canlı kanalların ve videoların açılmama / siyah ekran sorununu çözen akıllı akış
+    try {
+        const response = await axios({
+            method: 'get',
+            url: targetUrl,
+            responseType: 'stream',
+            headers: { 'User-Agent': 'Mozilla/5.0' },
+            timeout: 10000
+        });
+
+        res.setHeader('Content-Type', 'video/mp4');
+        response.data.pipe(res);
+    } catch (err) {
+        // Proxy takılırsa doğrudan 302 yönlendirerek yayının açılmasını garantile
+        return res.redirect(302, targetUrl);
+    }
 });
 
 app.listen(PORT, () => console.log(`Xtream IPTV Sunucusu ${PORT} portunda devrede.`));
