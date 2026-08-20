@@ -84,7 +84,6 @@ function generateLivePlaylists() {
                 let cleanUrl = line;
                 const idMatch = line.match(/id=([a-zA-Z0-9_-]+)/);
                 if (idMatch) {
-                    // TV'lerin daha kararlı okuyabilmesi için direct export linki
                     cleanUrl = `https://drive.google.com/uc?export=download&id=${idMatch[1]}`;
                 }
                 currentItem.url = cleanUrl;
@@ -115,18 +114,15 @@ function generateLivePlaylists() {
         const slug = generateSmartAbbreviation(data.name, usedSlugs);
         usedSlugs.add(slug);
 
-        // TV Uyumluluğu için HLS Başlıkları Düzeltildi
         let m3u8Content = `#EXTM3U\n`;
         m3u8Content += `#EXT-X-VERSION:3\n`;
-        m3u8Content += `#EXT-X-TARGETDURATION:1200\n`; // TV'lerin şaşırmaması için gerçek süre sınırına çekildi
+        m3u8Content += `#EXT-X-TARGETDURATION:1200\n`;
         m3u8Content += `#EXT-X-PLAYLIST-TYPE:VOD\n`;
         m3u8Content += `#EXT-X-MEDIA-SEQUENCE:0\n`;
 
-        data.parts.forEach((part, i) => {
-            if (i > 0) {
-                // TV oynatıcıların zaman damgası çakışmasını (119 saat hatasını) önleyen kritik etiket
-                m3u8Content += `#EXT-X-DISCONTINUITY\n`;
-            }
+        data.parts.forEach((part) => {
+            // KRİTİK DÜZELTME: Her parçadan önce discontinuity ekleyerek TV'nin zamanı toplamasını engelliyoruz
+            m3u8Content += `#EXT-X-DISCONTINUITY\n`;
             m3u8Content += `#EXTINF:${part.duration}.0, ${part.title}\n`;
             m3u8Content += `${part.url}\n`;
         });
