@@ -9,10 +9,10 @@ const USERNAME = "admin";
 const PASSWORD = "123";
 const DEFAULT_EP_DURATION = 1200;
 
-// Önbellek (I/O gecikmesini ve donmayı önler)
 let cacheTV = [];
 let cacheMovies = [];
 let cacheSeries = [];
+let groupedSeriesCache = new Map();
 
 function parseM3U(content) {
     const lines = content.split(/\r?\n/);
@@ -91,24 +91,7 @@ function parseM3U(content) {
     return items;
 }
 
-function loadAllFiles() {
-    try {
-        const tvPath = path.join(__dirname, 'tv.m3u');
-        if (fs.existsSync(tvPath)) cacheTV = parseM3U(fs.readFileSync(tvPath, 'utf-8'));
-
-        const moviePath = path.join(__dirname, 'movie.m3u');
-        if (fs.existsSync(moviePath)) cacheMovies = parseM3U(fs.readFileSync(moviePath, 'utf-8'));
-
-        const seriesPath = path.join(__dirname, 'series.m3u');
-        if (fs.existsSync(seriesPath)) cacheSeries = parseM3U(fs.readFileSync(seriesPath, 'utf-8'));
-    } catch (e) {
-        console.error("M3U yükleme hatası:", e);
-    }
-}
-
-loadAllFiles();
-
-function getGroupedSeriesList() {
+function rebuildSeriesHierarchy() {
     const seriesMap = new Map();
 
     cacheSeries.forEach(item => {
@@ -150,38 +133,31 @@ function getGroupedSeriesList() {
         });
     });
 
-    return seriesMap;
+    groupedSeriesCache = seriesMap;
 }
+
+function loadAllFiles() {
+    try {
+        const tvPath = path.join(__dirname, 'tv.m3u');
+        if (fs.existsSync(tvPath)) cacheTV = parseM3U(fs.readFileSync(tvPath, 'utf-8'));
+
+        const moviePath = path.join(__dirname, 'movie.m3u');
+        if (fs.existsSync(moviePath)) cacheMovies = parseM3U(fs.readFileSync(moviePath, 'utf-8'));
+
+        const seriesPath = path.join(__dirname, 'series.m3u');
+        if (fs.existsSync(seriesPath)) {
+            cacheSeries = parseM3U(fs.readFileSync(seriesPath, 'utf-8'));
+            rebuildSeriesHierarchy();
+        }
+    } catch (e) {
+        console.error("M3U yükleme hatası:", e);
+    }
+}
+
+loadAllFiles();
 
 function getAllUniqueSeries() {
-    return Array.from(getGroupedSeriesList().values());
-}
-
-function getLiveHlsManifest(seriesName) {
-    const rawItems = cacheSeries.filter(i => i.seriesName.toLowerCase() === seriesName.toLowerCase());
-    if (rawItems.length === 0) return null;
-
-    const totalDuration = rawItems.length * DEFAULT_EP_DURATION;
-    const nowSec = Math.floor(Date.now() / 1000);
-    const loopOffset = nowSec % totalDuration;
-
-    const currentPartIdx = Math.floor(loopOffset / DEFAULT_EP_DURATION);
-    const mediaSequence = Math.floor(nowSec / DEFAULT_EP_DURATION);
-
-    let m3u8 = `#EXTM3U\n`;
-    m3u8 += `#EXT-X-VERSION:3\n`;
-    m3u8 += `#EXT-X-TARGETDURATION:${DEFAULT_EP_DURATION + 10}\n`;
-    m3u8 += `#EXT-X-MEDIA-SEQUENCE:${mediaSequence}\n`;
-
-    for (let i = 0; i < 3; i++) {
-        const idx = (currentPartIdx + i) % rawItems.length;
-        const item = rawItems[idx];
-        if (i > 0) m3u8 += `#EXT-X-DISCONTINUITY\n`;
-        m3u8 += `#EXTINF:${DEFAULT_EP_DURATION}.0, ${item.name}\n`;
-        m3u8 += `${item.url}\n`;
-    }
-
-    return m3u8;
+    return Array.from(groupedSeriesCache.values());
 }
 
 // 📺 XTREAM API
@@ -203,7 +179,7 @@ app.get('/player_api.php', (req, res) => {
         return res.json({ epg_listings: [] });
     }
 
-    // CANLI KATEGORİLER
+    // 1. CANLI KATEGORİLER
     if (action === 'get_live_categories') {
         let categories = [{ category_id: "724_diziler", category_name: "📺 7/24 DİZİLER", parent_id: 0 }];
         if (cacheTV.length > 0) {
@@ -213,12 +189,13 @@ app.get('/player_api.php', (req, res) => {
         return res.json(categories);
     }
 
-    // CANLI KANALLAR
+    // 2. CANLI KANALLAR
     if (action === 'get_live_streams') {
         const uniqueSeries = getAllUniqueSeries();
         const cats = Array.from(new Set(cacheTV.map(i => i.group)));
         let streams = [];
 
+        // 7/24 Dizi Kanalları (Stream ID: 501 - 599)
         uniqueSeries.forEach((s, idx) => {
             streams.push({
                 num: streams.length + 1,
@@ -231,6 +208,7 @@ app.get('/player_api.php', (req, res) => {
             });
         });
 
+        // Standart TV Kanalları (Stream ID: 1 - 500)
         cacheTV.forEach((item, index) => {
             streams.push({
                 num: streams.length + 1,
@@ -249,7 +227,7 @@ app.get('/player_api.php', (req, res) => {
         return res.json(streams);
     }
 
-    // VOD FİLMLER
+    // 3. VOD FİLMLER
     if (action === 'get_vod_categories') {
         if (cacheMovies.length === 0) return res.json([{ category_id: "1", category_name: "Film Yok", parent_id: 0 }]);
         const cats = Array.from(new Set(cacheMovies.map(i => i.group)));
@@ -274,7 +252,7 @@ app.get('/player_api.php', (req, res) => {
         return res.json(vodList);
     }
 
-    // DİZİLER
+    // 4. DİZİLER
     if (action === 'get_series_categories') {
         return res.json([{ category_id: "1", category_name: "Tüm Diziler", parent_id: 0 }]);
     }
@@ -322,10 +300,11 @@ app.get('/player_api.php', (req, res) => {
                     id: globalEpId.toString(),
                     episode_num: parseInt(epNum),
                     title: `${targetSeries.name} - ${sInt}. Sezon ${epNum}. Bölüm`,
-                    container_extension: "m3u8",
+                    container_extension: "mp4",
                     info: { 
+                        duration_secs: epData.parts.reduce((acc, p) => acc + (p.durationInSeconds || DEFAULT_EP_DURATION), 0),
                         duration: `${epData.parts.length * 20} min`, 
-                        plot: `${epData.parts.length} Parçadan Oluşan Tam Bölüm`, 
+                        plot: `${epData.parts.length} Parçadan Oluşan Bölüm`, 
                         movie_image: epData.logo || targetSeries.logo 
                     }
                 });
@@ -344,7 +323,7 @@ app.get('/player_api.php', (req, res) => {
     res.json([]);
 });
 
-// 🎬 YAYIN KÖPRÜSÜ
+// 🎬 STREAM VE YÖNLENDİRİCİ
 app.get('/:type/:user/:pass/:id', async (req, res) => {
     const { user, pass, id } = req.params;
 
@@ -358,20 +337,23 @@ app.get('/:type/:user/:pass/:id', async (req, res) => {
     const cleanId = parseInt(cleanIdMatch[1]);
     const uniqueSeries = getAllUniqueSeries();
 
-    // 1. 7/24 Dizi Kanalları (501 - 599)
+    // 1. 7/24 Dizi Canlı Akışı (Günün Saatine Göre Sıradaki Parça)
     if (cleanId >= 501 && cleanId <= 599) {
         const seriesIdx = cleanId - 501;
         const targetSeries = uniqueSeries[seriesIdx];
         if (targetSeries) {
-            const manifest = getLiveHlsManifest(targetSeries.name);
-            if (manifest) {
-                res.setHeader('Content-Type', 'application/vnd.apple.mpegurl');
-                return res.send(manifest);
+            const rawItems = cacheSeries.filter(i => i.seriesName.toLowerCase() === targetSeries.name.toLowerCase());
+            if (rawItems.length > 0) {
+                const totalDuration = rawItems.length * DEFAULT_EP_DURATION;
+                const nowSec = Math.floor(Date.now() / 1000);
+                const currentPartIdx = Math.floor((nowSec % totalDuration) / DEFAULT_EP_DURATION);
+                const activeItem = rawItems[currentPartIdx % rawItems.length];
+                return res.redirect(302, activeItem.url);
             }
         }
     }
 
-    // 2. Normal Canlı TV (1 - 500)
+    // 2. Normal Canlı TV Kanalları (1 - 500)
     if (cleanId <= 500 && cacheTV[cleanId - 1]) {
         return res.redirect(302, cacheTV[cleanId - 1].url);
     }
@@ -381,7 +363,7 @@ app.get('/:type/:user/:pass/:id', async (req, res) => {
         return res.redirect(302, cacheMovies[cleanId - 1001].url);
     }
     
-    // 4. Dizi Bölümü (100000+)
+    // 4. Dizi Bölümleri (100000+)
     if (cleanId >= 100000) {
         const seriesIdx = Math.floor(cleanId / 100000) - 1;
         const remainder = cleanId % 100000;
@@ -391,26 +373,35 @@ app.get('/:type/:user/:pass/:id', async (req, res) => {
         const targetSeries = uniqueSeries[seriesIdx];
         if (targetSeries && targetSeries.seasons[seasonNum] && targetSeries.seasons[seasonNum][epNum]) {
             const epData = targetSeries.seasons[seasonNum][epNum];
-
-            let vodM3u8 = `#EXTM3U\n`;
-            vodM3u8 += `#EXT-X-VERSION:3\n`;
-            vodM3u8 += `#EXT-X-TARGETDURATION:${DEFAULT_EP_DURATION + 10}\n`;
-            vodM3u8 += `#EXT-X-PLAYLIST-TYPE:VOD\n`;
-
-            epData.parts.forEach((part, i) => {
-                if (i > 0) vodM3u8 += `#EXT-X-DISCONTINUITY\n`;
-                vodM3u8 += `#EXTINF:${part.durationInSeconds || DEFAULT_EP_DURATION}.0, ${part.name}\n`;
-                vodM3u8 += `${part.url}\n`;
-            });
-
-            vodM3u8 += `#EXT-X-ENDLIST\n`;
-
-            res.setHeader('Content-Type', 'application/vnd.apple.mpegurl');
-            return res.send(vodM3u8);
+            if (epData.parts.length > 0) {
+                return res.redirect(302, epData.parts[0].url);
+            }
         }
     }
 
     return res.status(404).send("Yayın bulunamadı");
 });
 
-app.listen(PORT, () => console.log(`Xtream IPTV Sunucusu ${PORT} portunda devrede.`));
+// 📦 DOĞRUDAN M3U / USB LİSTESİ ÇIKTISI
+app.get('/playlist/all.m3u', (req, res) => {
+    let m3u = "#EXTM3U\n";
+
+    // 7/24 Dizi Kanalları
+    const uniqueSeries = getAllUniqueSeries();
+    uniqueSeries.forEach((s, idx) => {
+        m3u += `#EXTINF:-1 group-title="7/24 DİZİLER",📺 7/24 ${s.name.toUpperCase()}\n`;
+        m3u += `http://${req.headers.host}/live/${USERNAME}/${PASSWORD}/${501 + idx}.ts\n`;
+    });
+
+    // Canlı TV
+    cacheTV.forEach(item => {
+        const logo = item.logo ? ` tvg-logo="${item.logo}"` : '';
+        const group = item.group ? ` group-title="${item.group}"` : '';
+        m3u += `#EXTINF:-1${logo}${group},${item.name}\n${item.url}\n`;
+    });
+
+    res.setHeader('Content-Type', 'audio/x-mpegurl; charset=utf-8');
+    return res.send(m3u);
+});
+
+app.listen(PORT, () => console.log(`Optimize Xtream & M3U Sunucusu ${PORT} portunda devrede.`));
