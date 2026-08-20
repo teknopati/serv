@@ -167,7 +167,7 @@ app.get('/player_api.php', (req, res) => {
         return res.json(categories);
     }
 
-    // 2. CANLI KANALLAR (Sadece tv.m3u)
+    // 2. CANLI KANALLAR ("Tüm Kanallar" tıklandığında sadece canlı tv.m3u gelir, kategori seçilince o kategori listelenir)
     if (action === 'get_live_streams') {
         const liveItems = readM3UFile('tv.m3u');
         const cats = Array.from(new Set(liveItems.map(i => i.group)));
@@ -194,6 +194,7 @@ app.get('/player_api.php', (req, res) => {
             });
         });
 
+        // Eğer kategori ID'si boşsa (Yani kullanıcı "Tüm Kanallar" sekmesindeyse), dizi bölümleri ve ekstra yükler görünmez, sadece canlı kanallar listelenir.
         if (category_id) {
             streams = streams.filter(s => s.category_id === category_id.toString());
         }
@@ -303,7 +304,7 @@ app.get('/player_api.php', (req, res) => {
     res.json([]);
 });
 
-// 🎬 AKIŞ YÖNLENDİRİCİSİ (Canlı TV, Filmler ve Ayrı Ayrı Oynatılan Dizi Parçaları/Bölümleri)
+// 🎬 AKIŞ YÖNLENDİRİCİSİ
 app.get('/:type/:user/:pass/:id', async (req, res) => {
     const { user, pass, id } = req.params;
 
@@ -339,7 +340,6 @@ app.get('/:type/:user/:pass/:id', async (req, res) => {
         return res.status(404).send("Yayın bulunamadı");
     }
 
-    // Sorunsuz açılış için güvenli akış ve yönlendirme
     try {
         const response = await axios({
             method: 'get',
