@@ -10,6 +10,17 @@ const USERNAME = "admin";
 const PASSWORD = "123";
 const DEFAULT_EP_DURATION = 1200;
 
+// M3U Dosyalarını Hafızada Tutan Önbellek (Performans için şart)
+let cacheTV = [];
+let cacheMovies = [];
+let cacheSeries = [];
+
+function loadAllPlaylists() {
+    cacheTV = readM3UFile('tv.m3u');
+    cacheMovies = readM3UFile('movie.m3u');
+    cacheSeries = readM3UFile('series.m3u');
+}
+
 function readM3UFile(fileName) {
     try {
         const filePath = path.join(__dirname, fileName);
@@ -88,11 +99,12 @@ function readM3UFile(fileName) {
     }
 }
 
-function getAllUniqueSeries() {
-    const rawItems = readM3UFile('series.m3u');
-    const seriesMap = new Map();
+// Sunucu başlarken dosyaları bir kez yükle
+loadAllPlaylists();
 
-    rawItems.forEach((item, index) => {
+function getAllUniqueSeries() {
+    const seriesMap = new Map();
+    cacheSeries.forEach((item, index) => {
         const sKey = item.seriesName.toLowerCase();
         if (!seriesMap.has(sKey)) {
             seriesMap.set(sKey, {
@@ -104,7 +116,6 @@ function getAllUniqueSeries() {
         item.globalIndex = index;
         seriesMap.get(sKey).items.push(item);
     });
-
     return Array.from(seriesMap.values());
 }
 
@@ -127,24 +138,22 @@ app.get('/player_api.php', (req, res) => {
         return res.json({ epg_listings: [] });
     }
 
-    // 1. CANLI KATEGORİLER (Sadece tv.m3u içindeki orijinal gruplar, şişirme yok)
+    // 1. CANLI KATEGORİLER
     if (action === 'get_live_categories') {
-        const liveItems = readM3UFile('tv.m3u');
         let categories = [];
-        if (liveItems.length > 0) {
-            const cats = Array.from(new Set(liveItems.map(i => i.group)));
+        if (cacheTV.length > 0) {
+            const cats = Array.from(new Set(cacheTV.map(i => i.group)));
             cats.forEach((c, i) => categories.push({ category_id: (i + 1).toString(), category_name: c, parent_id: 0 }));
         }
         return res.json(categories);
     }
 
-    // 2. CANLI KANALLAR (Sadece seçilen kategorinin kanallarını döner, alıcıyı asla kasmaz)
+    // 2. CANLI KANALLAR (Standart ve hafif yapı)
     if (action === 'get_live_streams') {
-        const liveItems = readM3UFile('tv.m3u');
-        const cats = Array.from(new Set(liveItems.map(i => i.group)));
+        const cats = Array.from(new Set(cacheTV.map(i => i.group)));
         let streams = [];
 
-        liveItems.forEach((item, index) => {
+        cacheTV.forEach((item, index) => {
             const origCatId = (cats.indexOf(item.group) + 1).toString();
             streams.push({
                 num: streams.length + 1,
@@ -159,26 +168,21 @@ app.get('/player_api.php', (req, res) => {
 
         if (category_id) {
             streams = streams.filter(s => s.category_id === category_id.toString());
-        } else {
-            return res.json([]); // Kategori seçilmeden liste yükletilmez, donma biter
         }
-
         return res.json(streams);
     }
 
     // 3. VOD FİLMLER
     if (action === 'get_vod_categories') {
-        const movieItems = readM3UFile('movie.m3u');
-        if (movieItems.length === 0) return res.json([{ category_id: "1", category_name: "Film Yok", parent_id: 0 }]);
-        const cats = Array.from(new Set(movieItems.map(i => i.group)));
+        if (cacheMovies.length === 0) return res.json([{ category_id: "1", category_name: "Film Yok", parent_id: 0 }]);
+        const cats = Array.from(new Set(cacheMovies.map(i => i.group)));
         let categories = cats.map((c, i) => ({ category_id: (i + 1).toString(), category_name: c || "Filmler", parent_id: 0 }));
         return res.json(categories);
     }
 
     if (action === 'get_vod_streams') {
-        const movieItems = readM3UFile('movie.m3u');
-        const cats = Array.from(new Set(movieItems.map(i => i.group)));
-        let vodList = movieItems.map((item, index) => ({
+        const cats = Array.from(new Set(cacheMovies.map(i => i.group)));
+        let vodList = cacheMovies.map((item, index) => ({
             num: index + 1,
             name: item.name,
             stream_id: index + 1001,
@@ -192,8 +196,6 @@ app.get('/player_api.php', (req, res) => {
 
         if (category_id) {
             vodList = vodList.filter(v => v.category_id === category_id.toString());
-        } else {
-            return res.json([]);
         }
         return res.json(vodList);
     }
@@ -285,16 +287,14 @@ app.get('/:type/:user/:pass/:id', async (req, res) => {
     if (!cleanIdMatch) return res.status(400).send("Geçersiz Yayın ID");
 
     const cleanId = parseInt(cleanIdMatch[1]);
-    const tvItems = readM3UFile('tv.m3u');
-    const movieItems = readM3UFile('movie.m3u');
     const uniqueSeries = getAllUniqueSeries();
 
     let targetUrl = null;
 
-    if (cleanId <= 500 && tvItems[cleanId - 1]) {
-        targetUrl = tvItems[cleanId - 1].url;
-    } else if (cleanId > 1000 && cleanId < 2000 && movieItems[cleanId - 1001]) {
-        targetUrl = movieItems[cleanId - 1001].url;
+    if (cleanId <= 500 && cacheTV[cleanId - 1]) {
+        targetUrl = cacheTV[cleanId - 1].url;
+    } else if (cleanId > 1000 && cleanId < 2000 && cacheMovies[cleanId - 1001]) {
+        targetUrl = cacheMovies[cleanId - 1001].url;
     } else if (cleanId >= 10001) {
         const seriesIndex = Math.floor(cleanId / 10000) - 1;
         const itemIndex = (cleanId % 10000) - 1;
