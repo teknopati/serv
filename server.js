@@ -7,12 +7,15 @@ const PORT = process.env.PORT || 3000;
 
 const USERNAME = "admin";
 const PASSWORD = "123";
-const DEFAULT_EP_DURATION = 1200; // 20 Dakika (1200 saniye)
+const DEFAULT_EP_DURATION = 1200;
 
 let cacheTV = [];
 let cacheMovies = [];
 let cacheSeries = [];
 let seriesChannelMap = new Map();
+
+// Her 7/24 kanalın anlık oynatma sırasını ve son istek zamanını tutan hafıza
+let channelPlaybackState = {};
 
 function parseM3U(content) {
     const lines = content.split(/\r?\n/);
@@ -87,7 +90,6 @@ function parseM3U(content) {
 function initSeriesChannels() {
     seriesChannelMap.clear();
     
-    // Dizilerin tüm bölümlerini ve parçalarını sıralı olarak haritaya al
     cacheSeries.forEach(item => {
         const sKey = item.seriesName.toLowerCase();
         if (!seriesChannelMap.has(sKey)) {
@@ -100,7 +102,7 @@ function initSeriesChannels() {
         seriesChannelMap.get(sKey).items.push(item);
     });
 
-    // Her dizinin parçalarını baştan sona (1. Sezon 1. Bölüm P1 -> P2 -> 2. Bölüm) sırala
+    // Parçaları sıraya diz: Sezon 1 Bölüm 1 Part 1 -> Part 2 -> Bölüm 2 ...
     seriesChannelMap.forEach(dizi => {
         dizi.items.sort((a, b) => {
             if (a.season !== b.season) return a.season - b.season;
@@ -149,7 +151,7 @@ app.get('/player_api.php', (req, res) => {
         return res.json({ epg_listings: [] });
     }
 
-    // 1. CANLI KATEGORİLER
+    // CANLI KATEGORİLER
     if (action === 'get_live_categories') {
         let categories = [{ category_id: "724_diziler", category_name: "📺 7/24 DİZİLER", parent_id: 0 }];
         if (cacheTV.length > 0) {
@@ -159,13 +161,13 @@ app.get('/player_api.php', (req, res) => {
         return res.json(categories);
     }
 
-    // 2. CANLI KANALLAR
+    // CANLI KANALLAR
     if (action === 'get_live_streams') {
         let streams = [];
         const seriesList = Array.from(seriesChannelMap.values());
         const cats = Array.from(new Set(cacheTV.map(i => i.group)));
 
-        // 7/24 Dizi Kanalları (ID: 501+)
+        // 7/24 Dizi Kanalları
         seriesList.forEach((s, idx) => {
             streams.push({
                 num: streams.length + 1,
@@ -178,7 +180,7 @@ app.get('/player_api.php', (req, res) => {
             });
         });
 
-        // Standart Canlı Kanallar (ID: 1 - 500)
+        // Canlı TV
         cacheTV.forEach((item, index) => {
             streams.push({
                 num: streams.length + 1,
@@ -197,7 +199,7 @@ app.get('/player_api.php', (req, res) => {
         return res.json(streams);
     }
 
-    // 3. VOD FİLMLER
+    // VOD FİLMLER
     if (action === 'get_vod_categories') {
         if (cacheMovies.length === 0) return res.json([{ category_id: "1", category_name: "Film Yok", parent_id: 0 }]);
         const cats = Array.from(new Set(cacheMovies.map(i => i.group)));
@@ -222,7 +224,7 @@ app.get('/player_api.php', (req, res) => {
         return res.json(vodList);
     }
 
-    // 4. DİZİLER MENÜSÜ
+    // DİZİLER MENÜSÜ
     if (action === 'get_series_categories') {
         return res.json([{ category_id: "1", category_name: "Tüm Diziler", parent_id: 0 }]);
     }
@@ -243,7 +245,7 @@ app.get('/player_api.php', (req, res) => {
     res.json([]);
 });
 
-// 🎬 KESİN ÇÖZÜM: VİDEO YÖNLENDİRME (Siyah Ekranı Bitiren 302 Yönlendirmesi)
+// 🎬 AKILLI YÖNLENDİRİCİ: HER BİTTİĞİNDE SIRADAKİ PARÇAYA GEÇER
 app.get('/:type/:user/:pass/:id', async (req, res) => {
     const { user, pass, id } = req.params;
 
@@ -257,19 +259,35 @@ app.get('/:type/:user/:pass/:id', async (req, res) => {
     const cleanId = parseInt(cleanIdMatch[1]);
     const seriesList = Array.from(seriesChannelMap.values());
 
-    // 1. 7/24 DİZİ KANALI (Günün saatine göre sıradaki parçaya doğrudan 302 atar)
+    // 1. 7/24 DİZİ KANALI (Part bittikçe sıradakine atlar)
     if (cleanId >= 501 && cleanId <= 599) {
         const seriesIdx = cleanId - 501;
         const targetSeries = seriesList[seriesIdx];
         
         if (targetSeries && targetSeries.items.length > 0) {
             const items = targetSeries.items;
-            const totalDuration = items.length * DEFAULT_EP_DURATION;
-            const nowSec = Math.floor(Date.now() / 1000);
-            const loopOffset = nowSec % totalDuration;
-            const currentPartIdx = Math.floor(loopOffset / DEFAULT_EP_DURATION);
+            const now = Date.now();
 
-            const activeVideo = items[currentPartIdx % items.length];
+            if (!channelPlaybackState[cleanId]) {
+                channelPlaybackState[cleanId] = {
+                    currentIndex: 0,
+                    lastRequestTime: now
+                };
+            } else {
+                const elapsed = now - channelPlaybackState[cleanId].lastRequestTime;
+                // Eğer önceki video başlayalı en az 30 saniye geçtiyse ve yeni istek geldiyse:
+                // Demek ki video bitti ve oynatıcı sıradakini istiyor -> Bir sonraki parta geç!
+                if (elapsed > 30000) {
+                    channelPlaybackState[cleanId].currentIndex = 
+                        (channelPlaybackState[cleanId].currentIndex + 1) % items.length;
+                    channelPlaybackState[cleanId].lastRequestTime = now;
+                }
+            }
+
+            const currentIdx = channelPlaybackState[cleanId].currentIndex;
+            const activeVideo = items[currentIdx];
+            
+            console.log(`[7/24 Kanal ${cleanId}] Oynatılıyor: ${activeVideo.name} (Index: ${currentIdx + 1}/${items.length})`);
             return res.redirect(302, activeVideo.url);
         }
     }
@@ -287,4 +305,4 @@ app.get('/:type/:user/:pass/:id', async (req, res) => {
     return res.status(404).send("Yayın bulunamadı");
 });
 
-app.listen(PORT, () => console.log(`Donmasız & Siyah Ekransız TV Sunucusu ${PORT} portunda devrede.`));
+app.listen(PORT, () => console.log(`Otomatik Sıralı Akış Sunucusu ${PORT} portunda devrede.`));
