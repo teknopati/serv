@@ -167,7 +167,7 @@ app.get('/player_api.php', (req, res) => {
         return res.json(categories);
     }
 
-    // 2. CANLI KANALLAR (Performans optimizasyonlu: Sadece istenen kategori filtrelenir)
+    // 2. CANLI KANALLAR (Logolar temizlendi, RAM tüketimi sıfıra indirildi)
     if (action === 'get_live_streams') {
         const liveItems = readM3UFile('tv.m3u');
         const cats = Array.from(new Set(liveItems.map(i => i.group)));
@@ -188,17 +188,15 @@ app.get('/player_api.php', (req, res) => {
                 name: item.name,
                 stream_id: streamId,
                 stream_type: "live",
-                stream_icon: item.logo,
+                stream_icon: "", // Logolar kaldırıldı, cihazı asla kasmaz
                 category_id: targetCatId,
                 direct_source: item.url
             });
         });
 
-        // Eğer kategori ID gönderilmişse sadece o kategoriyi döndür, gönderilmemişse ilk kategoriyi veya boş liste dönerek kilitlenmeyi önle
         if (category_id) {
             streams = streams.filter(s => s.category_id === category_id.toString());
         } else {
-            // Hiç kategori seçilmediğinde ilk 50 kanalı dönerek alıcının çökmesini engelliyoruz
             streams = streams.slice(0, 50);
         }
 
@@ -222,7 +220,7 @@ app.get('/player_api.php', (req, res) => {
             name: item.name,
             stream_id: index + 1001,
             stream_type: "movie",
-            stream_icon: item.logo || "",
+            stream_icon: "",
             category_id: (cats.indexOf(item.group) + 1).toString(),
             container_extension: "mp4",
             rating: "8.0",
@@ -248,7 +246,7 @@ app.get('/player_api.php', (req, res) => {
             num: index + 1,
             name: data.name,
             series_id: index + 1,
-            cover: data.logo,
+            cover: "",
             plot: `${data.name} Dizisi`,
             genre: "Dizi / Çizgi Dizi",
             category_id: "1"
@@ -289,7 +287,7 @@ app.get('/player_api.php', (req, res) => {
                     duration_secs: item.durationInSeconds,
                     duration: `${Math.round(item.durationInSeconds / 60)} min`,
                     plot: displayName, 
-                    movie_image: item.logo || targetSeries.logo 
+                    movie_image: "" 
                 }
             });
         });
@@ -299,13 +297,13 @@ app.get('/player_api.php', (req, res) => {
             id: s,
             name: `${s}. Sezon`,
             season_number: s,
-            cover: targetSeries.logo
+            cover: ""
         }));
 
         return res.json({
             seasons: seasonsList,
             episodes: episodesObj,
-            info: { name: targetSeries.name, cover: targetSeries.logo }
+            info: { name: targetSeries.name, cover: "" }
         });
     }
 
