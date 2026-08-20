@@ -77,7 +77,6 @@ function getAllUniqueSeries() {
     return Array.from(seriesMap.values());
 }
 
-// Series dizilerini Canlı TV içine kategori ve kanal olarak hazırlayan motor
 function getSeriesAsLiveCategoriesAndStreams() {
     const uniqueSeries = getAllUniqueSeries();
     let categories = [];
@@ -117,7 +116,7 @@ function getSeriesAsLiveCategoriesAndStreams() {
 app.get('/player_api.php', (req, res) => {
     const { action, category_id, series_id } = req.query;
 
-    // 1. CANLI KATEGORİLER (Normal TV + Her Dizi Ayrı Bir Klasör)
+    // 1. CANLI KATEGORİLER
     if (action === 'get_live_categories') {
         const tv = readM3UFile('tv.m3u');
         const cats = Array.from(new Set(tv.map(i => i.group)));
@@ -127,8 +126,12 @@ app.get('/player_api.php', (req, res) => {
         return res.json(tvCategories.concat(seriesCategories));
     }
 
-    // 2. CANLI KANALLAR (Normal TV Kanalları + Seçilen Dizinin Bölüm/Parça Kanalları)
+    // 2. CANLI KANALLAR (KRİTİK: Kategori seçilmeden liste yükletilmez, donma tamamen biter)
     if (action === 'get_live_streams') {
+        if (!category_id) {
+            return res.json([]); // İlk girişte boş dönerek alıcının donmasını engeller
+        }
+
         const tv = readM3UFile('tv.m3u');
         const cats = Array.from(new Set(tv.map(i => i.group)));
         let streams = tv.map((item, index) => ({
@@ -141,10 +144,7 @@ app.get('/player_api.php', (req, res) => {
         const { streams: seriesStreams } = getSeriesAsLiveCategoriesAndStreams();
         streams = streams.concat(seriesStreams);
 
-        if (category_id) {
-            return res.json(streams.filter(s => s.category_id === category_id.toString()));
-        }
-        return res.json(streams.slice(0, 100)); // Donmayı önlemek için ilk açılışta sınırlandırıldı
+        return res.json(streams.filter(s => s.category_id === category_id.toString()));
     }
 
     // 3. DİZİLER (SERIES - Orijinal menü bozulmadan duruyor)
@@ -178,11 +178,9 @@ app.get('/:type/:user/:pass/:id', async (req, res) => {
     if (cleanId < 1000) {
         url = tv[cleanId - 1]?.url;
     } else if (cleanId >= 50000) {
-        // Canlı TV içine eklenen dizi bölümleri/parçaları
         const found = seriesStreams.find(s => s.stream_id === cleanId);
         if (found) url = found.direct_source;
     } else {
-        // Orijinal Series menüsünden gelenler
         const sId = Math.floor(cleanId / 1000) - 1;
         const eId = (cleanId % 1000);
         url = series[sId]?.items[eId]?.url;
@@ -195,4 +193,4 @@ app.get('/:type/:user/:pass/:id', async (req, res) => {
     return res.redirect(302, finalUrl);
 });
 
-app.listen(PORT, () => console.log('Sunucu Güncellendi ve Hazır.'));
+app.listen(PORT, () => console.log('Sunucu Optimizasyonlu Başlatıldı.'));
