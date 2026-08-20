@@ -134,7 +134,7 @@ function getAllUniqueSeries() {
     return Array.from(seriesMap.values());
 }
 
-// 📺 XTREAM API (Dizileri Tek Kanal Mantığıyla Canlı Kanallara Çeviriyoruz)
+// 📺 XTREAM API
 app.get('/player_api.php', (req, res) => {
     const { username, password, action, category_id } = req.query;
 
@@ -153,22 +153,58 @@ app.get('/player_api.php', (req, res) => {
         return res.json({ epg_listings: [] });
     }
 
-    // DİZİLERİ TEK KANAL OLARAK "CANLI KATEGORİ" GÖSTERİYORUZ
+    // CANLI KATEGORİLER (Normal Canlı TV + Dizi Kanalları)
     if (action === 'get_live_categories') {
-        return res.json([
-            { category_id: "999", category_name: "📺 Dizi Kanalları (Kesintisiz)", parent_id: 0 }
-        ]);
+        const liveItems = readM3UFile('tv.m3u');
+        let categories = [];
+        
+        if (liveItems.length > 0) {
+            const cats = Array.from(new Set(liveItems.map(i => i.group)));
+            cats.forEach((c, i) => categories.push({ category_id: (i + 1).toString(), category_name: c, parent_id: 0 }));
+        }
+
+        // Dizi Kanalları Kategorisi
+        categories.push({ category_id: "999", category_name: "📺 Dizi Kanalları (Kesintisiz)", parent_id: 0 });
+
+        ALPHABET_GROUPS.forEach(group => {
+            categories.push({ category_id: group.id, category_name: group.name, parent_id: 0 });
+        });
+
+        return res.json(categories);
     }
 
-    // HER BİR DİZİ ARTIK CANLI KANAL LİSTESİNDE TEK BİR KANAL OLACAK
+    // CANLI KANALLAR (Normal TV Kanalları + Tek Kanal Haline Getirilmiş Diziler)
     if (action === 'get_live_streams') {
-        const uniqueSeries = getAllUniqueSeries();
+        const liveItems = readM3UFile('tv.m3u');
+        const cats = Array.from(new Set(liveItems.map(i => i.group)));
         let streams = [];
 
-        uniqueSeries.forEach((series, index) => {
-            // Canlı kanal ID'sini özel bir aralıkta veriyoruz (Örn: 9001, 9002...)
-            const channelId = 9000 + index + 1;
+        // 1. Normal Canlı TV Kanalları
+        liveItems.forEach((item, index) => {
+            const origCatId = (cats.indexOf(item.group) + 1).toString();
+            const alphaCatId = getAlphabetCategoryId(item.name);
+            const streamId = index + 1;
 
+            let targetCatId = origCatId;
+            if (category_id && category_id.toString().startsWith("alpha_")) {
+                targetCatId = alphaCatId;
+            }
+
+            streams.push({
+                num: streams.length + 1,
+                name: item.name,
+                stream_id: streamId,
+                stream_type: "live",
+                stream_icon: item.logo,
+                category_id: targetCatId,
+                direct_source: item.url
+            });
+        });
+
+        // 2. Dizi Kanalları (Her dizi tek bir canlı kanal olur, id'si 9000'den başlar)
+        const uniqueSeries = getAllUniqueSeries();
+        uniqueSeries.forEach((series, index) => {
+            const channelId = 9000 + index + 1;
             streams.push({
                 num: streams.length + 1,
                 name: `${series.name} (7/24 Kesintisiz)`,
@@ -186,15 +222,43 @@ app.get('/player_api.php', (req, res) => {
         return res.json(streams);
     }
 
-    // Normal VOD kısımlarını boş geçiyoruz ki TV tamamen Canlı Kanallara odaklansın
-    if (action === 'get_vod_categories' || action === 'get_vod_streams' || action === 'get_series_categories' || action === 'get_series' || action === 'get_series_info') {
+    // VOD FİLMLER
+    if (action === 'get_vod_categories') {
+        const movieItems = readM3UFile('movie.m3u');
+        if (movieItems.length === 0) return res.json([{ category_id: "1", category_name: "Film Yok", parent_id: 0 }]);
+        const cats = Array.from(new Set(movieItems.map(i => i.group)));
+        let categories = cats.map((c, i) => ({ category_id: (i + 1).toString(), category_name: c || "Filmler", parent_id: 0 }));
+        return res.json(categories);
+    }
+
+    if (action === 'get_vod_streams') {
+        const movieItems = readM3UFile('movie.m3u');
+        const cats = Array.from(new Set(movieItems.map(i => i.group)));
+        let vodList = movieItems.map((item, index) => ({
+            num: index + 1,
+            name: item.name,
+            stream_id: index + 1001,
+            stream_type: "movie",
+            stream_icon: item.logo || "",
+            category_id: (cats.indexOf(item.group) + 1).toString(),
+            container_extension: "mp4",
+            rating: "8.0",
+            added: "1600000000"
+        }));
+
+        if (category_id) vodList = vodList.filter(v => v.category_id === category_id.toString());
+        return res.json(vodList);
+    }
+
+    // Normal dizi listesini kapatıyoruz çünkü artık diziler "Canlı Dizi Kanalı" olarak çalışıyor
+    if (action === 'get_series_categories' || action === 'get_series' || action === 'get_series_info') {
         return res.json([]);
     }
 
     res.json([]);
 });
 
-// 🎬 KESİNTİSİZ SIRALI AKIŞ MOTORU (Sıradaki Parçaya Otomatik Geçiş Yapan Proxy)
+// 🎬 AKIŞ YÖNLENDİRİCİSİ (Normal TV, Filmler ve Kesintisiz Dizi Kanalları)
 app.get('/:type/:user/:pass/:id', async (req, res) => {
     const { user, pass, id } = req.params;
 
@@ -202,72 +266,98 @@ app.get('/:type/:user/:pass/:id', async (req, res) => {
         return res.status(403).send("Yetkisiz Erişim");
     }
 
-    // ID temizleme (örn: 9001.ts veya 9001)
     const cleanIdMatch = id.match(/^(\d+)/);
-    if (!cleanIdMatch) return res.status(400).send("Geçersiz Kanal ID");
+    if (!cleanIdMatch) return res.status(400).send("Geçersiz Yayın ID");
 
-    const channelId = parseInt(cleanIdMatch[1]);
+    const cleanId = parseInt(cleanIdMatch[1]);
+    const tvItems = readM3UFile('tv.m3u');
+    const movieItems = readM3UFile('movie.m3u');
     const uniqueSeries = getAllUniqueSeries();
 
-    // Eğer istek dizi kanalından (9001 ve üzeri) geldiyse ilgili diziyi seç
-    if (channelId >= 9001) {
-        const seriesIndex = channelId - 9001;
-        const targetSeries = uniqueSeries[seriesIndex];
+    let targetUrl = null;
+    let isSeriesChannel = false;
+    let seriesIndex = 0;
 
-        if (!targetSeries || targetSeries.items.length === 0) {
-            return res.status(404).send("Dizi bulunamadı");
+    // 1. Canlı TV Kanalları (tv.m3u)
+    if (cleanId <= 500 && tvItems[cleanId - 1]) {
+        targetUrl = tvItems[cleanId - 1].url;
+    }
+    // 2. Filmler (movie.m3u)
+    else if (cleanId > 1000 && cleanId < 2000 && movieItems[cleanId - 1001]) {
+        targetUrl = movieItems[cleanId - 1001].url;
+    }
+    // 3. Kesintisiz Dizi Kanalları (9001 ve üzeri)
+    else if (cleanId >= 9001) {
+        isSeriesChannel = true;
+        seriesIndex = cleanId - 9001;
+    }
+
+    // Eğer normal bir kanal veya filmse doğrudan akıt
+    if (!isSeriesChannel) {
+        if (!targetUrl) return res.status(404).send("Yayın bulunamadı");
+
+        try {
+            const response = await axios({
+                method: 'get',
+                url: targetUrl,
+                responseType: 'stream',
+                headers: { 'User-Agent': 'Mozilla/5.0' }
+            });
+
+            res.setHeader('Content-Type', 'video/mp4');
+            response.data.pipe(res);
+        } catch (err) {
+            console.error("Akış hatası:", err.message);
+            if (!res.headersSent) res.status(500).send("Video akışı sağlanamadı");
         }
-
-        // Tüm parçaların URL listesi (Kuyruk)
-        const playlistUrls = targetSeries.items.map(item => item.url);
-        let currentIndex = 0;
-
-        res.setHeader('Content-Type', 'video/mp4');
-        res.setHeader('Connection', 'keep-alive');
-
-        // Sıradaki parçayı oynatan özyinelemeli (recursive) akış fonksiyonu
-        async function playNextStream() {
-            if (currentIndex >= playlistUrls.length) {
-                // Liste bittiğinde başa dönerek 7/24 döngü sağlar
-                currentIndex = 0; 
-            }
-
-            const currentUrl = playlistUrls[currentIndex];
-            currentIndex++;
-
-            try {
-                const response = await axios({
-                    method: 'get',
-                    url: currentUrl,
-                    responseType: 'stream',
-                    headers: { 'User-Agent': 'Mozilla/5.0' }
-                });
-
-                // Bu parça bittiğinde hiç duraksamadan hemen sıradakine geç
-                response.data.on('end', () => {
-                    playNextStream();
-                });
-
-                response.data.on('error', (err) => {
-                    console.error("Parça akış hatası, sonrakine geçiliyor:", err.message);
-                    playNextStream();
-                });
-
-                // Veriyi TV'ye aktar
-                response.data.pipe(res, { end: false });
-
-            } catch (err) {
-                console.error("Bağlantı hatası, sonrakine geçiliyor:", err.message);
-                playNextStream();
-            }
-        }
-
-        // Akışı başlat
-        playNextStream();
         return;
     }
 
-    return res.status(404).send("Yayın bulunamadı");
+    // Eğer kesintisiz dizi kanalıysa parçaları otomatik sırayla döndüren motor çalışır
+    const targetSeries = uniqueSeries[seriesIndex];
+    if (!targetSeries || targetSeries.items.length === 0) {
+        return res.status(404).send("Dizi bulunamadı");
+    }
+
+    const playlistUrls = targetSeries.items.map(item => item.url);
+    let currentIndex = 0;
+
+    res.setHeader('Content-Type', 'video/mp4');
+    res.setHeader('Connection', 'keep-alive');
+
+    async function playNextStream() {
+        if (currentIndex >= playlistUrls.length) {
+            currentIndex = 0; // Liste bitince başa dön (7/24 döngü)
+        }
+
+        const currentUrl = playlistUrls[currentIndex];
+        currentIndex++;
+
+        try {
+            const response = await axios({
+                method: 'get',
+                url: currentUrl,
+                responseType: 'stream',
+                headers: { 'User-Agent': 'Mozilla/5.0' }
+            });
+
+            response.data.on('end', () => {
+                playNextStream();
+            });
+
+            response.data.on('error', (err) => {
+                console.error("Parça geçiş hatası:", err.message);
+                playNextStream();
+            });
+
+            response.data.pipe(res, { end: false });
+        } catch (err) {
+            console.error("Bağlantı hatası, sonrakine geçiliyor:", err.message);
+            playNextStream();
+        }
+    }
+
+    playNextStream();
 });
 
-app.listen(PORT, () => console.log(`Kesintisiz Dizi Kanalı Sunucusu ${PORT} portunda devrede.`));
+app.listen(PORT, () => console.log(`Xtream IPTV Sunucusu ${PORT} portunda devrede.`));
