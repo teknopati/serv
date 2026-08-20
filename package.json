@@ -1,14 +1,11 @@
 {
-  "name": "xtream-proxy",
+  "name": "iptv-server",
   "version": "1.0.0",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
   "dependencies": {
-    "express": "^4.18.2",
-    "basic-ftp": "^5.0.0",
-    "axios": "^1.6.0",
-    "fluent-ffmpeg": "^2.1.3"
+    "express": "^4.19.2"
   }
 }
