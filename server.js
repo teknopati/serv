@@ -1,6 +1,7 @@
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
+const axios = require('axios'); // Google Drive akışı için eklendi
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -302,7 +303,7 @@ app.get('/player_api.php', (req, res) => {
     res.json([]);
 });
 
-// 🎬 XTREAM 302 YÖNLENDİRİCİSİ
+// 🎬 TV İÇİN AKIŞ (PROXY) YÖNLENDİRİCİSİ (TV'lerin açabilmesi için güncellendi)
 app.get('/:type/:user/:pass/:id', async (req, res) => {
     const { user, pass, id } = req.params;
 
@@ -318,28 +319,48 @@ app.get('/:type/:user/:pass/:id', async (req, res) => {
     const movieItems = readM3UFile('movie.m3u');
     const uniqueSeries = getAllUniqueSeries();
 
+    let targetUrl = null;
+
     // Canlı TV (tv.m3u)
     if (cleanId <= 500 && tvItems[cleanId - 1]) {
-        return res.redirect(302, tvItems[cleanId - 1].url);
+        targetUrl = tvItems[cleanId - 1].url;
     }
-    
     // Filmler (movie.m3u)
-    if (cleanId > 1000 && cleanId < 2000 && movieItems[cleanId - 1001]) {
-        return res.redirect(302, movieItems[cleanId - 1001].url);
+    else if (cleanId > 1000 && cleanId < 2000 && movieItems[cleanId - 1001]) {
+        targetUrl = movieItems[cleanId - 1001].url;
     }
-    
     // Diziler (series.m3u)
-    if (cleanId >= 10001) {
+    else if (cleanId >= 10001) {
         const seriesIndex = Math.floor(cleanId / 10000) - 1;
         const itemIndex = (cleanId % 10000) - 1;
         const targetSeries = uniqueSeries[seriesIndex];
 
         if (targetSeries && targetSeries.items[itemIndex]) {
-            return res.redirect(302, targetSeries.items[itemIndex].url);
+            targetUrl = targetSeries.items[itemIndex].url;
         }
     }
 
-    return res.status(404).send("Yayın bulunamadı");
+    if (!targetUrl) {
+        return res.status(404).send("Yayın bulunamadı");
+    }
+
+    // Akış (Proxy) Yöntemi: Smart TV'lerin doğrudan oynatabilmesi için veriyi aradan akıtıyoruz
+    try {
+        const response = await axios({
+            method: 'get',
+            url: targetUrl,
+            responseType: 'stream',
+            headers: { 'User-Agent': 'Mozilla/5.0' }
+        });
+
+        res.setHeader('Content-Type', 'video/mp4');
+        response.data.pipe(res);
+    } catch (err) {
+        console.error("Video akış hatası:", err.message);
+        if (!res.headersSent) {
+            res.status(500).send("Video akışı sağlanamadı");
+        }
+    }
 });
 
 app.listen(PORT, () => console.log(`Xtream IPTV Sunucusu ${PORT} portunda devrede.`));
