@@ -114,8 +114,8 @@ function getAlphabetCategoryId(channelName) {
     return "alpha_10";
 }
 
-// DİZİLERİ SEZON, BÖLÜM VE KATEGORİLERİNE GÖRE GRUPLAYAN MOTOR
-function getStructuredSeries() {
+// DİZİLERİN BÖLÜMLERİNİ VE PARÇALARINI GRUPLAYAN MOTOR
+function getStructuredEpisodesAsChannels() {
     const rawItems = readM3UFile('series.m3u');
     const seriesMap = new Map();
 
@@ -138,7 +138,7 @@ function getStructuredSeries() {
             seriesObj.episodesMap.set(epKey, {
                 season: seasonNum,
                 episode: episodeNum,
-                title: `${seasonNum}. Sezon ${episodeNum}. Bölüm`,
+                title: `${seriesObj.name} - ${seasonNum}. Sezon ${episodeNum}. Bölüm`,
                 logo: item.logo,
                 parts: []
             });
@@ -146,13 +146,17 @@ function getStructuredSeries() {
         seriesObj.episodesMap.get(epKey).parts.push(item);
     });
 
-    let formattedSeries = [];
-    let seriesIndex = 0;
+    let allEpisodeChannels = [];
+    let catMap = new Map();
+    let channelCounter = 50000; // Çakışma olmaması için yüksek ID
 
     for (let [_, seriesData] of seriesMap) {
-        let seasonsObj = {};
-        let episodesList = [];
-        let globalEpisodeCounter = 1;
+        // Her dizi kendi adına bir kategori (klasör) olacak
+        let catName = seriesData.name;
+        if (!catMap.has(catName)) {
+            catMap.set(catName, `cat_${catMap.size + 1}`);
+        }
+        let assignedCatId = catMap.get(catName);
 
         let sortedEpisodes = Array.from(seriesData.episodesMap.values()).sort((a, b) => {
             if (a.season !== b.season) return a.season - b.season;
@@ -160,57 +164,24 @@ function getStructuredSeries() {
         });
 
         sortedEpisodes.forEach((ep) => {
-            const seasonKey = ep.season.toString();
-            if (!seasonsObj[seasonKey]) seasonsObj[seasonKey] = [];
-
-            let totalDurationSecs = ep.parts.reduce((acc, p) => acc + p.durationInSeconds, 0);
-            const uniqueEpId = ((seriesIndex + 1) * 10000) + globalEpisodeCounter;
-
-            episodesList.push({
-                globalEpId: uniqueEpId,
-                season: ep.season,
-                episode: ep.episode,
-                title: `${ep.season}. Sezon ${ep.episode}. Bölüm`,
+            allEpisodeChannels.push({
+                stream_id: channelCounter,
+                name: ep.title,
+                category_name: catName,
+                category_id: assignedCatId,
                 logo: ep.logo || seriesData.logo,
-                duration: totalDurationSecs,
-                parts: ep.parts
+                parts: ep.parts.map(p => p.url)
             });
-
-            seasonsObj[seasonKey].push({
-                id: uniqueEpId.toString(),
-                episode_num: globalEpisodeCounter,
-                title: `${ep.season}. Sezon ${ep.episode}. Bölüm`,
-                container_extension: "mp4",
-                info: {
-                    duration_secs: totalDurationSecs,
-                    duration: `${Math.round(totalDurationSecs / 60)} min`,
-                    plot: `${seriesData.name} - ${ep.season}. Sezon ${ep.episode}. Bölüm`,
-                    movie_image: ep.logo || seriesData.logo
-                }
-            });
-
-            globalEpisodeCounter++;
+            channelCounter++;
         });
-
-        formattedSeries.push({
-            id: seriesIndex + 1,
-            name: seriesData.name,
-            logo: seriesData.logo,
-            categoryId: (seriesIndex + 1).toString(),
-            seasons: Object.keys(seasonsObj).map(s => ({ id: parseInt(s), name: `${s}. Sezon`, season_number: parseInt(s), cover: seriesData.logo })),
-            episodesObj: seasonsObj,
-            rawEpisodesList: episodesList
-        });
-
-        seriesIndex++;
     }
 
-    return formattedSeries;
+    return { allEpisodeChannels, catMap };
 }
 
-// 📺 XTREAM API
+// 📺 XTRAY API
 app.get('/player_api.php', (req, res) => {
-    const { username, password, action, series_id, category_id } = req.query;
+    const { username, password, action, category_id } = req.query;
 
     if (username !== USERNAME || password !== PASSWORD) {
         return res.status(401).json({ user_info: { auth: 0 } });
@@ -227,44 +198,60 @@ app.get('/player_api.php', (req, res) => {
         return res.json({ epg_listings: [] });
     }
 
-    // CANLI KATEGORİLER
+    // 1. CANLI KATEGORİLER (Normal TV Grupları + Her Dizi Ayrı Bir Kategori)
     if (action === 'get_live_categories') {
         const liveItems = readM3UFile('tv.m3u');
         let categories = [];
+        let catIndex = 1;
+
         if (liveItems.length > 0) {
             const cats = Array.from(new Set(liveItems.map(i => i.group)));
-            cats.forEach((c, i) => categories.push({ category_id: (i + 1).toString(), category_name: c, parent_id: 0 }));
+            cats.forEach((c) => {
+                categories.push({ category_id: catIndex.toString(), category_name: c, parent_id: 0 });
+                catIndex++;
+            });
         }
-        ALPHABET_GROUPS.forEach(group => {
-            categories.push({ category_id: group.id, category_name: group.name, parent_id: 0 });
-        });
+
+        // Dizi Bölümlerinin Kategorileri (Her Dizi Bir Klasör)
+        const { catMap } = getStructuredEpisodesAsChannels();
+        for (let [catName, catId] of catMap) {
+            categories.push({ category_id: catId, category_name: `📺 ${catName}`, parent_id: 0 });
+        }
+
         return res.json(categories);
     }
 
-    // CANLI KANALLAR
+    // 2. CANLI KANALLAR (Normal TV Kanalları + Dizi Bölümlerinin Her Biri Birer Kanal)
     if (action === 'get_live_streams') {
         const liveItems = readM3UFile('tv.m3u');
         const cats = Array.from(new Set(liveItems.map(i => i.group)));
         let streams = [];
 
+        // Normal Kanallar
         liveItems.forEach((item, index) => {
             const origCatId = (cats.indexOf(item.group) + 1).toString();
-            const alphaCatId = getAlphabetCategoryId(item.name);
-            const streamId = index + 1;
-
-            let targetCatId = origCatId;
-            if (category_id && category_id.toString().startsWith("alpha_")) {
-                targetCatId = alphaCatId;
-            }
-
             streams.push({
                 num: streams.length + 1,
                 name: item.name,
-                stream_id: streamId,
+                stream_id: index + 1,
                 stream_type: "live",
                 stream_icon: item.logo,
-                category_id: targetCatId,
+                category_id: origCatId,
                 direct_source: item.url
+            });
+        });
+
+        // Dizi Bölümlerini "Canlı Kanal" Olarak Ekle
+        const { allEpisodeChannels } = getStructuredEpisodesAsChannels();
+        allEpisodeChannels.forEach((epChannel) => {
+            streams.push({
+                num: streams.length + 1,
+                name: epChannel.name,
+                stream_id: epChannel.stream_id,
+                stream_type: "live",
+                stream_icon: epChannel.logo,
+                category_id: epChannel.category_id,
+                direct_source: `http://${req.headers.host}/episode_channel/${USERNAME}/${PASSWORD}/${epChannel.stream_id}`
             });
         });
 
@@ -274,7 +261,7 @@ app.get('/player_api.php', (req, res) => {
         return res.json(streams);
     }
 
-    // VOD FİLMLER
+    // 3. VOD FİLMLER
     if (action === 'get_vod_categories') {
         const movieItems = readM3UFile('movie.m3u');
         if (movieItems.length === 0) return res.json([{ category_id: "1", category_name: "Film Yok", parent_id: 0 }]);
@@ -302,53 +289,69 @@ app.get('/player_api.php', (req, res) => {
         return res.json(vodList);
     }
 
-    // DİZİ KATEGORİLERİ (Her dizi kendi adıyla kategori olur)
-    if (action === 'get_series_categories') {
-        const structuredSeries = getStructuredSeries();
-        return res.json(structuredSeries.map(s => ({
-            category_id: s.categoryId,
-            category_name: s.name,
-            parent_id: 0
-        })));
-    }
-
-    // DİZİLER
-    if (action === 'get_series') {
-        const structuredSeries = getStructuredSeries();
-        let seriesList = structuredSeries.map((data) => ({
-            num: data.id,
-            name: data.name,
-            series_id: data.id,
-            cover: data.logo,
-            plot: `${data.name} Dizisi`,
-            genre: "Dizi / Çizgi Dizi",
-            category_id: data.categoryId
-        }));
-
-        if (category_id) {
-            seriesList = seriesList.filter(s => s.category_id === category_id.toString());
-        }
-        return res.json(seriesList);
-    }
-
-    if (action === 'get_series_info') {
-        const targetId = parseInt(series_id) || 1;
-        const structuredSeries = getStructuredSeries();
-        const targetSeries = structuredSeries.find(s => s.id === targetId);
-
-        if (!targetSeries) return res.json({ seasons: [], episodes: {} });
-
-        return res.json({
-            seasons: targetSeries.seasons,
-            episodes: targetSeries.episodesObj,
-            info: { name: targetSeries.name, cover: targetSeries.logo }
-        });
+    // Eski seri yapılarını tamamen kapattık, çünkü bölümleri canlı kanal yaptık
+    if (action === 'get_series_categories' || action === 'get_series' || action === 'get_series_info') {
+        return res.json([]);
     }
 
     res.json([]);
 });
 
-// 🎬 AKIŞ YÖNLENDİRİCİSİ (Canlı Kanallar, Filmler ve Parçaları Birleşen Dizi Bölümleri)
+// 🎬 DİZİ BÖLÜMÜ KANALI AÇILDIĞINDA PARÇALARI BİRLEŞTİREREK OYNATAN MOTOR
+app.get('/episode_channel/:user/:pass/:streamId', async (req, res) => {
+    const { user, pass, streamId } = req.params;
+
+    if (user !== USERNAME || pass !== PASSWORD) {
+        return res.status(403).send("Yetkisiz Erişim");
+    }
+
+    const { allEpisodeChannels } = getStructuredEpisodesAsChannels();
+    const targetEpisode = allEpisodeChannels.find(ep => ep.stream_id === parseInt(streamId));
+
+    if (!targetEpisode || targetEpisode.parts.length === 0) {
+        return res.status(404).send("Bölüm bulunamadı");
+    }
+
+    const parts = targetEpisode.parts;
+    let partIndex = 0;
+
+    res.setHeader('Content-Type', 'video/mp4');
+    res.setHeader('Connection', 'keep-alive');
+
+    async function playNextPart() {
+        if (partIndex >= parts.length) {
+            return res.end(); // Bölüm bitince akışı sonlandır
+        }
+
+        const currentUrl = parts[partIndex];
+        partIndex++;
+
+        try {
+            const response = await axios({
+                method: 'get',
+                url: currentUrl,
+                responseType: 'stream',
+                headers: { 'User-Agent': 'Mozilla/5.0' }
+            });
+
+            response.data.on('end', () => {
+                playNextPart();
+            });
+
+            response.data.on('error', () => {
+                playNextPart();
+            });
+
+            response.data.pipe(res, { end: false });
+        } catch (err) {
+            playNextPart();
+        }
+    }
+
+    playNextPart();
+});
+
+// 🎬 NORMAL CANLI KANALLAR VE FİLMLER İÇİN YÖNLENDİRİCİ
 app.get('/:type/:user/:pass/:id', async (req, res) => {
     const { user, pass, id } = req.params;
 
@@ -362,89 +365,33 @@ app.get('/:type/:user/:pass/:id', async (req, res) => {
     const cleanId = parseInt(cleanIdMatch[1]);
     const tvItems = readM3UFile('tv.m3u');
     const movieItems = readM3UFile('movie.m3u');
-    const structuredSeries = getStructuredSeries();
 
     let targetUrl = null;
-    let targetEpisodeParts = null;
 
-    // Canlı TV
     if (cleanId <= 500 && tvItems[cleanId - 1]) {
         targetUrl = tvItems[cleanId - 1].url;
-    }
-    // Filmler
-    else if (cleanId > 1000 && cleanId < 2000 && movieItems[cleanId - 1001]) {
+    } else if (cleanId > 1000 && cleanId < 2000 && movieItems[cleanId - 1001]) {
         targetUrl = movieItems[cleanId - 1001].url;
     }
-    // Diziler (Bölüme tıklandığında parçalarını bulur)
-    else if (cleanId >= 10000) {
-        for (let series of structuredSeries) {
-            const foundEp = series.rawEpisodesList.find(ep => ep.globalEpId === cleanId);
-            if (foundEp) {
-                targetEpisodeParts = foundEp.parts.map(p => p.url);
-                break;
-            }
-        }
+
+    if (!targetUrl) {
+        return res.status(404).send("Yayın bulunamadı");
     }
 
-    // Canlı kanal veya film ise
-    if (targetUrl) {
-        try {
-            const response = await axios({
-                method: 'get',
-                url: targetUrl,
-                responseType: 'stream',
-                headers: { 'User-Agent': 'Mozilla/5.0' },
-                timeout: 10000
-            });
-            res.setHeader('Content-Type', 'video/mp4');
-            return response.data.pipe(res);
-        } catch (err) {
-            return res.redirect(302, targetUrl);
-        }
-    }
+    try {
+        const response = await axios({
+            method: 'get',
+            url: targetUrl,
+            responseType: 'stream',
+            headers: { 'User-Agent': 'Mozilla/5.0' },
+            timeout: 10000
+        });
 
-    // Dizi bölümü ise parçaları sırayla arkaya arkaya birleştirerek akıt
-    if (targetEpisodeParts && targetEpisodeParts.length > 0) {
         res.setHeader('Content-Type', 'video/mp4');
-        res.setHeader('Connection', 'keep-alive');
-
-        let partIndex = 0;
-
-        async function streamPart() {
-            if (partIndex >= targetEpisodeParts.length) {
-                return res.end();
-            }
-
-            const currentPartUrl = targetEpisodeParts[partIndex];
-            partIndex++;
-
-            try {
-                const response = await axios({
-                    method: 'get',
-                    url: currentPartUrl,
-                    responseType: 'stream',
-                    headers: { 'User-Agent': 'Mozilla/5.0' }
-                });
-
-                response.data.on('end', () => {
-                    streamPart();
-                });
-
-                response.data.on('error', () => {
-                    streamPart();
-                });
-
-                response.data.pipe(res, { end: false });
-            } catch (err) {
-                streamPart();
-            }
-        }
-
-        streamPart();
-        return;
+        response.data.pipe(res);
+    } catch (err) {
+        return res.redirect(302, targetUrl);
     }
-
-    return res.status(404).send("Yayın bulunamadı");
 });
 
 app.listen(PORT, () => console.log(`Xtream IPTV Sunucusu ${PORT} portunda devrede.`));
