@@ -167,7 +167,7 @@ app.get('/player_api.php', (req, res) => {
         return res.json(categories);
     }
 
-    // 2. CANLI KANALLAR ("Tüm Kanallar" tıklandığında sadece canlı tv.m3u gelir, kategori seçilince o kategori listelenir)
+    // 2. CANLI KANALLAR (Donmayı önlemek için sadece seçilen kategorinin kanallarını döndürür)
     if (action === 'get_live_streams') {
         const liveItems = readM3UFile('tv.m3u');
         const cats = Array.from(new Set(liveItems.map(i => i.group)));
@@ -194,10 +194,12 @@ app.get('/player_api.php', (req, res) => {
             });
         });
 
-        // Eğer kategori ID'si boşsa (Yani kullanıcı "Tüm Kanallar" sekmesindeyse), dizi bölümleri ve ekstra yükler görünmez, sadece canlı kanallar listelenir.
-        if (category_id) {
-            streams = streams.filter(s => s.category_id === category_id.toString());
+        // Eğer kullanıcı henüz bir kategori seçmediyse (Tüm kanalları çekmeye çalışıyorsa) boş döndürerek uydu alıcısının donmasını engelle
+        if (!category_id) {
+            return res.json([]);
         }
+
+        streams = streams.filter(s => s.category_id === category_id.toString());
         return res.json(streams);
     }
 
@@ -225,7 +227,8 @@ app.get('/player_api.php', (req, res) => {
             added: "1600000000"
         }));
 
-        if (category_id) vodList = vodList.filter(v => v.category_id === category_id.toString());
+        if (!category_id) return res.json([]);
+        vodList = vodList.filter(v => v.category_id === category_id.toString());
         return res.json(vodList);
     }
 
