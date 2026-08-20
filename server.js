@@ -1,7 +1,7 @@
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
-const axios = require('axios'); // Google Drive akışı için eklendi
+const axios = require('axios');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -153,7 +153,7 @@ app.get('/player_api.php', (req, res) => {
         return res.json({ epg_listings: [] });
     }
 
-    // CANLI KATEGORİLER (Normal Kanallar + Dizi Kanalları Kategorisi)
+    // CANLI KATEGORİLER
     if (action === 'get_live_categories') {
         const liveItems = readM3UFile('tv.m3u');
         let categories = [];
@@ -161,24 +161,18 @@ app.get('/player_api.php', (req, res) => {
             const cats = Array.from(new Set(liveItems.map(i => i.group)));
             cats.forEach((c, i) => categories.push({ category_id: (i + 1).toString(), category_name: c, parent_id: 0 }));
         }
-        
-        // Dizi Kanalları İçin Özel Kategori
-        categories.push({ category_id: "999", category_name: "📺 Dizi Kanalları", parent_id: 0 });
-
         ALPHABET_GROUPS.forEach(group => {
             categories.push({ category_id: group.id, category_name: group.name, parent_id: 0 });
         });
         return res.json(categories);
     }
 
-    // CANLI KANALLAR (Normal Kanallar + Çubuksuz Akacak Dizi Kanalları)
+    // CANLI KANALLAR
     if (action === 'get_live_streams') {
         const liveItems = readM3UFile('tv.m3u');
-        const uniqueSeries = getAllUniqueSeries();
         const cats = Array.from(new Set(liveItems.map(i => i.group)));
         let streams = [];
 
-        // 1. Normal Canlı TV Kanalları
         liveItems.forEach((item, index) => {
             const origCatId = (cats.indexOf(item.group) + 1).toString();
             const alphaCatId = getAlphabetCategoryId(item.name);
@@ -197,19 +191,6 @@ app.get('/player_api.php', (req, res) => {
                 stream_icon: item.logo,
                 category_id: targetCatId,
                 direct_source: item.url
-            });
-        });
-
-        // 2. DİZİLERİ "CANLI KANAL" OLARAK EKLE (İlerleme Çubuğu Çıkmaz)
-        uniqueSeries.forEach((series, index) => {
-            streams.push({
-                num: streams.length + 1,
-                name: `${series.name} (Kesintisiz Dizi Kanalı)`,
-                stream_id: 9000 + index + 1,
-                stream_type: "live",
-                stream_icon: series.logo || "",
-                category_id: "999",
-                direct_source: `http://${req.headers.host}/series_stream/${USERNAME}/${PASSWORD}/${index}`
             });
         });
 
@@ -247,7 +228,7 @@ app.get('/player_api.php', (req, res) => {
         return res.json(vodList);
     }
 
-    // DİZİLER (Series - Orijinal tablosu korundu)
+    // DİZİLER (Series)
     if (action === 'get_series_categories') {
         return res.json([{ category_id: "1", category_name: "Tüm Diziler", parent_id: 0 }]);
     }
@@ -322,61 +303,7 @@ app.get('/player_api.php', (req, res) => {
     res.json([]);
 });
 
-// 🎬 DİZİLERİ ARALIKSIZ AKITAN ÖZEL AKIŞ MOTORU (İlerleme çubuğu çıkmaz)
-app.get('/series_stream/:user/:pass/:seriesIndex', async (req, res) => {
-    const { user, pass, seriesIndex } = req.params;
-
-    if (user !== USERNAME || pass !== PASSWORD) {
-        return res.status(403).send("Yetkisiz Erişim");
-    }
-
-    const uniqueSeries = getAllUniqueSeries();
-    const targetSeries = uniqueSeries[parseInt(seriesIndex)];
-
-    if (!targetSeries || targetSeries.items.length === 0) {
-        return res.status(404).send("Dizi bulunamadı");
-    }
-
-    const playlistUrls = targetSeries.items.map(item => item.url);
-    let currentIndex = 0;
-
-    res.setHeader('Content-Type', 'video/mp4');
-    res.setHeader('Connection', 'keep-alive');
-
-    async function streamNext() {
-        if (currentIndex >= playlistUrls.length) {
-            currentIndex = 0; // Liste bittiğinde başa dönerek döngü sağlar
-        }
-
-        const currentUrl = playlistUrls[currentIndex];
-        currentIndex++;
-
-        try {
-            const response = await axios({
-                method: 'get',
-                url: currentUrl,
-                responseType: 'stream',
-                headers: { 'User-Agent': 'Mozilla/5.0' }
-            });
-
-            response.data.on('end', () => {
-                streamNext();
-            });
-
-            response.data.on('error', (err) => {
-                streamNext();
-            });
-
-            response.data.pipe(res, { end: false });
-        } catch (e) {
-            streamNext();
-        }
-    }
-
-    streamNext();
-});
-
-// 🎬 NORMAL KANALLAR VE FİLMLER İÇİN GÜVENLİ YÖNLENDİRİCİ
+// 🎬 GÜVENLİ 302 YÖNLENDİRİCİ (Google Drive videolarını sorunsuz ve en hızlı açan yöntem)
 app.get('/:type/:user/:pass/:id', async (req, res) => {
     const { user, pass, id } = req.params;
 
@@ -390,6 +317,7 @@ app.get('/:type/:user/:pass/:id', async (req, res) => {
     const cleanId = parseInt(cleanIdMatch[1]);
     const tvItems = readM3UFile('tv.m3u');
     const movieItems = readM3UFile('movie.m3u');
+    const uniqueSeries = getAllUniqueSeries();
 
     let targetUrl = null;
 
@@ -397,26 +325,23 @@ app.get('/:type/:user/:pass/:id', async (req, res) => {
         targetUrl = tvItems[cleanId - 1].url;
     } else if (cleanId > 1000 && cleanId < 2000 && movieItems[cleanId - 1001]) {
         targetUrl = movieItems[cleanId - 1001].url;
+    } else if (cleanId >= 10001) {
+        const seriesIndex = Math.floor(cleanId / 10000) - 1;
+        const itemIndex = (cleanId % 10000) - 1;
+        const targetSeries = uniqueSeries[seriesIndex];
+
+        if (targetSeries && targetSeries.items[itemIndex]) {
+            targetUrl = targetSeries.items[itemIndex].url;
+        }
     }
 
     if (!targetUrl) {
         return res.status(404).send("Yayın bulunamadı");
     }
 
-    try {
-        const response = await axios({
-            method: 'get',
-            url: targetUrl,
-            responseType: 'stream',
-            headers: { 'User-Agent': 'Mozilla/5.0' },
-            timeout: 10000
-        });
-
-        res.setHeader('Content-Type', 'video/mp4');
-        response.data.pipe(res);
-    } catch (err) {
-        return res.redirect(302, targetUrl);
-    }
+    // Doğrudan 302 yönlendirmesi, Google Drive videolarının TV oynatıcılarında 
+    // en kararlı, siyah ekransız ve hatasız açılmasını sağlayan kesin yöntemdir.
+    return res.redirect(302, targetUrl);
 });
 
 app.listen(PORT, () => console.log(`Xtream IPTV Sunucusu ${PORT} portunda devrede.`));
