@@ -153,7 +153,7 @@ app.get('/player_api.php', (req, res) => {
         return res.json({ epg_listings: [] });
     }
 
-    // CANLI KATEGORİLER (Normal Canlı TV + Dizi Kanalları)
+    // CANLI KATEGORİLER
     if (action === 'get_live_categories') {
         const liveItems = readM3UFile('tv.m3u');
         let categories = [];
@@ -163,7 +163,6 @@ app.get('/player_api.php', (req, res) => {
             cats.forEach((c, i) => categories.push({ category_id: (i + 1).toString(), category_name: c, parent_id: 0 }));
         }
 
-        // Dizi Kanalları Kategorisi
         categories.push({ category_id: "999", category_name: "📺 Dizi Kanalları (Kesintisiz)", parent_id: 0 });
 
         ALPHABET_GROUPS.forEach(group => {
@@ -173,13 +172,12 @@ app.get('/player_api.php', (req, res) => {
         return res.json(categories);
     }
 
-    // CANLI KANALLAR (Normal TV Kanalları + Tek Kanal Haline Getirilmiş Diziler)
+    // CANLI KANALLAR
     if (action === 'get_live_streams') {
         const liveItems = readM3UFile('tv.m3u');
         const cats = Array.from(new Set(liveItems.map(i => i.group)));
         let streams = [];
 
-        // 1. Normal Canlı TV Kanalları
         liveItems.forEach((item, index) => {
             const origCatId = (cats.indexOf(item.group) + 1).toString();
             const alphaCatId = getAlphabetCategoryId(item.name);
@@ -201,7 +199,6 @@ app.get('/player_api.php', (req, res) => {
             });
         });
 
-        // 2. Dizi Kanalları (Her dizi tek bir canlı kanal olur, id'si 9000'den başlar)
         const uniqueSeries = getAllUniqueSeries();
         uniqueSeries.forEach((series, index) => {
             const channelId = 9000 + index + 1;
@@ -250,7 +247,6 @@ app.get('/player_api.php', (req, res) => {
         return res.json(vodList);
     }
 
-    // Normal dizi listesini kapatıyoruz çünkü artık diziler "Canlı Dizi Kanalı" olarak çalışıyor
     if (action === 'get_series_categories' || action === 'get_series' || action === 'get_series_info') {
         return res.json([]);
     }
@@ -258,7 +254,7 @@ app.get('/player_api.php', (req, res) => {
     res.json([]);
 });
 
-// 🎬 AKIŞ YÖNLENDİRİCİSİ (Normal TV, Filmler ve Kesintisiz Dizi Kanalları)
+// 🎬 AKIŞ YÖNLENDİRİCİSİ (Saat Hesaplamalı Akıllı Başlangıç)
 app.get('/:type/:user/:pass/:id', async (req, res) => {
     const { user, pass, id } = req.params;
 
@@ -278,21 +274,15 @@ app.get('/:type/:user/:pass/:id', async (req, res) => {
     let isSeriesChannel = false;
     let seriesIndex = 0;
 
-    // 1. Canlı TV Kanalları (tv.m3u)
     if (cleanId <= 500 && tvItems[cleanId - 1]) {
         targetUrl = tvItems[cleanId - 1].url;
-    }
-    // 2. Filmler (movie.m3u)
-    else if (cleanId > 1000 && cleanId < 2000 && movieItems[cleanId - 1001]) {
+    } else if (cleanId > 1000 && cleanId < 2000 && movieItems[cleanId - 1001]) {
         targetUrl = movieItems[cleanId - 1001].url;
-    }
-    // 3. Kesintisiz Dizi Kanalları (9001 ve üzeri)
-    else if (cleanId >= 9001) {
+    } else if (cleanId >= 9001) {
         isSeriesChannel = true;
         seriesIndex = cleanId - 9001;
     }
 
-    // Eğer normal bir kanal veya filmse doğrudan akıt
     if (!isSeriesChannel) {
         if (!targetUrl) return res.status(404).send("Yayın bulunamadı");
 
@@ -313,21 +303,30 @@ app.get('/:type/:user/:pass/:id', async (req, res) => {
         return;
     }
 
-    // Eğer kesintisiz dizi kanalıysa parçaları otomatik sırayla döndüren motor çalışır
+    // Kesintisiz Dizi Kanalı Mantığı (Günün saatine göre doğru parçadan başlama)
     const targetSeries = uniqueSeries[seriesIndex];
     if (!targetSeries || targetSeries.items.length === 0) {
         return res.status(404).send("Dizi bulunamadı");
     }
 
     const playlistUrls = targetSeries.items.map(item => item.url);
-    let currentIndex = 0;
+    const totalDurationPerPart = DEFAULT_EP_DURATION; // Her parçanın varsayılan süresi (saniye)
+    const totalPlaylistDuration = playlistUrls.length * totalDurationPerPart;
+
+    // Günün o anki saniyesini hesapla (00:00'dan bu yana geçen saniye)
+    const now = new Date();
+    const secondsSinceMidnight = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+
+    // Döngüye göre şu an hangi parçada olmamız gerektiğini bul
+    const currentPlaylistSecond = secondsSinceMidnight % totalPlaylistDuration;
+    let currentIndex = Math.floor(currentPlaylistSecond / totalDurationPerPart);
 
     res.setHeader('Content-Type', 'video/mp4');
     res.setHeader('Connection', 'keep-alive');
 
     async function playNextStream() {
         if (currentIndex >= playlistUrls.length) {
-            currentIndex = 0; // Liste bitince başa dön (7/24 döngü)
+            currentIndex = 0; 
         }
 
         const currentUrl = playlistUrls[currentIndex];
