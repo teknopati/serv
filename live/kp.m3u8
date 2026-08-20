@@ -3,6 +3,7 @@
 #EXT-X-TARGETDURATION:1200
 #EXT-X-PLAYLIST-TYPE:VOD
 #EXT-X-MEDIA-SEQUENCE:0
+#EXT-X-DISCONTINUITY
 #EXTINF:1200.0, Kardeş Payı - Sezon 1 Bölüm 1 (Parça 1)
 https://drive.google.com/uc?export=download&id=1jTmUBwIkbfWsYOPstZqmSP3g94o265ni
 #EXT-X-DISCONTINUITY
