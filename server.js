@@ -27,9 +27,6 @@ function readM3UFile(fileName) {
                 const durationMatch = line.match(/#EXTINF:(-?\d+)/);
                 let parsedDuration = durationMatch ? parseInt(durationMatch[1]) : -1;
 
-                const logoMatch = line.match(/tvg-logo="([^"]+)"/);
-                const logo = logoMatch ? logoMatch[1] : "";
-
                 const groupMatch = line.match(/group-title="([^"]+)"/);
                 const rawGroup = groupMatch ? groupMatch[1] : "Genel";
                 
@@ -66,7 +63,6 @@ function readM3UFile(fileName) {
                     name: rawTitle, 
                     group: rawGroup, 
                     seriesName, 
-                    logo, 
                     season, 
                     episode, 
                     partNum,
@@ -92,28 +88,6 @@ function readM3UFile(fileName) {
     }
 }
 
-const ALPHABET_GROUPS = [
-    { id: "alpha_1", name: "🔤 [ A - B - C ]", chars: ['a', 'b', 'c'] },
-    { id: "alpha_2", name: "🔤 [ Ç - D - E ]", chars: ['ç', 'd', 'e'] },
-    { id: "alpha_3", name: "🔤 [ F - G - Ğ ]", chars: ['f', 'g', 'ğ'] },
-    { id: "alpha_4", name: "🔤 [ H - I - İ ]", chars: ['h', 'ı', 'i'] },
-    { id: "alpha_5", name: "🔤 [ J - K - L ]", chars: ['j', 'k', 'l'] },
-    { id: "alpha_6", name: "🔤 [ M - N - O ]", chars: ['m', 'n', 'o'] },
-    { id: "alpha_7", name: "🔤 [ Ö - P - R ]", chars: ['ö', 'p', 'r'] },
-    { id: "alpha_8", name: "🔤 [ S - Ş - T ]", chars: ['s', 'ş', 't'] },
-    { id: "alpha_9", name: "🔤 [ U - Ü - V ]", chars: ['u', 'ü', 'v'] },
-    { id: "alpha_10", name: "🔤 [ Y - Z - # ]", chars: ['y', 'z'] }
-];
-
-function getAlphabetCategoryId(channelName) {
-    if (!channelName) return "alpha_10";
-    const firstChar = channelName.trim().charAt(0).toLowerCase();
-    for (let group of ALPHABET_GROUPS) {
-        if (group.chars.includes(firstChar)) return group.id;
-    }
-    return "alpha_10";
-}
-
 function getAllUniqueSeries() {
     const rawItems = readM3UFile('series.m3u');
     const seriesMap = new Map();
@@ -123,7 +97,7 @@ function getAllUniqueSeries() {
         if (!seriesMap.has(sKey)) {
             seriesMap.set(sKey, {
                 name: item.seriesName,
-                logo: item.logo,
+                logo: "",
                 items: []
             });
         }
@@ -153,7 +127,7 @@ app.get('/player_api.php', (req, res) => {
         return res.json({ epg_listings: [] });
     }
 
-    // 1. CANLI KATEGORİLER
+    // 1. CANLI KATEGORİLER (Sadece tv.m3u içindeki orijinal gruplar, şişirme yok)
     if (action === 'get_live_categories') {
         const liveItems = readM3UFile('tv.m3u');
         let categories = [];
@@ -161,13 +135,10 @@ app.get('/player_api.php', (req, res) => {
             const cats = Array.from(new Set(liveItems.map(i => i.group)));
             cats.forEach((c, i) => categories.push({ category_id: (i + 1).toString(), category_name: c, parent_id: 0 }));
         }
-        ALPHABET_GROUPS.forEach(group => {
-            categories.push({ category_id: group.id, category_name: group.name, parent_id: 0 });
-        });
         return res.json(categories);
     }
 
-    // 2. CANLI KANALLAR (Logolar temizlendi, RAM tüketimi sıfıra indirildi)
+    // 2. CANLI KANALLAR (Sadece seçilen kategorinin kanallarını döner, alıcıyı asla kasmaz)
     if (action === 'get_live_streams') {
         const liveItems = readM3UFile('tv.m3u');
         const cats = Array.from(new Set(liveItems.map(i => i.group)));
@@ -175,21 +146,13 @@ app.get('/player_api.php', (req, res) => {
 
         liveItems.forEach((item, index) => {
             const origCatId = (cats.indexOf(item.group) + 1).toString();
-            const alphaCatId = getAlphabetCategoryId(item.name);
-            const streamId = index + 1;
-
-            let targetCatId = origCatId;
-            if (category_id && category_id.toString().startsWith("alpha_")) {
-                targetCatId = alphaCatId;
-            }
-
             streams.push({
                 num: streams.length + 1,
                 name: item.name,
-                stream_id: streamId,
+                stream_id: index + 1,
                 stream_type: "live",
-                stream_icon: "", // Logolar kaldırıldı, cihazı asla kasmaz
-                category_id: targetCatId,
+                stream_icon: "",
+                category_id: origCatId,
                 direct_source: item.url
             });
         });
@@ -197,7 +160,7 @@ app.get('/player_api.php', (req, res) => {
         if (category_id) {
             streams = streams.filter(s => s.category_id === category_id.toString());
         } else {
-            streams = streams.slice(0, 50);
+            return res.json([]); // Kategori seçilmeden liste yükletilmez, donma biter
         }
 
         return res.json(streams);
@@ -230,7 +193,7 @@ app.get('/player_api.php', (req, res) => {
         if (category_id) {
             vodList = vodList.filter(v => v.category_id === category_id.toString());
         } else {
-            vodList = vodList.slice(0, 50);
+            return res.json([]);
         }
         return res.json(vodList);
     }
