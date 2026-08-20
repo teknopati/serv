@@ -1,7 +1,7 @@
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
-const axios = require('axios');
+const axios = require('axios'); // Google Drive akışı için eklendi
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -134,9 +134,9 @@ function getAllUniqueSeries() {
     return Array.from(seriesMap.values());
 }
 
-// 📺 XTREAM API
+// 📺 XTRAY API (Orijinal Haline Geri Döndü)
 app.get('/player_api.php', (req, res) => {
-    const { username, password, action, category_id } = req.query;
+    const { username, password, action, series_id, category_id } = req.query;
 
     if (username !== USERNAME || password !== PASSWORD) {
         return res.status(401).json({ user_info: { auth: 0 } });
@@ -157,18 +157,13 @@ app.get('/player_api.php', (req, res) => {
     if (action === 'get_live_categories') {
         const liveItems = readM3UFile('tv.m3u');
         let categories = [];
-        
         if (liveItems.length > 0) {
             const cats = Array.from(new Set(liveItems.map(i => i.group)));
             cats.forEach((c, i) => categories.push({ category_id: (i + 1).toString(), category_name: c, parent_id: 0 }));
         }
-
-        categories.push({ category_id: "999", category_name: "📺 Dizi Kanalları (Kesintisiz)", parent_id: 0 });
-
         ALPHABET_GROUPS.forEach(group => {
             categories.push({ category_id: group.id, category_name: group.name, parent_id: 0 });
         });
-
         return res.json(categories);
     }
 
@@ -196,20 +191,6 @@ app.get('/player_api.php', (req, res) => {
                 stream_icon: item.logo,
                 category_id: targetCatId,
                 direct_source: item.url
-            });
-        });
-
-        const uniqueSeries = getAllUniqueSeries();
-        uniqueSeries.forEach((series, index) => {
-            const channelId = 9000 + index + 1;
-            streams.push({
-                num: streams.length + 1,
-                name: `${series.name} (7/24 Kesintisiz)`,
-                stream_id: channelId,
-                stream_type: "live",
-                stream_icon: series.logo || "",
-                category_id: "999",
-                direct_source: `http://${req.headers.host}/live/${USERNAME}/${PASSWORD}/${channelId}.ts`
             });
         });
 
@@ -247,14 +228,82 @@ app.get('/player_api.php', (req, res) => {
         return res.json(vodList);
     }
 
-    if (action === 'get_series_categories' || action === 'get_series' || action === 'get_series_info') {
-        return res.json([]);
+    // DİZİLER (Series - Orijinal Mantık)
+    if (action === 'get_series_categories') {
+        return res.json([{ category_id: "1", category_name: "Tüm Diziler", parent_id: 0 }]);
+    }
+
+    if (action === 'get_series') {
+        const uniqueSeries = getAllUniqueSeries();
+        let seriesList = uniqueSeries.map((data, index) => ({
+            num: index + 1,
+            name: data.name,
+            series_id: index + 1,
+            cover: data.logo,
+            plot: `${data.name} Dizisi`,
+            genre: "Dizi / Çizgi Dizi",
+            category_id: "1"
+        }));
+        return res.json(seriesList);
+    }
+
+    if (action === 'get_series_info') {
+        const targetId = parseInt(series_id) || 1;
+        const uniqueSeries = getAllUniqueSeries();
+        const targetSeries = uniqueSeries[targetId - 1];
+
+        if (!targetSeries) return res.json({ seasons: [], episodes: {} });
+
+        let seasonsSet = new Set();
+        let episodesObj = {};
+
+        targetSeries.items.forEach((item, idx) => {
+            const sNum = item.season || 1;
+            seasonsSet.add(sNum);
+            const seasonKey = sNum.toString();
+
+            if (!episodesObj[seasonKey]) episodesObj[seasonKey] = [];
+
+            const globalEpId = (targetId * 10000) + (idx + 1);
+
+            let displayName = item.name;
+            if (!displayName.toLowerCase().includes("parça") && item.partNum > 0) {
+                displayName = `${sNum}. Sezon ${item.episode}. Bölüm (Parça ${item.partNum})`;
+            }
+
+            episodesObj[seasonKey].push({
+                id: globalEpId.toString(),
+                episode_num: idx + 1,
+                title: displayName,
+                container_extension: "mp4",
+                info: { 
+                    duration_secs: item.durationInSeconds,
+                    duration: `${Math.round(item.durationInSeconds / 60)} min`,
+                    plot: displayName, 
+                    movie_image: item.logo || targetSeries.logo 
+                }
+            });
+        });
+
+        const sortedSeasons = Array.from(seasonsSet).sort((a, b) => a - b);
+        const seasonsList = sortedSeasons.map(s => ({
+            id: s,
+            name: `${s}. Sezon`,
+            season_number: s,
+            cover: targetSeries.logo
+        }));
+
+        return res.json({
+            seasons: seasonsList,
+            episodes: episodesObj,
+            info: { name: targetSeries.name, cover: targetSeries.logo }
+        });
     }
 
     res.json([]);
 });
 
-// 🎬 AKIŞ YÖNLENDİRİCİSİ (Saat Hesaplamalı Akıllı Başlangıç)
+// 🎬 GÜVENLİ YÖNLENDİRİCİ (Orijinal Çalışan Yapı + Siyah Ekran Koruması)
 app.get('/:type/:user/:pass/:id', async (req, res) => {
     const { user, pass, id } = req.params;
 
@@ -271,92 +320,46 @@ app.get('/:type/:user/:pass/:id', async (req, res) => {
     const uniqueSeries = getAllUniqueSeries();
 
     let targetUrl = null;
-    let isSeriesChannel = false;
-    let seriesIndex = 0;
 
+    // Canlı TV (tv.m3u)
     if (cleanId <= 500 && tvItems[cleanId - 1]) {
         targetUrl = tvItems[cleanId - 1].url;
-    } else if (cleanId > 1000 && cleanId < 2000 && movieItems[cleanId - 1001]) {
+    }
+    // Filmler (movie.m3u)
+    else if (cleanId > 1000 && cleanId < 2000 && movieItems[cleanId - 1001]) {
         targetUrl = movieItems[cleanId - 1001].url;
-    } else if (cleanId >= 9001) {
-        isSeriesChannel = true;
-        seriesIndex = cleanId - 9001;
     }
+    // Diziler (series.m3u)
+    else if (cleanId >= 10001) {
+        const seriesIndex = Math.floor(cleanId / 10000) - 1;
+        const itemIndex = (cleanId % 10000) - 1;
+        const targetSeries = uniqueSeries[seriesIndex];
 
-    if (!isSeriesChannel) {
-        if (!targetUrl) return res.status(404).send("Yayın bulunamadı");
-
-        try {
-            const response = await axios({
-                method: 'get',
-                url: targetUrl,
-                responseType: 'stream',
-                headers: { 'User-Agent': 'Mozilla/5.0' }
-            });
-
-            res.setHeader('Content-Type', 'video/mp4');
-            response.data.pipe(res);
-        } catch (err) {
-            console.error("Akış hatası:", err.message);
-            if (!res.headersSent) res.status(500).send("Video akışı sağlanamadı");
-        }
-        return;
-    }
-
-    // Kesintisiz Dizi Kanalı Mantığı (Günün saatine göre doğru parçadan başlama)
-    const targetSeries = uniqueSeries[seriesIndex];
-    if (!targetSeries || targetSeries.items.length === 0) {
-        return res.status(404).send("Dizi bulunamadı");
-    }
-
-    const playlistUrls = targetSeries.items.map(item => item.url);
-    const totalDurationPerPart = DEFAULT_EP_DURATION; // Her parçanın varsayılan süresi (saniye)
-    const totalPlaylistDuration = playlistUrls.length * totalDurationPerPart;
-
-    // Günün o anki saniyesini hesapla (00:00'dan bu yana geçen saniye)
-    const now = new Date();
-    const secondsSinceMidnight = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
-
-    // Döngüye göre şu an hangi parçada olmamız gerektiğini bul
-    const currentPlaylistSecond = secondsSinceMidnight % totalPlaylistDuration;
-    let currentIndex = Math.floor(currentPlaylistSecond / totalDurationPerPart);
-
-    res.setHeader('Content-Type', 'video/mp4');
-    res.setHeader('Connection', 'keep-alive');
-
-    async function playNextStream() {
-        if (currentIndex >= playlistUrls.length) {
-            currentIndex = 0; 
-        }
-
-        const currentUrl = playlistUrls[currentIndex];
-        currentIndex++;
-
-        try {
-            const response = await axios({
-                method: 'get',
-                url: currentUrl,
-                responseType: 'stream',
-                headers: { 'User-Agent': 'Mozilla/5.0' }
-            });
-
-            response.data.on('end', () => {
-                playNextStream();
-            });
-
-            response.data.on('error', (err) => {
-                console.error("Parça geçiş hatası:", err.message);
-                playNextStream();
-            });
-
-            response.data.pipe(res, { end: false });
-        } catch (err) {
-            console.error("Bağlantı hatası, sonrakine geçiliyor:", err.message);
-            playNextStream();
+        if (targetSeries && targetSeries.items[itemIndex]) {
+            targetUrl = targetSeries.items[itemIndex].url;
         }
     }
 
-    playNextStream();
+    if (!targetUrl) {
+        return res.status(404).send("Yayın bulunamadı");
+    }
+
+    // Akış denemesi: Önce proxy olarak açmaya çalış, açamazsa orijinal 302 yönlendirmesine dön
+    try {
+        const response = await axios({
+            method: 'get',
+            url: targetUrl,
+            responseType: 'stream',
+            headers: { 'User-Agent': 'Mozilla/5.0' },
+            timeout: 10000
+        });
+
+        res.setHeader('Content-Type', 'video/mp4');
+        response.data.pipe(res);
+    } catch (err) {
+        // Proxy takılırsa doğrudan 302 yönlendir (Orijinal çalışan yöntem)
+        return res.redirect(302, targetUrl);
+    }
 });
 
 app.listen(PORT, () => console.log(`Xtream IPTV Sunucusu ${PORT} portunda devrede.`));
