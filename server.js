@@ -9,6 +9,15 @@ const PORT = process.env.PORT || 3000;
 const USERNAME = "admin";
 const PASSWORD = "123";
 
+// Performans ve hız için listeleri bir kez belleğe alıyoruz (Her istekte dosya okumayı keser, donmayı bitirir)
+let cacheTV = [];
+let cacheSeries = [];
+
+function loadPlaylists() {
+    cacheTV = readM3UFile('tv.m3u');
+    cacheSeries = readM3UFile('series.m3u');
+}
+
 function readM3UFile(fileName) {
     try {
         const filePath = path.join(__dirname, fileName);
@@ -66,10 +75,11 @@ function readM3UFile(fileName) {
     } catch (e) { return []; }
 }
 
+loadPlaylists();
+
 function getAllUniqueSeries() {
-    const rawItems = readM3UFile('series.m3u');
     const seriesMap = new Map();
-    rawItems.forEach((item, index) => {
+    cacheSeries.forEach((item, index) => {
         const sKey = item.seriesName.toLowerCase();
         if (!seriesMap.has(sKey)) seriesMap.set(sKey, { name: item.seriesName, items: [] });
         seriesMap.get(sKey).items.push(item);
@@ -118,23 +128,17 @@ app.get('/player_api.php', (req, res) => {
 
     // 1. CANLI KATEGORİLER
     if (action === 'get_live_categories') {
-        const tv = readM3UFile('tv.m3u');
-        const cats = Array.from(new Set(tv.map(i => i.group)));
+        const cats = Array.from(new Set(cacheTV.map(i => i.group)));
         let tvCategories = cats.map((c, i) => ({ category_id: (i + 1).toString(), category_name: c, parent_id: 0 }));
         
         const { categories: seriesCategories } = getSeriesAsLiveCategoriesAndStreams();
         return res.json(tvCategories.concat(seriesCategories));
     }
 
-    // 2. CANLI KANALLAR (KRİTİK: Kategori seçilmeden liste yükletilmez, donma tamamen biter)
+    // 2. CANLI KANALLAR (Akıllı filtreleme: Alıcıyı kilitlemeden sadece tıklanan kategoriyi döner)
     if (action === 'get_live_streams') {
-        if (!category_id) {
-            return res.json([]); // İlk girişte boş dönerek alıcının donmasını engeller
-        }
-
-        const tv = readM3UFile('tv.m3u');
-        const cats = Array.from(new Set(tv.map(i => i.group)));
-        let streams = tv.map((item, index) => ({
+        const cats = Array.from(new Set(cacheTV.map(i => i.group)));
+        let streams = cacheTV.map((item, index) => ({
             stream_id: index + 1,
             name: item.name,
             category_id: (cats.indexOf(item.group) + 1).toString(),
@@ -144,7 +148,11 @@ app.get('/player_api.php', (req, res) => {
         const { streams: seriesStreams } = getSeriesAsLiveCategoriesAndStreams();
         streams = streams.concat(seriesStreams);
 
-        return res.json(streams.filter(s => s.category_id === category_id.toString()));
+        if (category_id) {
+            return res.json(streams.filter(s => s.category_id === category_id.toString()));
+        }
+        // Kategori seçilmediyse ilk 100 kanalı vererek alıcının siyah ekranda kalmasını önleriz
+        return res.json(streams.slice(0, 100));
     }
 
     // 3. DİZİLER (SERIES - Orijinal menü bozulmadan duruyor)
@@ -168,22 +176,21 @@ app.get('/player_api.php', (req, res) => {
 // YAYIN YÖNLENDİRİCİ
 app.get('/:type/:user/:pass/:id', async (req, res) => {
     const { id } = req.params;
-    const tv = readM3UFile('tv.m3u');
-    const series = getAllUniqueSeries();
+    const uniqueSeries = getAllUniqueSeries();
     const { streams: seriesStreams } = getSeriesAsLiveCategoriesAndStreams();
     
     let url = "";
     const cleanId = parseInt(id);
 
     if (cleanId < 1000) {
-        url = tv[cleanId - 1]?.url;
+        url = cacheTV[cleanId - 1]?.url;
     } else if (cleanId >= 50000) {
         const found = seriesStreams.find(s => s.stream_id === cleanId);
         if (found) url = found.direct_source;
     } else {
         const sId = Math.floor(cleanId / 1000) - 1;
         const eId = (cleanId % 1000);
-        url = series[sId]?.items[eId]?.url;
+        url = uniqueSeries[sId]?.items[eId]?.url;
     }
 
     if (!url) return res.status(404).send("Bulunamadı");
@@ -193,4 +200,4 @@ app.get('/:type/:user/:pass/:id', async (req, res) => {
     return res.redirect(302, finalUrl);
 });
 
-app.listen(PORT, () => console.log('Sunucu Optimizasyonlu Başlatıldı.'));
+app.listen(PORT, () => console.log('Sunucu Önbellekli ve Kararlı Modda Başlatıldı.'));
