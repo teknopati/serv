@@ -140,7 +140,7 @@ app.get('/player_api.php', (req, res) => {
         return res.json({ epg_listings: [] });
     }
 
-    // 1. CANLI KATEGORİLER (Sadece saf ve orijinal tv.m3u grupları)
+    // 1. CANLI KATEGORİLER
     if (action === 'get_live_categories') {
         if (cacheTV.length === 0) return res.json([]);
         const cats = Array.from(new Set(cacheTV.map(i => i.group)));
@@ -148,8 +148,12 @@ app.get('/player_api.php', (req, res) => {
         return res.json(categories);
     }
 
-    // 2. CANLI KANALLAR
+    // 2. CANLI KANALLAR (KRİTİK: Kategori seçilmeden asla liste yükletilmez, cihaz donmaz)
     if (action === 'get_live_streams') {
+        if (!category_id) {
+            return res.json([]); // İlk girişte boş döner, cihazın kilitlenmesini engeller
+        }
+
         const cats = Array.from(new Set(cacheTV.map(i => i.group)));
         let streams = cacheTV.map((item, index) => ({
             num: index + 1,
@@ -161,12 +165,7 @@ app.get('/player_api.php', (req, res) => {
             direct_source: item.url
         }));
 
-        if (category_id) {
-            streams = streams.filter(s => s.category_id === category_id.toString());
-        } else {
-            streams = streams.slice(0, 100);
-        }
-        return res.json(streams);
+        return res.json(streams.filter(s => s.category_id === category_id.toString()));
     }
 
     // 3. VOD FİLMLER
@@ -178,6 +177,7 @@ app.get('/player_api.php', (req, res) => {
     }
 
     if (action === 'get_vod_streams') {
+        if (!category_id) return res.json([]);
         const cats = Array.from(new Set(cacheMovies.map(i => i.group)));
         let vodList = cacheMovies.map((item, index) => ({
             num: index + 1,
@@ -191,8 +191,7 @@ app.get('/player_api.php', (req, res) => {
             added: "1600000000"
         }));
 
-        if (category_id) vodList = vodList.filter(v => v.category_id === category_id.toString());
-        return res.json(vodList);
+        return res.json(vodList.filter(v => v.category_id === category_id.toString()));
     }
 
     // 4. DİZİLER (Series)
