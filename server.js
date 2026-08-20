@@ -100,10 +100,9 @@ function readM3UFile(fileName) {
 
 loadAllPlaylists();
 
-// Dizileri adlarına ve sezon/bölüm/parçalarına göre yapılandıran motor
-function getStructuredSeries() {
+// Series.m3u içindeki dizileri gruplayan orijinal motor
+function getAllUniqueSeries() {
     const seriesMap = new Map();
-
     cacheSeries.forEach((item, index) => {
         const sKey = item.seriesName.toLowerCase();
         if (!seriesMap.has(sKey)) {
@@ -116,8 +115,48 @@ function getStructuredSeries() {
         item.globalIndex = index;
         seriesMap.get(sKey).items.push(item);
     });
-
     return Array.from(seriesMap.values());
+}
+
+// Series dizilerini Canlı TV içine kategori ve parça kanal olarak ekleyen motor
+function getSeriesAsLiveChannels() {
+    const uniqueSeries = getAllUniqueSeries();
+    let categories = [];
+    let streams = [];
+    
+    let catIdCounter = 5000;
+    let streamIdCounter = 70000;
+
+    uniqueSeries.forEach(series => {
+        const currentCatId = catIdCounter.toString();
+        categories.push({
+            category_id: currentCatId,
+            category_name: `📺 ${series.name}`,
+            parent_id: 0
+        });
+
+        series.items.forEach((item) => {
+            let displayName = item.name;
+            if (!displayName.toLowerCase().includes("parça") && item.partNum > 0) {
+                displayName = `${item.season}. Sezon ${item.episode}. Bölüm (Parça ${item.partNum})`;
+            }
+
+            streams.push({
+                num: streams.length + 1,
+                name: displayName,
+                stream_id: streamIdCounter,
+                stream_type: "live",
+                stream_icon: "",
+                category_id: currentCatId,
+                direct_source: item.url
+            });
+            streamIdCounter++;
+        });
+
+        catIdCounter++;
+    });
+
+    return { categories, streams };
 }
 
 // 📺 XTRAY API
@@ -139,17 +178,22 @@ app.get('/player_api.php', (req, res) => {
         return res.json({ epg_listings: [] });
     }
 
-    // 1. CANLI KATEGORİLER
+    // 1. CANLI KATEGORİLER (Normal TV Grupları + Dizi Kanalı Kategorileri)
     if (action === 'get_live_categories') {
         let categories = [];
         if (cacheTV.length > 0) {
             const cats = Array.from(new Set(cacheTV.map(i => i.group)));
             cats.forEach((c, i) => categories.push({ category_id: (i + 1).toString(), category_name: c, parent_id: 0 }));
         }
+
+        // Dizi kategorilerini canlı TV'ye ekle
+        const { categories: seriesCategories } = getSeriesAsLiveChannels();
+        categories = categories.concat(seriesCategories);
+
         return res.json(categories);
     }
 
-    // 2. CANLI KANALLAR
+    // 2. CANLI KANALLAR (Normal TV Kanalları + Dizi Bölüm/Parça Kanalları)
     if (action === 'get_live_streams') {
         const cats = Array.from(new Set(cacheTV.map(i => i.group)));
         let streams = [];
@@ -166,6 +210,10 @@ app.get('/player_api.php', (req, res) => {
                 direct_source: item.url
             });
         });
+
+        // Dizi bölümlerini ve parçalarını canlı kanal olarak ekle
+        const { streams: seriesStreams } = getSeriesAsLiveChannels();
+        streams = streams.concat(seriesStreams);
 
         if (category_id) {
             streams = streams.filter(s => s.category_id === category_id.toString());
@@ -201,19 +249,13 @@ app.get('/player_api.php', (req, res) => {
         return res.json(vodList);
     }
 
-    // 4. DİZİ KATEGORİLERİ (Her dizi kendi adına bir kategori/klasör olur)
+    // 4. DİZİLER (SERIES - Orijinal ve kusursuz haliyle bırakıldı)
     if (action === 'get_series_categories') {
-        const uniqueSeries = getStructuredSeries();
-        return res.json(uniqueSeries.map((data, index) => ({
-            category_id: (index + 1).toString(),
-            category_name: data.name,
-            parent_id: 0
-        })));
+        return res.json([{ category_id: "1", category_name: "Tüm Diziler", parent_id: 0 }]);
     }
 
-    // DİZİLER LİSTESİ (Kategorilere göre filtrelenir)
     if (action === 'get_series') {
-        const uniqueSeries = getStructuredSeries();
+        const uniqueSeries = getAllUniqueSeries();
         let seriesList = uniqueSeries.map((data, index) => ({
             num: index + 1,
             name: data.name,
@@ -221,19 +263,14 @@ app.get('/player_api.php', (req, res) => {
             cover: "",
             plot: `${data.name} Dizisi`,
             genre: "Dizi / Çizgi Dizi",
-            category_id: (index + 1).toString()
+            category_id: "1"
         }));
-
-        if (category_id) {
-            seriesList = seriesList.filter(s => s.category_id === category_id.toString());
-        }
         return res.json(seriesList);
     }
 
-    // BÖLÜMLER VE SEZONLAR (Parçalar ayrı ayrı bölümler/öğeler olarak listelenir)
     if (action === 'get_series_info') {
         const targetId = parseInt(series_id) || 1;
-        const uniqueSeries = getStructuredSeries();
+        const uniqueSeries = getAllUniqueSeries();
         const targetSeries = uniqueSeries[targetId - 1];
 
         if (!targetSeries) return res.json({ seasons: [], episodes: {} });
@@ -299,7 +336,8 @@ app.get('/:type/:user/:pass/:id', async (req, res) => {
     if (!cleanIdMatch) return res.status(400).send("Geçersiz Yayın ID");
 
     const cleanId = parseInt(cleanIdMatch[1]);
-    const uniqueSeries = getStructuredSeries();
+    const uniqueSeries = getAllUniqueSeries();
+    const { streams: seriesStreams } = getSeriesAsLiveChannels();
 
     let targetUrl = null;
 
@@ -307,7 +345,12 @@ app.get('/:type/:user/:pass/:id', async (req, res) => {
         targetUrl = cacheTV[cleanId - 1].url;
     } else if (cleanId > 1000 && cleanId < 2000 && cacheMovies[cleanId - 1001]) {
         targetUrl = cacheMovies[cleanId - 1001].url;
+    } else if (cleanId >= 70000) {
+        // Canlı TV içine eklenen dizi parçası kanalları
+        const foundStream = seriesStreams.find(s => s.stream_id === cleanId);
+        if (foundStream) targetUrl = foundStream.direct_source;
     } else if (cleanId >= 10001) {
+        // Orijinal Series menüsünden gelenler
         const seriesIndex = Math.floor(cleanId / 10000) - 1;
         const itemIndex = (cleanId % 10000) - 1;
         const targetSeries = uniqueSeries[seriesIndex];
