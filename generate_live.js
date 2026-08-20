@@ -22,7 +22,6 @@ function generateSmartAbbreviation(name, usedSlugs) {
 
     if (words.length === 0) return "dizi";
 
-    // Çok kelimeliyse (Örn: "Adventure Time" -> "at", "Kardeş Payı" -> "kp")
     if (words.length > 1) {
         let slug = words.map(w => w[0]).join('');
         if (!usedSlugs.has(slug)) return slug;
@@ -31,9 +30,7 @@ function generateSmartAbbreviation(name, usedSlugs) {
             slug = words.map(w => w.substring(0, len)).join('');
             if (!usedSlugs.has(slug)) return slug;
         }
-    } 
-    // Tek kelimeliyse (Örn: "Suskunlar" -> "su")
-    else {
+    } else {
         const word = words[0];
         let slug = word.substring(0, 2);
         if (!usedSlugs.has(slug)) return slug;
@@ -87,7 +84,8 @@ function generateLivePlaylists() {
                 let cleanUrl = line;
                 const idMatch = line.match(/id=([a-zA-Z0-9_-]+)/);
                 if (idMatch) {
-                    cleanUrl = `https://drive.usercontent.google.com/download?id=${idMatch[1]}&export=download&confirm=t`;
+                    // TV'lerin daha kararlı okuyabilmesi için direct export linki
+                    cleanUrl = `https://drive.google.com/uc?export=download&id=${idMatch[1]}`;
                 }
                 currentItem.url = cleanUrl;
 
@@ -106,7 +104,6 @@ function generateLivePlaylists() {
 
     const outputDir = path.join(__dirname, 'live');
     
-    // Eski dosyaları tamamen temizle
     if (fs.existsSync(outputDir)) {
         fs.rmSync(outputDir, { recursive: true, force: true });
     }
@@ -118,14 +115,18 @@ function generateLivePlaylists() {
         const slug = generateSmartAbbreviation(data.name, usedSlugs);
         usedSlugs.add(slug);
 
+        // TV Uyumluluğu için HLS Başlıkları Düzeltildi
         let m3u8Content = `#EXTM3U\n`;
         m3u8Content += `#EXT-X-VERSION:3\n`;
-        m3u8Content += `#EXT-X-TARGETDURATION:7200\n`;
+        m3u8Content += `#EXT-X-TARGETDURATION:1200\n`; // TV'lerin şaşırmaması için gerçek süre sınırına çekildi
         m3u8Content += `#EXT-X-PLAYLIST-TYPE:VOD\n`;
         m3u8Content += `#EXT-X-MEDIA-SEQUENCE:0\n`;
 
         data.parts.forEach((part, i) => {
-            if (i > 0) m3u8Content += `#EXT-X-DISCONTINUITY\n`;
+            if (i > 0) {
+                // TV oynatıcıların zaman damgası çakışmasını (119 saat hatasını) önleyen kritik etiket
+                m3u8Content += `#EXT-X-DISCONTINUITY\n`;
+            }
             m3u8Content += `#EXTINF:${part.duration}.0, ${part.title}\n`;
             m3u8Content += `${part.url}\n`;
         });
