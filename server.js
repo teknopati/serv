@@ -10,7 +10,6 @@ const USERNAME = "admin";
 const PASSWORD = "123";
 const DEFAULT_EP_DURATION = 1200;
 
-// Performans ve hız için listeleri bellekte tutuyoruz
 let cacheTV = [];
 let cacheMovies = [];
 let cacheSeries = [];
@@ -103,34 +102,10 @@ function readM3UFile(fileName) {
     }
 }
 
-// Sunucu başlarken dosyaları belleğe yükle
 loadPlaylists();
-
-const ALPHABET_GROUPS = [
-    { id: "alpha_1", name: "🔤 [ A - B - C ]", chars: ['a', 'b', 'c'] },
-    { id: "alpha_2", name: "🔤 [ Ç - D - E ]", chars: ['ç', 'd', 'e'] },
-    { id: "alpha_3", name: "🔤 [ F - G - Ğ ]", chars: ['f', 'g', 'ğ'] },
-    { id: "alpha_4", name: "🔤 [ H - I - İ ]", chars: ['h', 'ı', 'i'] },
-    { id: "alpha_5", name: "🔤 [ J - K - L ]", chars: ['j', 'k', 'l'] },
-    { id: "alpha_6", name: "🔤 [ M - N - O ]", chars: ['m', 'n', 'o'] },
-    { id: "alpha_7", name: "🔤 [ Ö - P - R ]", chars: ['ö', 'p', 'r'] },
-    { id: "alpha_8", name: "🔤 [ S - Ş - T ]", chars: ['s', 'ş', 't'] },
-    { id: "alpha_9", name: "🔤 [ U - Ü - V ]", chars: ['u', 'ü', 'v'] },
-    { id: "alpha_10", name: "🔤 [ Y - Z - # ]", chars: ['y', 'z'] }
-];
-
-function getAlphabetCategoryId(channelName) {
-    if (!channelName) return "alpha_10";
-    const firstChar = channelName.trim().charAt(0).toLowerCase();
-    for (let group of ALPHABET_GROUPS) {
-        if (group.chars.includes(firstChar)) return group.id;
-    }
-    return "alpha_10";
-}
 
 function getAllUniqueSeries() {
     const seriesMap = new Map();
-
     cacheSeries.forEach((item, index) => {
         const sKey = item.seriesName.toLowerCase();
         if (!seriesMap.has(sKey)) {
@@ -143,7 +118,6 @@ function getAllUniqueSeries() {
         item.globalIndex = index;
         seriesMap.get(sKey).items.push(item);
     });
-
     return Array.from(seriesMap.values());
 }
 
@@ -166,54 +140,36 @@ app.get('/player_api.php', (req, res) => {
         return res.json({ epg_listings: [] });
     }
 
-    // CANLI KATEGORİLER
+    // 1. CANLI KATEGORİLER (Sadece saf ve orijinal tv.m3u grupları)
     if (action === 'get_live_categories') {
-        let categories = [];
-        if (cacheTV.length > 0) {
-            const cats = Array.from(new Set(cacheTV.map(i => i.group)));
-            cats.forEach((c, i) => categories.push({ category_id: (i + 1).toString(), category_name: c, parent_id: 0 }));
-        }
-        ALPHABET_GROUPS.forEach(group => {
-            categories.push({ category_id: group.id, category_name: group.name, parent_id: 0 });
-        });
+        if (cacheTV.length === 0) return res.json([]);
+        const cats = Array.from(new Set(cacheTV.map(i => i.group)));
+        let categories = cats.map((c, i) => ({ category_id: (i + 1).toString(), category_name: c, parent_id: 0 }));
         return res.json(categories);
     }
 
-    // CANLI KANALLAR
+    // 2. CANLI KANALLAR
     if (action === 'get_live_streams') {
         const cats = Array.from(new Set(cacheTV.map(i => i.group)));
-        let streams = [];
-
-        cacheTV.forEach((item, index) => {
-            const origCatId = (cats.indexOf(item.group) + 1).toString();
-            const alphaCatId = getAlphabetCategoryId(item.name);
-            const streamId = index + 1;
-
-            let targetCatId = origCatId;
-            if (category_id && category_id.toString().startsWith("alpha_")) {
-                targetCatId = alphaCatId;
-            }
-
-            streams.push({
-                num: streams.length + 1,
-                name: item.name,
-                stream_id: streamId,
-                stream_type: "live",
-                stream_icon: item.logo,
-                category_id: targetCatId,
-                direct_source: item.url
-            });
-        });
+        let streams = cacheTV.map((item, index) => ({
+            num: index + 1,
+            name: item.name,
+            stream_id: index + 1,
+            stream_type: "live",
+            stream_icon: item.logo,
+            category_id: (cats.indexOf(item.group) + 1).toString(),
+            direct_source: item.url
+        }));
 
         if (category_id) {
             streams = streams.filter(s => s.category_id === category_id.toString());
         } else {
-            streams = streams.slice(0, 100); // İlk açılışta kilitlenmeyi önler
+            streams = streams.slice(0, 100);
         }
         return res.json(streams);
     }
 
-    // VOD FİLMLER
+    // 3. VOD FİLMLER
     if (action === 'get_vod_categories') {
         if (cacheMovies.length === 0) return res.json([{ category_id: "1", category_name: "Film Yok", parent_id: 0 }]);
         const cats = Array.from(new Set(cacheMovies.map(i => i.group)));
@@ -239,7 +195,7 @@ app.get('/player_api.php', (req, res) => {
         return res.json(vodList);
     }
 
-    // DİZİLER (Series)
+    // 4. DİZİLER (Series)
     if (action === 'get_series_categories') {
         return res.json([{ category_id: "1", category_name: "Tüm Diziler", parent_id: 0 }]);
     }
@@ -330,9 +286,9 @@ app.get('/:type/:user/:pass/:id', async (req, res) => {
 
     let targetUrl = null;
 
-    if (cleanId <= 500 && cacheTV[cleanId - 1]) {
+    if (cleanId <= 1000 && cacheTV[cleanId - 1]) {
         targetUrl = cacheTV[cleanId - 1].url;
-    } else if (cleanId > 1000 && cleanId < 2000 && cacheMovies[cleanId - 1001]) {
+    } else if (cleanId > 1000 && cleanId < 10000 && cacheMovies[cleanId - 1001]) {
         targetUrl = cacheMovies[cleanId - 1001].url;
     } else if (cleanId >= 10001) {
         const seriesIndex = Math.floor(cleanId / 10000) - 1;
