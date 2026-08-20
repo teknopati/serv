@@ -8,42 +8,42 @@ const PORT = process.env.PORT || 3000;
 const USERNAME = "admin";
 const PASSWORD = "123";
 
-// Sabit Evrensel Zaman Çizelgesi Referansı
-const TIMELINE_BASE_TIME = 1700000000;
+// 🕒 SUNUCU BAŞLADIĞI ANDA KRONOMETRE ÇALIŞMAYA BAŞLAR
+const SERVER_START_TIME = Math.floor(Date.now() / 1000);
 
 let cacheTV = [];
 let cacheMovies = [];
 let cacheSeries = [];
 let seriesChannelMap = new Map();
 
-// ⏱️ DİZİ FORMATINA GÖRE AKILLI SÜRE TAYİNİ
+// ⏱️ Dizi Türlerine Göre Parça Süreleri (Saniye)
 function calculateItemDuration(seriesName, rawTitle, explicitDuration) {
     if (explicitDuration && explicitDuration > 0) return explicitDuration;
 
     const sName = seriesName.toLowerCase();
     
-    // 1. Çizgi Diziler (11 Dakikalık Bölümler - Regular Show & Adventure Time)
+    // Çizgi Diziler (11 Dakika)
     if (sName.includes('sürekli dizi') || sName.includes('adventure time')) {
-        if (rawTitle.includes('_P3') || rawTitle.includes('Parça 3')) return 220; // 3 parçalıysa ~3.5 dk
-        if (rawTitle.includes('_P') || rawTitle.includes('Parça')) return 330;   // 2 parçalıysa ~5.5 dk
-        return 660; // Tek parça tam bölüm (11 dk)
+        if (rawTitle.includes('_P3') || rawTitle.includes('Parça 3')) return 220;
+        if (rawTitle.includes('_P') || rawTitle.includes('Parça')) return 330;
+        return 660;
     }
 
-    // 2. Kardeş Payı (60 - 75 Dakikalık Komedi)
+    // Kardeş Payı (~60-75 Dk)
     if (sName.includes('kardeş payı')) {
         if (rawTitle.includes('Parça 6') || rawTitle.includes('Parça 7') || rawTitle.includes('Parça 8') || rawTitle.includes('Parça 9')) return 500;
         if (rawTitle.includes('Parça 5')) return 780;
-        return 950; // Standart 4 parçalı (~15-16 dk parça başı)
+        return 950;
     }
 
-    // 3. Kurtlar Vadisi & Suskunlar (75 - 90 Dakikalık Yerli Dizi)
+    // Kurtlar Vadisi & Suskunlar (~75-90 Dk)
     if (sName.includes('kurtlar vadisi') || sName.includes('suskunlar')) {
         if (rawTitle.includes('_P5') || rawTitle.includes('_P6') || rawTitle.includes('_P7') || rawTitle.includes('_P8') || rawTitle.includes('_P9') || rawTitle.includes('_P10')) return 650;
         if (rawTitle.includes('_P4')) return 1100;
-        return 1350; // Standart 3-4 parçalı (~20-22 dk parça başı)
+        return 1350;
     }
 
-    return 1200; // Varsayılan 20 dakika
+    return 1200;
 }
 
 function parseM3U(content) {
@@ -132,7 +132,6 @@ function initSeriesChannels() {
         seriesChannelMap.get(sKey).items.push(item);
     });
 
-    // Parçaları sırala ve toplam dizi süresini hesapla
     seriesChannelMap.forEach(dizi => {
         dizi.items.sort((a, b) => {
             if (a.season !== b.season) return a.season - b.season;
@@ -166,6 +165,7 @@ loadAllFiles();
 
 // 📺 XTREAM API
 app.get('/player_api.php', (req, res) => {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
     const { username, password, action, category_id } = req.query;
 
     if (username !== USERNAME || password !== PASSWORD) {
@@ -183,7 +183,6 @@ app.get('/player_api.php', (req, res) => {
         return res.json({ epg_listings: [] });
     }
 
-    // CANLI KATEGORİLER
     if (action === 'get_live_categories') {
         let categories = [{ category_id: "724_diziler", category_name: "📺 7/24 DİZİLER", parent_id: 0 }];
         if (cacheTV.length > 0) {
@@ -193,7 +192,6 @@ app.get('/player_api.php', (req, res) => {
         return res.json(categories);
     }
 
-    // CANLI KANALLAR
     if (action === 'get_live_streams') {
         let streams = [];
         const seriesList = Array.from(seriesChannelMap.values());
@@ -229,7 +227,6 @@ app.get('/player_api.php', (req, res) => {
         return res.json(streams);
     }
 
-    // VOD FİLMLER
     if (action === 'get_vod_categories') {
         if (cacheMovies.length === 0) return res.json([{ category_id: "1", category_name: "Film Yok", parent_id: 0 }]);
         const cats = Array.from(new Set(cacheMovies.map(i => i.group)));
@@ -254,7 +251,6 @@ app.get('/player_api.php', (req, res) => {
         return res.json(vodList);
     }
 
-    // DİZİLER MENÜSÜ
     if (action === 'get_series_categories') {
         return res.json([{ category_id: "1", category_name: "Tüm Diziler", parent_id: 0 }]);
     }
@@ -275,8 +271,12 @@ app.get('/player_api.php', (req, res) => {
     res.json([]);
 });
 
-// 🎬 7/24 ZAMAN ÇİZELGESİ VE YÖNLENDİRİCİ MOTORU
+// 🎬 KESİNTİSİZ SANAL YAYIN AKIŞI
 app.get('/:type/:user/:pass/:id', async (req, res) => {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+
     const { user, pass, id } = req.params;
 
     if (user !== USERNAME || pass !== PASSWORD) {
@@ -289,39 +289,45 @@ app.get('/:type/:user/:pass/:id', async (req, res) => {
     const cleanId = parseInt(cleanIdMatch[1]);
     const seriesList = Array.from(seriesChannelMap.values());
 
-    // 1. 7/24 DİZİ KANALI (Evrensel Saate Göre Kesintisiz Akış)
+    // 1. 7/24 DİZİ KANALI (Sunucu başlama saatine göre anlık parça ve saniye)
     if (cleanId >= 501 && cleanId <= 599) {
         const seriesIdx = cleanId - 501;
         const targetSeries = seriesList[seriesIdx];
         
         if (targetSeries && targetSeries.items.length > 0 && targetSeries.totalDuration > 0) {
             const nowSec = Math.floor(Date.now() / 1000);
-            const elapsedSinceBase = Math.max(0, nowSec - TIMELINE_BASE_TIME);
-            let currentLoopSecond = elapsedSinceBase % targetSeries.totalDuration;
+            
+            // Sunucu açıldığından beri geçen toplam saniye
+            const elapsedSinceStart = Math.max(0, nowSec - SERVER_START_TIME);
+            let currentLoopSecond = elapsedSinceStart % targetSeries.totalDuration;
 
             let activeVideo = targetSeries.items[0];
             let accumulatedTime = 0;
+            let offsetInPart = 0;
 
             for (let i = 0; i < targetSeries.items.length; i++) {
                 const item = targetSeries.items[i];
                 if (currentLoopSecond >= accumulatedTime && currentLoopSecond < accumulatedTime + item.durationInSeconds) {
                     activeVideo = item;
+                    offsetInPart = currentLoopSecond - accumulatedTime;
                     break;
                 }
                 accumulatedTime += item.durationInSeconds;
             }
 
-            console.log(`[7/24 ${targetSeries.name}] Aktif Parça: ${activeVideo.name}`);
-            return res.redirect(302, activeVideo.url);
+            console.log(`[7/24 ${targetSeries.name}] Yayın Akıyor: ${activeVideo.name} (Dakika: ${Math.floor(offsetInPart / 60)}:${offsetInPart % 60})`);
+            
+            const redirectUrl = `${activeVideo.url}&_t=${nowSec}#t=${offsetInPart}`;
+            return res.redirect(302, redirectUrl);
         }
     }
 
-    // 2. STANDART CANLI TV KANALLARI (1 - 500)
+    // 2. NORMAL CANLI TV
     if (cleanId <= 500 && cacheTV[cleanId - 1]) {
         return res.redirect(302, cacheTV[cleanId - 1].url);
     }
 
-    // 3. FİLMLER (1001 - 1999)
+    // 3. FİLMLER
     if (cleanId > 1000 && cleanId < 2000 && cacheMovies[cleanId - 1001]) {
         return res.redirect(302, cacheMovies[cleanId - 1001].url);
     }
@@ -329,4 +335,9 @@ app.get('/:type/:user/:pass/:id', async (req, res) => {
     return res.status(404).send("Yayın bulunamadı");
 });
 
-app.listen(PORT, () => console.log(`7/24 Akıllı Zaman Tüneli Sunucusu ${PORT} portunda devrede.`));
+app.listen(PORT, () => {
+    console.log(`=========================================`);
+    console.log(`7/24 Canlı Yayın Motoru Başlatıldı!`);
+    console.log(`Port: ${PORT} | Yayın Başlangıcı: ${new Date(SERVER_START_TIME * 1000).toLocaleTimeString()}`);
+    console.log(`=========================================`);
+});
