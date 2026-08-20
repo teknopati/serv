@@ -114,74 +114,29 @@ function getAlphabetCategoryId(channelName) {
     return "alpha_10";
 }
 
-// DİZİLERİN BÖLÜMLERİNİ VE PARÇALARINI GRUPLAYAN MOTOR
-function getStructuredEpisodesAsChannels() {
+function getAllUniqueSeries() {
     const rawItems = readM3UFile('series.m3u');
     const seriesMap = new Map();
 
-    rawItems.forEach((item) => {
+    rawItems.forEach((item, index) => {
         const sKey = item.seriesName.toLowerCase();
         if (!seriesMap.has(sKey)) {
             seriesMap.set(sKey, {
                 name: item.seriesName,
                 logo: item.logo,
-                episodesMap: new Map()
+                items: []
             });
         }
-
-        const seriesObj = seriesMap.get(sKey);
-        const seasonNum = item.season || 1;
-        const episodeNum = item.episode || 1;
-        const epKey = `${seasonNum}-${episodeNum}`;
-
-        if (!seriesObj.episodesMap.has(epKey)) {
-            seriesObj.episodesMap.set(epKey, {
-                season: seasonNum,
-                episode: episodeNum,
-                title: `${seriesObj.name} - ${seasonNum}. Sezon ${episodeNum}. Bölüm`,
-                logo: item.logo,
-                parts: []
-            });
-        }
-        seriesObj.episodesMap.get(epKey).parts.push(item);
+        item.globalIndex = index;
+        seriesMap.get(sKey).items.push(item);
     });
 
-    let allEpisodeChannels = [];
-    let catMap = new Map();
-    let channelCounter = 50000; // Çakışma olmaması için yüksek ID
-
-    for (let [_, seriesData] of seriesMap) {
-        // Her dizi kendi adına bir kategori (klasör) olacak
-        let catName = seriesData.name;
-        if (!catMap.has(catName)) {
-            catMap.set(catName, `cat_${catMap.size + 1}`);
-        }
-        let assignedCatId = catMap.get(catName);
-
-        let sortedEpisodes = Array.from(seriesData.episodesMap.values()).sort((a, b) => {
-            if (a.season !== b.season) return a.season - b.season;
-            return a.episode - b.episode;
-        });
-
-        sortedEpisodes.forEach((ep) => {
-            allEpisodeChannels.push({
-                stream_id: channelCounter,
-                name: ep.title,
-                category_name: catName,
-                category_id: assignedCatId,
-                logo: ep.logo || seriesData.logo,
-                parts: ep.parts.map(p => p.url)
-            });
-            channelCounter++;
-        });
-    }
-
-    return { allEpisodeChannels, catMap };
+    return Array.from(seriesMap.values());
 }
 
-// 📺 XTRAY API
+// 📺 XTREAM API
 app.get('/player_api.php', (req, res) => {
-    const { username, password, action, category_id } = req.query;
+    const { username, password, action, series_id, category_id } = req.query;
 
     if (username !== USERNAME || password !== PASSWORD) {
         return res.status(401).json({ user_info: { auth: 0 } });
@@ -198,60 +153,44 @@ app.get('/player_api.php', (req, res) => {
         return res.json({ epg_listings: [] });
     }
 
-    // 1. CANLI KATEGORİLER (Normal TV Grupları + Her Dizi Ayrı Bir Kategori)
+    // 1. CANLI KATEGORİLER
     if (action === 'get_live_categories') {
         const liveItems = readM3UFile('tv.m3u');
         let categories = [];
-        let catIndex = 1;
-
         if (liveItems.length > 0) {
             const cats = Array.from(new Set(liveItems.map(i => i.group)));
-            cats.forEach((c) => {
-                categories.push({ category_id: catIndex.toString(), category_name: c, parent_id: 0 });
-                catIndex++;
-            });
+            cats.forEach((c, i) => categories.push({ category_id: (i + 1).toString(), category_name: c, parent_id: 0 }));
         }
-
-        // Dizi Bölümlerinin Kategorileri (Her Dizi Bir Klasör)
-        const { catMap } = getStructuredEpisodesAsChannels();
-        for (let [catName, catId] of catMap) {
-            categories.push({ category_id: catId, category_name: `📺 ${catName}`, parent_id: 0 });
-        }
-
+        ALPHABET_GROUPS.forEach(group => {
+            categories.push({ category_id: group.id, category_name: group.name, parent_id: 0 });
+        });
         return res.json(categories);
     }
 
-    // 2. CANLI KANALLAR (Normal TV Kanalları + Dizi Bölümlerinin Her Biri Birer Kanal)
+    // 2. CANLI KANALLAR (Sadece tv.m3u)
     if (action === 'get_live_streams') {
         const liveItems = readM3UFile('tv.m3u');
         const cats = Array.from(new Set(liveItems.map(i => i.group)));
         let streams = [];
 
-        // Normal Kanallar
         liveItems.forEach((item, index) => {
             const origCatId = (cats.indexOf(item.group) + 1).toString();
+            const alphaCatId = getAlphabetCategoryId(item.name);
+            const streamId = index + 1;
+
+            let targetCatId = origCatId;
+            if (category_id && category_id.toString().startsWith("alpha_")) {
+                targetCatId = alphaCatId;
+            }
+
             streams.push({
                 num: streams.length + 1,
                 name: item.name,
-                stream_id: index + 1,
+                stream_id: streamId,
                 stream_type: "live",
                 stream_icon: item.logo,
-                category_id: origCatId,
+                category_id: targetCatId,
                 direct_source: item.url
-            });
-        });
-
-        // Dizi Bölümlerini "Canlı Kanal" Olarak Ekle
-        const { allEpisodeChannels } = getStructuredEpisodesAsChannels();
-        allEpisodeChannels.forEach((epChannel) => {
-            streams.push({
-                num: streams.length + 1,
-                name: epChannel.name,
-                stream_id: epChannel.stream_id,
-                stream_type: "live",
-                stream_icon: epChannel.logo,
-                category_id: epChannel.category_id,
-                direct_source: `http://${req.headers.host}/episode_channel/${USERNAME}/${PASSWORD}/${epChannel.stream_id}`
             });
         });
 
@@ -289,69 +228,82 @@ app.get('/player_api.php', (req, res) => {
         return res.json(vodList);
     }
 
-    // Eski seri yapılarını tamamen kapattık, çünkü bölümleri canlı kanal yaptık
-    if (action === 'get_series_categories' || action === 'get_series' || action === 'get_series_info') {
-        return res.json([]);
+    // 4. DİZİLER (SERIES)
+    if (action === 'get_series_categories') {
+        return res.json([{ category_id: "1", category_name: "Tüm Diziler", parent_id: 0 }]);
+    }
+
+    if (action === 'get_series') {
+        const uniqueSeries = getAllUniqueSeries();
+        let seriesList = uniqueSeries.map((data, index) => ({
+            num: index + 1,
+            name: data.name,
+            series_id: index + 1,
+            cover: data.logo,
+            plot: `${data.name} Dizisi`,
+            genre: "Dizi / Çizgi Dizi",
+            category_id: "1"
+        }));
+        return res.json(seriesList);
+    }
+
+    if (action === 'get_series_info') {
+        const targetId = parseInt(series_id) || 1;
+        const uniqueSeries = getAllUniqueSeries();
+        const targetSeries = uniqueSeries[targetId - 1];
+
+        if (!targetSeries) return res.json({ seasons: [], episodes: {} });
+
+        let seasonsSet = new Set();
+        let episodesObj = {};
+
+        targetSeries.items.forEach((item, idx) => {
+            const sNum = item.season || 1;
+            seasonsSet.add(sNum);
+            const seasonKey = sNum.toString();
+
+            if (!episodesObj[seasonKey]) episodesObj[seasonKey] = [];
+
+            const globalEpId = (targetId * 10000) + (idx + 1);
+
+            let displayName = item.name;
+            if (!displayName.toLowerCase().includes("parça") && item.partNum > 0) {
+                displayName = `${sNum}. Sezon ${item.episode}. Bölüm (Parça ${item.partNum})`;
+            }
+
+            episodesObj[seasonKey].push({
+                id: globalEpId.toString(),
+                episode_num: idx + 1,
+                title: displayName,
+                container_extension: "mp4",
+                info: { 
+                    duration_secs: item.durationInSeconds,
+                    duration: `${Math.round(item.durationInSeconds / 60)} min`,
+                    plot: displayName, 
+                    movie_image: item.logo || targetSeries.logo 
+                }
+            });
+        });
+
+        const sortedSeasons = Array.from(seasonsSet).sort((a, b) => a - b);
+        const seasonsList = sortedSeasons.map(s => ({
+            id: s,
+            name: `${s}. Sezon`,
+            season_number: s,
+            cover: targetSeries.logo
+        }));
+
+        return res.json({
+            seasons: seasonsList,
+            episodes: episodesObj,
+            info: { name: targetSeries.name, cover: targetSeries.logo }
+        });
     }
 
     res.json([]);
 });
 
-// 🎬 DİZİ BÖLÜMÜ KANALI AÇILDIĞINDA PARÇALARI BİRLEŞTİREREK OYNATAN MOTOR
-app.get('/episode_channel/:user/:pass/:streamId', async (req, res) => {
-    const { user, pass, streamId } = req.params;
-
-    if (user !== USERNAME || pass !== PASSWORD) {
-        return res.status(403).send("Yetkisiz Erişim");
-    }
-
-    const { allEpisodeChannels } = getStructuredEpisodesAsChannels();
-    const targetEpisode = allEpisodeChannels.find(ep => ep.stream_id === parseInt(streamId));
-
-    if (!targetEpisode || targetEpisode.parts.length === 0) {
-        return res.status(404).send("Bölüm bulunamadı");
-    }
-
-    const parts = targetEpisode.parts;
-    let partIndex = 0;
-
-    res.setHeader('Content-Type', 'video/mp4');
-    res.setHeader('Connection', 'keep-alive');
-
-    async function playNextPart() {
-        if (partIndex >= parts.length) {
-            return res.end(); // Bölüm bitince akışı sonlandır
-        }
-
-        const currentUrl = parts[partIndex];
-        partIndex++;
-
-        try {
-            const response = await axios({
-                method: 'get',
-                url: currentUrl,
-                responseType: 'stream',
-                headers: { 'User-Agent': 'Mozilla/5.0' }
-            });
-
-            response.data.on('end', () => {
-                playNextPart();
-            });
-
-            response.data.on('error', () => {
-                playNextPart();
-            });
-
-            response.data.pipe(res, { end: false });
-        } catch (err) {
-            playNextPart();
-        }
-    }
-
-    playNextPart();
-});
-
-// 🎬 NORMAL CANLI KANALLAR VE FİLMLER İÇİN YÖNLENDİRİCİ
+// 🎬 AKIŞ YÖNLENDİRİCİSİ (Canlı TV, Filmler ve Ayrı Ayrı Oynatılan Dizi Parçaları/Bölümleri)
 app.get('/:type/:user/:pass/:id', async (req, res) => {
     const { user, pass, id } = req.params;
 
@@ -365,6 +317,7 @@ app.get('/:type/:user/:pass/:id', async (req, res) => {
     const cleanId = parseInt(cleanIdMatch[1]);
     const tvItems = readM3UFile('tv.m3u');
     const movieItems = readM3UFile('movie.m3u');
+    const uniqueSeries = getAllUniqueSeries();
 
     let targetUrl = null;
 
@@ -372,12 +325,21 @@ app.get('/:type/:user/:pass/:id', async (req, res) => {
         targetUrl = tvItems[cleanId - 1].url;
     } else if (cleanId > 1000 && cleanId < 2000 && movieItems[cleanId - 1001]) {
         targetUrl = movieItems[cleanId - 1001].url;
+    } else if (cleanId >= 10001) {
+        const seriesIndex = Math.floor(cleanId / 10000) - 1;
+        const itemIndex = (cleanId % 10000) - 1;
+        const targetSeries = uniqueSeries[seriesIndex];
+
+        if (targetSeries && targetSeries.items[itemIndex]) {
+            targetUrl = targetSeries.items[itemIndex].url;
+        }
     }
 
     if (!targetUrl) {
         return res.status(404).send("Yayın bulunamadı");
     }
 
+    // Sorunsuz açılış için güvenli akış ve yönlendirme
     try {
         const response = await axios({
             method: 'get',
