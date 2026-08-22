@@ -72,7 +72,7 @@ https://tv-trtturk.medya.trt.com.tr/master.m3u8
 #EXTINF:-1 tvg-logo="https://i.postimg.cc/kXBrk0ww/TRT-Kurdi-logosu.png" group-title="KÜRTÇE KANALLAR",TRT KURDİ
 https://tv-trtkurdi.medya.trt.com.tr/master.m3u8
 #EXTINF:-1 tvg-logo="https://www.trtbelgesel.com.tr/images/logo.svg" group-title="BELGELSEL KANALLARI",TRT BELGESEL
-http://176.65.153.26:6001/play/a01l
+https://vavoo.biz-az.workers.dev/play/2753787815dd010dd9300c
 #EXTINF:-1 tvg-logo="https://r.resimlink.com/3RPAUOgSTD.png" group-title="AVRUPA KANALLARI",TRT AVAZ
 https://tv-trtavaz.medya.trt.com.tr/master_1440.m3u8
 #EXTINF:-1 tvg-logo="https://r.resimlink.com/WEiRbsx.webp" group-title="HABER KANALLARI",CNBC-E
@@ -94,13 +94,13 @@ https://tv.ensonhaber.com/haberturk/haberturk.m3u8
 #EXTINF:-1 tvg-logo="https://s.halktv.com.tr/assets/web/images/logo.svg" group-title="HABER KANALLARI",HALK TV
 https://halktv-live.daioncdn.net/halktv/halktv.m3u8
 #EXTINF:-1 tvg-logo="https://s.tv100.com/assets/web/images/logo.svg" group-title="HABER KANALLARI",TV100
-http://europe77.xyz:2095/live/sevgul49/nFSNas21UA/120666.m3u8
+https://vavoo.biz-az.workers.dev/play/1685299472998443240851.m3u8
 #EXTINF:-1 tvg-logo="https://i.postimg.cc/6qkkWfXk/CNN-Turk-logo-svg.webp" group-title="HABER KANALLARI",CNN TÜRK
 http://izlego.minikirppis-com.workers.dev/ID=427315396743dfe9212c50
 #EXTINF:-1 tvg-logo="https://www.bloomberght.com/images/common/logo/bht-logo-white.svg" group-title="HABER KANALLARI",BLOOMBERG HT
 https://ciner.daioncdn.net/bloomberght/bloomberght.m3u8
 #EXTINF:-1 tvg-logo="https://www.szctv.com.tr/lib/img/logo.png" group-title="HABER KANALLARI",SZC
-http://176.65.153.66:6004/play/a019/index.m3u8
+http://line.iptvhunt.com:80/play/live.php?mac=00:1A:79:0A:AC:C0&stream=1133616&extension=ts&play_token=HiDXvtttGx
 #EXTINF:-1 tvg-logo="https://s.tgrthaber.com/s/i/i-logo-black.svg" group-title="HABER KANALLARI",TGRT HABER
 https://canli.tgrthaber.com/tgrt.m3u8
 #EXTINF:-1 tvg-logo="https://i.postimg.cc/RFJpWzq0/1708069491985.jpg" group-title="HABER KANALLARI",KRT
