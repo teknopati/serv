@@ -72,7 +72,7 @@ https://tv-trtturk.medya.trt.com.tr/master.m3u8
 #EXTINF:-1 tvg-logo="https://i.postimg.cc/kXBrk0ww/TRT-Kurdi-logosu.png" group-title="KÜRTÇE KANALLAR",TRT KURDİ
 https://tv-trtkurdi.medya.trt.com.tr/master.m3u8
 #EXTINF:-1 tvg-logo="https://www.trtbelgesel.com.tr/images/logo.svg" group-title="BELGELSEL KANALLARI",TRT BELGESEL
-https://vavoo.biz-az.workers.dev/play/2753787815dd010dd9300c
+http://82.70.45.131/Uyan.php?ID=TRT Belgesel
 #EXTINF:-1 tvg-logo="https://r.resimlink.com/3RPAUOgSTD.png" group-title="AVRUPA KANALLARI",TRT AVAZ
 https://tv-trtavaz.medya.trt.com.tr/master_1440.m3u8
 #EXTINF:-1 tvg-logo="https://r.resimlink.com/WEiRbsx.webp" group-title="HABER KANALLARI",CNBC-E
@@ -124,7 +124,7 @@ https://cdn-kanal23.yayin.com.tr/kanal23/tracks-v1a1/mono.m3u8
 #EXTINF:-1 tvg-logo="https://asset.artidijitalmedya.com/image/400x400/channels/v1/logo_103.png?v=15" group-title="HABER KANALLARI",MK TV
 https://live.artidijitalmedya.com/artidijital_mavikaradeniz/mavikaradeniz/chunks.m3u8
 #EXTINF:-1 tvg-logo="https://r.resimlink.com/KT-GhEyP.png" group-title="BELGELSEL KANALLARI",TGRT BELGESEL
-https://vavoo.biz-az.workers.dev/play/2753787815dd010dd9300c
+http://82.70.45.131/Uyan.php?ID=TGRT Belgesel
 #EXTINF:-1 tvg-logo="https://s.haberglobal.com/assets/web/images/hg_logo.svg" group-title="HABER KANALLARI",HABER GLOBAL
 https://tv.ensonhaber.com/haberglobal/haberglobal.m3u8
 #EXTINF:-1 tvg-logo="https://tele1comtr.teimg.com/tele1-com-tr/uploads/2024/12/tele1-logo-1.svg" group-title="HABER KANALLARI",TELE1
