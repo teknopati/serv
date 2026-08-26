@@ -42,7 +42,7 @@ http://umperisn.mywire.org/index.php?id=620421&token=DeaTHLesS
 #EXTINF:-1 tvg-logo="https://i.postimg.cc/xCrVRXnZ/logo.png" group-title="SPOR KANALLARI",A SPOR
 https://rnttwmjcin.turknet.ercdn.net/lcpmvefbyo/aspor/aspor.m3u8
 #EXTINF:-1 tvg-logo="https://i.postimg.cc/zGJwcNq4/Tivibu-spor-logosu-removebg-preview.png" group-title="SPOR KANALLARI",TİVİBU SPOR
-http://176.65.153.69:6004/play/a01c/index.m3u8
+http://176.65.153.23:6001/play/a01a/index.m3u8
 #EXTINF:-1 tvg-logo="https://i.postimg.cc/W3p6xnNm/unnamed-removebg-preview-(1).png" group-title="SPOR KANALLARI",HT SPOR
 https://ciner.daioncdn.net/ht-spor/ht-spor.m3u8?app=web&dfp_paln=AQzzBGQEBm1BO0E2iVe9tLfcsqJ3gAOMJ63P8Ch&ppid=675956db19f9bb686edda21d15d911e8
 #EXTINF:-1 tvg-logo="https://i.postimg.cc/K8rq1QYT/logo-sportstv-large.png" group-title="SPOR KANALLARI",SPORTS TV
@@ -58,7 +58,7 @@ http://ott.teleport.az/server33/hls/cbc_sport.m3u8?st=AzGSZjk1DpXY1SLc1m4OvA&e=1
 #EXTINF:-1 tvg-logo="https://i.postimg.cc/jdCtQwfR/sifir-tv-logo.png" group-title="SPOR KANALLARI",SIFIR TV
 http://umperisn.mywire.org/index.php?id=611874&token=DeaTHLesS
 #EXTINF:-1 tvg-logo="https://cdn-s.pr.trt.com.tr/trtspor/public/svg/logo-trtspor.svg" group-title="SPOR KANALLARI",TRT SPOR
-http://176.65.153.26:6001/play/a01k
+https://tv-trtspor1.medya.trt.com.tr/master_1080.m3u8
 #EXTINF:-1 tvg-logo="https://i.postimg.cc/g2SMyj3t/TRT-3-Spor-logo-(2022)-svg.webp" group-title="SPOR KANALLARI",TRT3 SPOR
 http://umperisn.mywire.org/index.php?id=2020&token=DeaTHLesS
 #EXTINF:-1 tvg-logo="https://i.postimg.cc/ZRkxjdns/ebqgat1642602905.png" group-title="SPOR KANALLARI",TRT SPOR YILDIZ
@@ -100,7 +100,7 @@ http://izlego.minikirppis-com.workers.dev/ID=427315396743dfe9212c50
 #EXTINF:-1 tvg-logo="https://www.bloomberght.com/images/common/logo/bht-logo-white.svg" group-title="HABER KANALLARI",BLOOMBERG HT
 https://ciner.daioncdn.net/bloomberght/bloomberght.m3u8
 #EXTINF:-1 tvg-logo="https://www.szctv.com.tr/lib/img/logo.png" group-title="HABER KANALLARI",SZC
-http://line.iptvhunt.com:80/play/live.php?mac=00:1A:79:0A:AC:C0&stream=1133616&extension=ts&play_token=HiDXvtttGx
+http://176.65.153.23:6001/play/a01n/index.m3u8
 #EXTINF:-1 tvg-logo="https://s.tgrthaber.com/s/i/i-logo-black.svg" group-title="HABER KANALLARI",TGRT HABER
 https://canli.tgrthaber.com/tgrt.m3u8
 #EXTINF:-1 tvg-logo="https://i.postimg.cc/RFJpWzq0/1708069491985.jpg" group-title="HABER KANALLARI",KRT
@@ -118,7 +118,7 @@ https://tv.ensonhaber.com/benguturk/benguturk.m3u8
 #EXTINF:-1 tvg-logo="https://www.ekoturk.com/wp-content/uploads/2021/06/ekoturk-logo-400.png" group-title="HABER KANALLARI",EKOTÜRK
 http://88.99.165.164:6878/ace/getstream?id=ab3c1dd7235dae249588d6b7b7a408b3d7d381b5&pid=6233
 #EXTINF:-1 tvg-logo="https://flashhabertv.com.tr/assets/img/logo-v4.png" group-title="HABER KANALLARI",FLASH HABER
-https://b01c02nl.mediatriple.net/videoonlylive/mtyycglqauzjhlive/broadcast_67c053c48829f.smil/mt_0.m3u8
+http://176.65.153.23:6001/play/a01d/index.m3u8
 #EXTINF:-1 tvg-logo="https://izmottvsc20.tvplus.com.tr:33207/CPS/images/universal/film/logo/202506/20250602/45/2121305491855eb9542c_op_0_XL.webp" group-title="HABER KANALLARI",KANAL 23
 https://cdn-kanal23.yayin.com.tr/kanal23/tracks-v1a1/mono.m3u8
 #EXTINF:-1 tvg-logo="https://asset.artidijitalmedya.com/image/400x400/channels/v1/logo_103.png?v=15" group-title="HABER KANALLARI",MK TV
