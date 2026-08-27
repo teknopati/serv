@@ -8,7 +8,7 @@ const PORT = process.env.PORT || 3000;
 const USERNAME = "admin";
 const PASSWORD = "123";
 
-// 🕒 Sabit Geçmiş Referans Zamanı (Zamanın 0 çıkmasını önler, yayın hep ileri akar)
+// 🕒 Sabit Referans Zamanı (Zaman sürekli ileri akar)
 const FIXED_GLOBAL_START = 1700000000; 
 
 let cacheTV = [];
@@ -261,7 +261,7 @@ app.get('/player_api.php', (req, res) => {
     res.json([]);
 });
 
-// 🎬 KESİNTİSİZ 7/24 HLS CANLI AKIŞ MANİFEST MOTORU (.m3u8)
+// 🎬 CANLI DIRECT-VIDEO YÖNLENDİRİCİSİ (Siyah ekran yok, anında açılır)
 app.get('/:type/:user/:pass/:id', async (req, res) => {
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0');
     res.setHeader('Pragma', 'no-cache');
@@ -279,48 +279,34 @@ app.get('/:type/:user/:pass/:id', async (req, res) => {
     const cleanId = parseInt(cleanIdMatch[1]);
     const seriesList = Array.from(seriesChannelMap.values());
 
-    // 1. 7/24 DİZİ KANALI (Gerçek Canlı HLS Playlist Üretimi)
+    // 1. 7/24 DİZİ KANALI (Anlık zamana göre sıradaki video parçası)
     if (cleanId >= 501 && cleanId <= 599) {
         const seriesIdx = cleanId - 501;
         const targetSeries = seriesList[seriesIdx];
         
         if (targetSeries && targetSeries.items.length > 0 && targetSeries.totalDuration > 0) {
             const nowSec = Math.floor(Date.now() / 1000);
+            
+            // 1700000000 geçmiş tarih olduğu için elapsed pozitif ve her saniye büyür
             const elapsed = Math.max(0, nowSec - FIXED_GLOBAL_START);
             let currentLoopSecond = elapsed % targetSeries.totalDuration;
 
-            let currentItemIndex = 0;
+            let activeVideo = targetSeries.items[0];
             let accumulatedTime = 0;
 
             for (let i = 0; i < targetSeries.items.length; i++) {
                 const item = targetSeries.items[i];
                 if (currentLoopSecond >= accumulatedTime && currentLoopSecond < accumulatedTime + item.durationInSeconds) {
-                    currentItemIndex = i;
+                    activeVideo = item;
                     break;
                 }
                 accumulatedTime += item.durationInSeconds;
             }
 
-            const mediaSequence = Math.floor(elapsed / 600); // 10 dakikalık dinamik sıra numarası
-
-            // TV'nin biten parçadan hemen sonrakine otomatik geçmesini sağlayan HLS akışı
-            let hlsManifest = `#EXTM3U\n`;
-            hlsManifest += `#EXT-X-VERSION:3\n`;
-            hlsManifest += `#EXT-X-TARGETDURATION:1500\n`;
-            hlsManifest += `#EXT-X-MEDIA-SEQUENCE:${mediaSequence}\n`;
-
-            // O anki parçayı ve peşinden gelecek sonraki 3 parçayı listeye ekler
-            for (let j = 0; j < 3; j++) {
-                const itemIdx = (currentItemIndex + j) % targetSeries.items.length;
-                const playItem = targetSeries.items[itemIdx];
-                if (j > 0) hlsManifest += `#EXT-X-DISCONTINUITY\n`;
-                hlsManifest += `#EXTINF:${playItem.durationInSeconds}.0, ${playItem.name}\n`;
-                hlsManifest += `${playItem.url}\n`;
-            }
-
-            console.log(`[7/24 ${targetSeries.name}] Oynatılıyor: ${targetSeries.items[currentItemIndex].name}`);
-            res.setHeader('Content-Type', 'application/vnd.apple.mpegurl');
-            return res.send(hlsManifest);
+            console.log(`[7/24 ${targetSeries.name}] Anlık Parça: ${activeVideo.name}`);
+            
+            // TV önbelleğini kırmak için rastgele zaman etiketiyle doğrudan MP4 yönlendirmesi
+            return res.redirect(302, `${activeVideo.url}&_t=${nowSec}`);
         }
     }
 
@@ -337,4 +323,4 @@ app.get('/:type/:user/:pass/:id', async (req, res) => {
     return res.status(404).send("Yayın bulunamadı");
 });
 
-app.listen(PORT, () => console.log(`7/24 Canlı Yayın Motoru ${PORT} portunda devrede.`));
+app.listen(PORT, () => console.log(`7/24 Direct-Video Motoru ${PORT} portunda devrede.`));
