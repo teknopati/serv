@@ -131,7 +131,7 @@ loadAllFiles();
 // 📺 XTREAM API
 app.get('/player_api.php', (req, res) => {
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
-    const { username, password, action, category_id } = req.query;
+    const { username, password, action, category_id, series_id } = req.query;
 
     if (username !== USERNAME || password !== PASSWORD) {
         return res.status(401).json({ user_info: { auth: 0 } });
@@ -219,7 +219,7 @@ app.get('/player_api.php', (req, res) => {
         return res.json(vodList);
     }
 
-    // 4. DİZİLER MENÜSÜ
+    // 4. DİZİLER MENÜSÜ & KATEGORİLERİ
     if (action === 'get_series_categories') {
         return res.json([{ category_id: "1", category_name: "Tüm Diziler", parent_id: 0 }]);
     }
@@ -231,16 +231,76 @@ app.get('/player_api.php', (req, res) => {
             name: s.name,
             series_id: index + 1,
             cover: s.logo,
-            plot: `${s.name} Tüm Bölümler`,
+            plot: `${s.name} Tüm Bölümler ve Parçalar`,
+            cast: "",
+            director: "",
             genre: "Dizi",
+            releaseDate: "2024",
+            rating: "9.0",
             category_id: "1"
         })));
+    }
+
+    // 🎬 EKSİK OLAN KISIM: DİZİ BÖLÜM VE PARÇALARINI LİSTELEME
+    if (action === 'get_series_info') {
+        const seriesList = Array.from(seriesChannelMap.values());
+        const sIndex = parseInt(series_id) - 1;
+        const targetSeries = seriesList[sIndex];
+
+        if (!targetSeries) return res.json({});
+
+        let episodesBySeason = {};
+        let seasonsMap = {};
+
+        targetSeries.items.forEach((item) => {
+            const seasonNum = item.season.toString();
+            if (!episodesBySeason[seasonNum]) {
+                episodesBySeason[seasonNum] = [];
+            }
+
+            // Global dizi listesinde bu parçanın genel ID'si
+            const globalStreamId = 2001 + cacheSeries.indexOf(item);
+
+            episodesBySeason[seasonNum].push({
+                id: globalStreamId.toString(),
+                episode_num: item.episode,
+                title: item.name,
+                container_extension: "mp4",
+                info: {
+                    name: item.name,
+                    season: item.season,
+                    episode_num: item.episode,
+                    plot: item.name,
+                    duration_secs: 1200,
+                    duration: "20:00"
+                }
+            });
+
+            seasonsMap[seasonNum] = {
+                season_number: item.season,
+                name: `Sezon ${item.season}`,
+                episode_count: episodesBySeason[seasonNum].length,
+                cover: targetSeries.logo
+            };
+        });
+
+        return res.json({
+            seasons: Object.values(seasonsMap),
+            info: {
+                name: targetSeries.name,
+                cover: targetSeries.logo,
+                plot: `${targetSeries.name} Bölümleri`,
+                genre: "Dizi",
+                rating: "9.0"
+            },
+            episodes: episodesBySeason
+        });
     }
 
     res.json([]);
 });
 
-// 🎬 AKILLI KANAL AYRIŞTIRICI VE OYNATICI
+// 🎬 AKILLI YAYIN YÖNLENDİRİCİSİ
 app.get('/:type/:user/:pass/:id', (req, res) => {
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0');
     res.setHeader('Pragma', 'no-cache');
@@ -270,20 +330,14 @@ app.get('/:type/:user/:pass/:id', (req, res) => {
             if (channelIndices[cleanId] === undefined) {
                 channelIndices[cleanId] = 0;
             } else {
-                // KONTROL 1: Kullanıcı bu kanalı hiç değiştirmeden izlemeye devam ediyor mu?
                 if (currentWatchingChannel === cleanId) {
                     const elapsed = now - lastRequestTime;
-                    // TV oynatıcıları ilk bağlantıda çift istek atar (0-3 sn arası atlama yapılmaz).
-                    // 3 saniyeden sonra aynı kanaldan istek geldiyse: Video bitmiştir veya ileri sarılmıştır!
                     if (elapsed > 3000) {
                         channelIndices[cleanId] = (channelIndices[cleanId] + 1) % items.length;
                     }
-                } 
-                // KONTROL 2: Başka bir kanaldan bu kanala yeni geçildiyse (currentWatchingChannel !== cleanId):
-                // channelIndices[cleanId] kesinlikle artırılmaz! Kaldığı parça en baştan verilir.
+                }
             }
 
-            // O anki aktif kanalı ve istek zamanını güncelle
             currentWatchingChannel = cleanId;
             lastRequestTime = now;
 
@@ -310,7 +364,14 @@ app.get('/:type/:user/:pass/:id', (req, res) => {
         return res.redirect(302, cacheMovies[cleanId - 1001].url);
     }
 
+    // 4. VOD DİZİ BÖLÜM VE PARÇALARI (2001+)
+    if (cleanId >= 2001 && cacheSeries[cleanId - 2001]) {
+        currentWatchingChannel = cleanId;
+        lastRequestTime = now;
+        return res.redirect(302, cacheSeries[cleanId - 2001].url);
+    }
+
     return res.status(404).send("Yayın bulunamadı");
 });
 
-app.listen(PORT, () => console.log(`7/24 Kesintisiz Kanal Takip Sunucusu ${PORT} portunda devrede.`));
+app.listen(PORT, () => console.log(`7/24 Kesintisiz TV ve Dizi Sunucusu ${PORT} portunda devrede.`));
