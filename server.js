@@ -13,8 +13,10 @@ let cacheMovies = [];
 let cacheSeries = [];
 let seriesChannelMap = new Map();
 
-// Her 7/24 kanalın anlık parça indeksini ve durumunu tutan sayaç
-let channelState = {};
+// Her kanalın anlık indeksini ve en son aktif olan kanalı tutan bellek
+let channelIndices = {};
+let lastActiveChannel = null;
+let lastRequestTimestamp = 0;
 
 function parseM3U(content) {
     const lines = content.split(/\r?\n/);
@@ -236,7 +238,7 @@ app.get('/player_api.php', (req, res) => {
     res.json([]);
 });
 
-// 🎬 AKILLI GEÇİŞ VE TEKRAR OYNATMA MOTORU
+// 🎬 AKILLI OTURUM VE PARÇA YÖNLENDİRİCİSİ
 app.get('/:type/:user/:pass/:id', (req, res) => {
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0');
     res.setHeader('Pragma', 'no-cache');
@@ -253,58 +255,59 @@ app.get('/:type/:user/:pass/:id', (req, res) => {
 
     const cleanId = parseInt(cleanIdMatch[1]);
     const seriesList = Array.from(seriesChannelMap.values());
+    const now = Date.now();
 
-    // 1. 7/24 DİZİ KANALI
+    // 1. 7/24 DİZİ KANALLARI (501 - 599)
     if (cleanId >= 501 && cleanId <= 599) {
         const seriesIdx = cleanId - 501;
         const targetSeries = seriesList[seriesIdx];
         
         if (targetSeries && targetSeries.items.length > 0) {
             const items = targetSeries.items;
-            const now = Date.now();
 
-            if (!channelState[cleanId]) {
-                channelState[cleanId] = {
-                    currentIndex: 0,
-                    lastReqTime: now
-                };
+            if (channelIndices[cleanId] === undefined) {
+                channelIndices[cleanId] = 0;
             } else {
-                const diffMs = now - channelState[cleanId].lastReqTime;
-
-                // TV oynatıcısı video bitince (doğal bitiş veya ileri sarıp bitirme)
-                // anında 4-30 saniye içinde sonraki parçayı ister:
-                // Bu durumda doğrudan sıradaki parçaya (+1) geçilir!
-                if (diffMs >= 4000 && diffMs <= 45000) {
-                    channelState[cleanId].currentIndex = 
-                        (channelState[cleanId].currentIndex + 1) % items.length;
-                }
-                // Eğer kanal değiştirip başka yerde vakit geçirip geri geldiysen (diffMs > 45000)
-                // currentIndex değiştirilmez; aynı parça en baştan oynar!
-
-                channelState[cleanId].lastReqTime = now;
+                // AYNI KANALDA KALINDIĞINDA:
+                if (lastActiveChannel === cleanId) {
+                    const diff = now - lastRequestTimestamp;
+                    // TV oynatıcısı video başlatırken ilk 3 saniyede çift istek atar (bunu yoksay).
+                    // 3 saniyeden sonra aynı kanalda istek gelmişse: Video bitti veya ileri sarılıp bitirildi demektir!
+                    if (diff > 3000) {
+                        channelIndices[cleanId] = (channelIndices[cleanId] + 1) % items.length;
+                    }
+                } 
+                // BAŞKA KANALDAN GERİ GELİNDİĞİNDE (lastActiveChannel !== cleanId):
+                // Hiçbir şey artırılmaz, mevcut parça en baştan başlar!
             }
 
-            const currentIdx = channelState[cleanId].currentIndex;
+            lastActiveChannel = cleanId;
+            lastRequestTimestamp = now;
+
+            const currentIdx = channelIndices[cleanId];
             const activeVideo = items[currentIdx];
             
             console.log(`[7/24 ${targetSeries.name}] Oynatılıyor (${currentIdx + 1}/${items.length}): ${activeVideo.name}`);
             
-            // TV'nin hafızasını kırmak ve parçayı baştan başlatmak için doğrudan 302 yönlendirmesi
             return res.redirect(302, `${activeVideo.url}&_t=${now}`);
         }
     }
 
     // 2. NORMAL CANLI TV
     if (cleanId <= 500 && cacheTV[cleanId - 1]) {
+        lastActiveChannel = cleanId;
+        lastRequestTimestamp = now;
         return res.redirect(302, cacheTV[cleanId - 1].url);
     }
 
     // 3. FİLMLER
     if (cleanId > 1000 && cleanId < 2000 && cacheMovies[cleanId - 1001]) {
+        lastActiveChannel = cleanId;
+        lastRequestTimestamp = now;
         return res.redirect(302, cacheMovies[cleanId - 1001].url);
     }
 
     return res.status(404).send("Yayın bulunamadı");
 });
 
-app.listen(PORT, () => console.log(`7/24 Akıllı Dizi Sunucusu ${PORT} portunda devrede.`));
+app.listen(PORT, () => console.log(`7/24 Akıllı Kanal Takip Sunucusu ${PORT} portunda devrede.`));
