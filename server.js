@@ -9,35 +9,13 @@ const PORT = process.env.PORT || 3000;
 const USERNAME = "admin";
 const PASSWORD = "123";
 
-// Sabit Referans Zamanı
-const GLOBAL_TIMELINE_BASE = 1704067200; 
-
 let cacheTV = [];
 let cacheMovies = [];
 let cacheSeries = [];
 let seriesChannelMap = new Map();
 
-function calculateItemDuration(seriesName, rawTitle, explicitDuration) {
-    if (explicitDuration && explicitDuration > 0) return explicitDuration;
-    const sName = seriesName.toLowerCase();
-    
-    if (sName.includes('sürekli dizi') || sName.includes('adventure time')) {
-        if (rawTitle.includes('_P3') || rawTitle.includes('Parça 3')) return 220;
-        if (rawTitle.includes('_P') || rawTitle.includes('Parça')) return 330;
-        return 660;
-    }
-    if (sName.includes('kardeş payı')) {
-        if (rawTitle.includes('Parça 6') || rawTitle.includes('Parça 7') || rawTitle.includes('Parça 8') || rawTitle.includes('Parça 9')) return 500;
-        if (rawTitle.includes('Parça 5')) return 780;
-        return 950;
-    }
-    if (sName.includes('kurtlar vadisi') || sName.includes('suskunlar')) {
-        if (rawTitle.includes('_P5') || rawTitle.includes('_P6') || rawTitle.includes('_P7') || rawTitle.includes('_P8') || rawTitle.includes('_P9') || rawTitle.includes('_P10')) return 650;
-        if (rawTitle.includes('_P4')) return 1100;
-        return 1350;
-    }
-    return 1200;
-}
+// Her kanalın anlık indeksini takip eden sayaç
+let channelState = {};
 
 function parseM3U(content) {
     const lines = content.split(/\r?\n/);
@@ -47,9 +25,6 @@ function parseM3U(content) {
     lines.forEach(line => {
         line = line.trim();
         if (line.startsWith('#EXTINF:')) {
-            const durationMatch = line.match(/#EXTINF:(-?\d+)/);
-            let parsedDuration = durationMatch ? parseInt(durationMatch[1]) : -1;
-
             const logoMatch = line.match(/tvg-logo="([^"]+)"/);
             const logo = logoMatch ? logoMatch[1] : "";
 
@@ -80,8 +55,6 @@ function parseM3U(content) {
             const partMatch = rawTitle.match(/(?:_P|\(Parça\s*|Parça\s*)(\d+)/i);
             if (partMatch) partNum = parseInt(partMatch[1]);
 
-            let durationInSeconds = calculateItemDuration(seriesName, rawTitle, parsedDuration);
-
             currentItem = { 
                 name: rawTitle, 
                 group: rawGroup, 
@@ -89,8 +62,7 @@ function parseM3U(content) {
                 logo, 
                 season, 
                 episode, 
-                partNum, 
-                durationInSeconds 
+                partNum 
             };
         } else if (line && !line.startsWith('#')) {
             if (currentItem.name) {
@@ -117,8 +89,7 @@ function initSeriesChannels() {
             seriesChannelMap.set(sKey, {
                 name: item.seriesName,
                 logo: item.logo,
-                items: [],
-                totalDuration: 0
+                items: []
             });
         }
         seriesChannelMap.get(sKey).items.push(item);
@@ -130,7 +101,6 @@ function initSeriesChannels() {
             if (a.episode !== b.episode) return a.episode - b.episode;
             return a.partNum - b.partNum;
         });
-        dizi.totalDuration = dizi.items.reduce((acc, curr) => acc + curr.durationInSeconds, 0);
     });
 }
 
@@ -262,11 +232,10 @@ app.get('/player_api.php', (req, res) => {
     res.json([]);
 });
 
-// 🎬 CANLI YAYIN MOTORU: DOĞRUDAN ZAMAN OFFSETLİ PROXY STREAM
-app.get('/:type/:user/:pass/:id', async (req, res) => {
-    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0');
-    res.setHeader('Pragma', 'no-cache');
-    res.setHeader('Expires', '0');
+// 🎬 KESİNTİSİZ AKIŞ KÖPRÜSÜ (DRIVE PROXY PIPELINE)
+app.get('/:type/:user/:pass/:id', (req, res) => {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+    res.setHeader('Content-Type', 'video/mp4');
 
     const { user, pass, id } = req.params;
 
@@ -280,32 +249,52 @@ app.get('/:type/:user/:pass/:id', async (req, res) => {
     const cleanId = parseInt(cleanIdMatch[1]);
     const seriesList = Array.from(seriesChannelMap.values());
 
-    // 1. 7/24 DİZİ KANALI
+    // 1. 7/24 DİZİ KANALI (Sunucu Akışı Doğrudan İletir, Bittiğinde Sıradakine Geçer)
     if (cleanId >= 501 && cleanId <= 599) {
         const seriesIdx = cleanId - 501;
         const targetSeries = seriesList[seriesIdx];
         
-        if (targetSeries && targetSeries.items.length > 0 && targetSeries.totalDuration > 0) {
-            const nowSec = Math.floor(Date.now() / 1000);
-            const elapsed = Math.max(0, nowSec - GLOBAL_TIMELINE_BASE);
-            let currentLoopSecond = elapsed % targetSeries.totalDuration;
+        if (targetSeries && targetSeries.items.length > 0) {
+            const items = targetSeries.items;
 
-            let activeVideo = targetSeries.items[0];
-            let accumulatedTime = 0;
-
-            for (let i = 0; i < targetSeries.items.length; i++) {
-                const item = targetSeries.items[i];
-                if (currentLoopSecond >= accumulatedTime && currentLoopSecond < accumulatedTime + item.durationInSeconds) {
-                    activeVideo = item;
-                    break;
-                }
-                accumulatedTime += item.durationInSeconds;
+            if (channelState[cleanId] === undefined) {
+                channelState[cleanId] = 0;
             }
 
-            console.log(`[7/24 ${targetSeries.name}] Oynatılıyor: ${activeVideo.name}`);
-            
-            // TV'nin hafızasını kırmak için zaman damgasıyla doğrudan yönlendirme
-            return res.redirect(302, `${activeVideo.url}&t_stamp=${nowSec}`);
+            function streamNextPart(index) {
+                const currentItem = items[index % items.length];
+                console.log(`[7/24 ${targetSeries.name}] Akış Başlatıldı: ${currentItem.name} (${(index % items.length) + 1}/${items.length})`);
+
+                https.get(currentItem.url, (driveRes) => {
+                    // Drive başka bir indirme adresine yönlendirirse takip et
+                    if (driveRes.statusCode === 302 || driveRes.statusCode === 301) {
+                        return https.get(driveRes.headers.location, (redirectedRes) => {
+                            pipeData(redirectedRes, index);
+                        }).on('error', (e) => console.error("Redirect hatası:", e));
+                    }
+                    pipeData(driveRes, index);
+                }).on('error', (e) => {
+                    console.error("Drive bağlantı hatası:", e);
+                });
+            }
+
+            function pipeData(streamSource, currentIndex) {
+                streamSource.on('data', (chunk) => {
+                    res.write(chunk);
+                });
+
+                streamSource.on('end', () => {
+                    console.log(`[7/24 ${targetSeries.name}] Parça bitti, hemen sıradakine geçiliyor...`);
+                    channelState[cleanId] = (currentIndex + 1) % items.length;
+                    streamNextPart(channelState[cleanId]);
+                });
+
+                req.on('close', () => {
+                    streamSource.destroy();
+                });
+            }
+
+            return streamNextPart(channelState[cleanId]);
         }
     }
 
@@ -322,4 +311,4 @@ app.get('/:type/:user/:pass/:id', async (req, res) => {
     return res.status(404).send("Yayın bulunamadı");
 });
 
-app.listen(PORT, () => console.log(`7/24 Kesintisiz Canlı Yayın Motoru ${PORT} portunda devrede.`));
+app.listen(PORT, () => console.log(`7/24 Kesintisiz Stream Proxy Sunucusu ${PORT} portunda devrede.`));
