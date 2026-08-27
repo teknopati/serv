@@ -9,7 +9,7 @@ const PORT = process.env.PORT || 3000;
 const USERNAME = "admin";
 const PASSWORD = "123";
 
-// Sabit Evrensel Yayın Saati (Render yeniden başlasa bile asla sıfırlanmaz)
+// Sabit Evrensel Yayın Saati (Zaman akışı bu referanstan itibaren aralıksız akar)
 const FIXED_GLOBAL_START = 1771400000; 
 
 let cacheTV = [];
@@ -262,7 +262,7 @@ app.get('/player_api.php', (req, res) => {
     res.json([]);
 });
 
-// 🎬 CANLI AKIŞ KÖPRÜSÜ
+// 🎬 AKILLI YAYIN MOTORU: CANLI ZAMAN TÜNELİ & KESİNTİSİZ AKIŞ
 app.get('/:type/:user/:pass/:id', async (req, res) => {
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0');
     res.setHeader('Pragma', 'no-cache');
@@ -280,7 +280,7 @@ app.get('/:type/:user/:pass/:id', async (req, res) => {
     const cleanId = parseInt(cleanIdMatch[1]);
     const seriesList = Array.from(seriesChannelMap.values());
 
-    // 1. 7/24 DİZİ KANALI (Evrensel Saate Göre Kesintisiz Akış)
+    // 1. 7/24 DİZİ KANALI (Anlık zamana göre o saniyeden başlatan yönlendirme)
     if (cleanId >= 501 && cleanId <= 599) {
         const seriesIdx = cleanId - 501;
         const targetSeries = seriesList[seriesIdx];
@@ -306,8 +306,9 @@ app.get('/:type/:user/:pass/:id', async (req, res) => {
 
             console.log(`[7/24 ${targetSeries.name}] Aktif Parça: ${activeVideo.name} | Konum: ${Math.floor(offsetInPart / 60)} dk ${offsetInPart % 60} sn`);
             
-            // TV oynatıcısını doğrudan o anki saniyeden başlatan yönlendirme
-            return res.redirect(302, activeVideo.url);
+            // TV oynatıcısını doğrudan o saniyeden (#t=saniye) ve önbelleksiz (&_t=epoch) başlatan yönlendirme
+            const redirectUrl = `${activeVideo.url}&_t=${nowSec}#t=${offsetInPart}`;
+            return res.redirect(302, redirectUrl);
         }
     }
 
