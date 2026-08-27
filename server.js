@@ -1,6 +1,7 @@
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
+const https = require('https');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -8,7 +9,7 @@ const PORT = process.env.PORT || 3000;
 const USERNAME = "admin";
 const PASSWORD = "123";
 
-// 🕒 Sabit Evrensel Başlangıç Referansı (2024 Epoch - Zaman sürekli ileri akar)
+// Sabit Referans Zamanı
 const GLOBAL_TIMELINE_BASE = 1704067200; 
 
 let cacheTV = [];
@@ -16,33 +17,26 @@ let cacheMovies = [];
 let cacheSeries = [];
 let seriesChannelMap = new Map();
 
-// ⏱️ Dizi Türüne Göre Gerçek Parça Süresi Tayini (Saniye)
 function calculateItemDuration(seriesName, rawTitle, explicitDuration) {
     if (explicitDuration && explicitDuration > 0) return explicitDuration;
     const sName = seriesName.toLowerCase();
     
-    // Çizgi Diziler (11 Dakikalık Bölümler)
     if (sName.includes('sürekli dizi') || sName.includes('adventure time')) {
-        if (rawTitle.includes('_P3') || rawTitle.includes('Parça 3')) return 220; // ~3.5 dk
-        if (rawTitle.includes('_P') || rawTitle.includes('Parça')) return 330;   // ~5.5 dk
-        return 660; // Tam bölüm (11 dk)
+        if (rawTitle.includes('_P3') || rawTitle.includes('Parça 3')) return 220;
+        if (rawTitle.includes('_P') || rawTitle.includes('Parça')) return 330;
+        return 660;
     }
-
-    // Kardeş Payı (~60-75 Dakika)
     if (sName.includes('kardeş payı')) {
         if (rawTitle.includes('Parça 6') || rawTitle.includes('Parça 7') || rawTitle.includes('Parça 8') || rawTitle.includes('Parça 9')) return 500;
         if (rawTitle.includes('Parça 5')) return 780;
-        return 950; // Standart 4 parçalı (~15-16 dk)
+        return 950;
     }
-
-    // Kurtlar Vadisi & Suskunlar (~75-90 Dakika)
     if (sName.includes('kurtlar vadisi') || sName.includes('suskunlar')) {
         if (rawTitle.includes('_P5') || rawTitle.includes('_P6') || rawTitle.includes('_P7') || rawTitle.includes('_P8') || rawTitle.includes('_P9') || rawTitle.includes('_P10')) return 650;
         if (rawTitle.includes('_P4')) return 1100;
-        return 1350; // Standart 3-4 parçalı (~20-22 dk)
+        return 1350;
     }
-
-    return 1200; // Varsayılan 20 dk
+    return 1200;
 }
 
 function parseM3U(content) {
@@ -268,7 +262,7 @@ app.get('/player_api.php', (req, res) => {
     res.json([]);
 });
 
-// 🎬 CANLI AKIŞ: DAKİKASINA VE KALINAN YERE GÖRE KESİNTİSİZ YÖNLENDİRİCİ
+// 🎬 CANLI YAYIN MOTORU: DOĞRUDAN ZAMAN OFFSETLİ PROXY STREAM
 app.get('/:type/:user/:pass/:id', async (req, res) => {
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0');
     res.setHeader('Pragma', 'no-cache');
@@ -286,37 +280,32 @@ app.get('/:type/:user/:pass/:id', async (req, res) => {
     const cleanId = parseInt(cleanIdMatch[1]);
     const seriesList = Array.from(seriesChannelMap.values());
 
-    // 1. 7/24 DİZİ KANALI (Evrensel zamana göre kalınan parça ve dakikadan açılır)
+    // 1. 7/24 DİZİ KANALI
     if (cleanId >= 501 && cleanId <= 599) {
         const seriesIdx = cleanId - 501;
         const targetSeries = seriesList[seriesIdx];
         
         if (targetSeries && targetSeries.items.length > 0 && targetSeries.totalDuration > 0) {
             const nowSec = Math.floor(Date.now() / 1000);
-            
-            // 2024 başından beri geçen toplam saniye (Zaman sürekli akar)
             const elapsed = Math.max(0, nowSec - GLOBAL_TIMELINE_BASE);
             let currentLoopSecond = elapsed % targetSeries.totalDuration;
 
             let activeVideo = targetSeries.items[0];
             let accumulatedTime = 0;
-            let offsetInPart = 0;
 
             for (let i = 0; i < targetSeries.items.length; i++) {
                 const item = targetSeries.items[i];
                 if (currentLoopSecond >= accumulatedTime && currentLoopSecond < accumulatedTime + item.durationInSeconds) {
                     activeVideo = item;
-                    offsetInPart = currentLoopSecond - accumulatedTime; // Parçanın kaçıncı saniyesinde olunduğu
                     break;
                 }
                 accumulatedTime += item.durationInSeconds;
             }
 
-            console.log(`[7/24 ${targetSeries.name}] Oynatılıyor: ${activeVideo.name} (Konum: ${Math.floor(offsetInPart / 60)} dk ${offsetInPart % 60} sn)`);
+            console.log(`[7/24 ${targetSeries.name}] Oynatılıyor: ${activeVideo.name}`);
             
-            // TV oynatıcısını doğrudan o saniyeden (#t=saniye) başlatan ve hafızayı kıran link
-            const redirectUrl = `${activeVideo.url}&_t=${nowSec}#t=${offsetInPart}`;
-            return res.redirect(302, redirectUrl);
+            // TV'nin hafızasını kırmak için zaman damgasıyla doğrudan yönlendirme
+            return res.redirect(302, `${activeVideo.url}&t_stamp=${nowSec}`);
         }
     }
 
